@@ -113,13 +113,6 @@ def cleanup_old_data():
         logger.error(f"Cleanup failed: {e}")
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(
-    cleanup_old_data,
-    'interval',
-    hours=24,
-    next_run_time=datetime.now()  # Run immediately on startup
-)
-scheduler.start()
 
 # ═══════════════════════════════════════════════
 # STARTUP / SHUTDOWN
@@ -129,6 +122,17 @@ scheduler.start()
 async def startup_event():
     """Initialize app on startup"""
     logger.info("🚀 Herald starting up...")
+
+    # Start background scheduler (skip in test environment)
+    if os.environ.get("TESTING") != "true":
+        scheduler.add_job(
+            cleanup_old_data,
+            'interval',
+            hours=24,
+            next_run_time=datetime.now()  # Run immediately on startup
+        )
+        scheduler.start()
+        logger.info("Background scheduler started")
 
     # Check database connection
     if not database.check_database_health():
