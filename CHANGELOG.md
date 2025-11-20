@@ -5,6 +5,32 @@ All notable changes to Squig League will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-11-20
+
+### Security - Admin Endpoint Protection
+
+**Added**
+- Admin endpoints for monitoring server health and abuse detection
+  - `/admin/resources` - CPU, memory, and disk usage monitoring
+  - `/admin/abuse-report` - Detect IPs making excessive requests
+- Rate limiting on admin endpoints (10 requests/hour per IP)
+- IP whitelist for admin routes via nginx configuration
+- Strong cryptographically secure admin key generation
+- Environment variable configuration for `ADMIN_IP` and `HERALD_ADMIN_KEY`
+- New justfile commands: `just admin-resources` and `just admin-abuse`
+
+**Security**
+- Admin endpoints protected by three layers:
+  1. IP whitelist at nginx level (configurable via `ADMIN_IP` env var)
+  2. Rate limiting (10 requests/hour)
+  3. Admin key authentication (strong 32-byte key)
+- Dynamic nginx configuration with `envsubst` for ADMIN_IP substitution
+
+**Developer Experience**
+- `just admin-resources` - Check server resources (requires admin key)
+- `just admin-abuse [MIN_REQUESTS] [HOURS]` - Check for abusive IPs
+- `just vps-sync-nginx` - Now handles ADMIN_IP substitution automatically
+
 ## [0.2.0] - 2025-11-20
 
 ### Herald - Frontend/Backend Separation

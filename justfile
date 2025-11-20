@@ -24,7 +24,7 @@ default:
 
 # Show detailed help
 help:
-    @echo "🏰 Squig League - Available Commands"
+    @echo "Squig League - Available Commands"
     @echo "======================================"
     @echo ""
     @echo "Quick Start:"
@@ -90,6 +90,10 @@ help:
     @echo "  just stats            - Show container resource usage"
     @echo "  just health           - Check Squig health"
     @echo "  just ps               - Show running containers"
+    @echo ""
+    @echo "Admin:"
+    @echo "  just admin-resources  - Check server resources (requires admin key)"
+    @echo "  just admin-abuse      - Check for abusive IPs (requires admin key)"
     @echo ""
     @echo "Cleanup:"
     @echo "  just clean            - Stop and remove containers"
@@ -513,8 +517,13 @@ vps-sync-nginx:
         echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
         exit 1
     fi
+    if [ -z "$ADMIN_IP" ]; then
+        echo "❌ ADMIN_IP not set in .env.prod"
+        exit 1
+    fi
     echo "📦 Syncing nginx configs to VPS..."
-    scp nginx/nginx.conf ${VPS_USER}@${VPS_IP}:~/squig_league/nginx/nginx.conf
+    echo "🔧 Substituting ADMIN_IP=${ADMIN_IP} in nginx.conf..."
+    envsubst '${ADMIN_IP}' < nginx/nginx.conf | ssh ${VPS_USER}@${VPS_IP} "cat > ~/squig_league/nginx/nginx.conf"
     scp nginx/nginx.http-only.conf ${VPS_USER}@${VPS_IP}:~/squig_league/nginx/nginx.http-only.conf
     echo "✅ Sync complete!"
     echo "⚠️  Restart nginx: ssh ${VPS_USER}@${VPS_IP} 'cd ~/squig_league && docker-compose restart nginx'"
@@ -654,3 +663,37 @@ test-exchange:
         -H "Content-Type: application/json" \
         -d '{"list_content":"Test Army List\n\nHQ:\n- Test Captain\n\nTroops:\n- 10x Test Marines"}' \
         | python3 -m json.tool
+
+# ═══════════════════════════════════════════════
+# ADMIN ENDPOINTS
+# ═══════════════════════════════════════════════
+
+# Get server resources (requires admin key from .env.prod)
+admin-resources:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$HERALD_ADMIN_KEY" ]; then
+        echo "❌ HERALD_ADMIN_KEY not set in .env.prod"
+        exit 1
+    fi
+    ENCODED_KEY=$(printf %s "$HERALD_ADMIN_KEY" | jq -sRr @uri)
+    curl -s "https://herald.squigleague.com/admin/resources?admin_key=$ENCODED_KEY" | python3 -m json.tool
+
+# Get abuse report (requires admin key from .env.prod)
+admin-abuse MIN_REQUESTS="100" HOURS="1":
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$HERALD_ADMIN_KEY" ]; then
+        echo "❌ HERALD_ADMIN_KEY not set in .env.prod"
+        exit 1
+    fi
+    ENCODED_KEY=$(printf %s "$HERALD_ADMIN_KEY" | jq -sRr @uri)
+    curl -s "https://herald.squigleague.com/admin/abuse-report?admin_key=$ENCODED_KEY&min_requests={{MIN_REQUESTS}}&hours={{HOURS}}" | python3 -m json.tool

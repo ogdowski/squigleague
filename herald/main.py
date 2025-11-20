@@ -296,7 +296,8 @@ async def get_stats():
     }
 
 @app.get("/admin/resources", response_model=ResourcesResponse)
-async def get_resources(admin_key: str):
+@limiter.limit("10/hour")
+async def get_resources(request: Request, admin_key: str):
     """Get server resource usage (requires admin key)"""
     if admin_key != ADMIN_KEY:
         raise HTTPException(401, "Invalid admin key")
@@ -324,7 +325,8 @@ async def get_resources(admin_key: str):
         raise HTTPException(500, "Failed to get resources")
 
 @app.get("/admin/abuse-report")
-async def abuse_report(admin_key: str, min_requests: int = 100, hours: int = 1):
+@limiter.limit("10/hour")
+async def abuse_report(request: Request, admin_key: str, min_requests: int = 100, hours: int = 1):
     """Get list of potentially abusive IPs (requires admin key)"""
     if admin_key != ADMIN_KEY:
         raise HTTPException(401, "Invalid admin key")
