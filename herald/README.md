@@ -1,43 +1,53 @@
-# 📯 Herald - Fair Army List Exchange
+# 📯 Herald Backend - JSON API
 
-Fair and secure blind army list exchange for Warhammer and other tabletop wargames.
+Backend service for the Herald blind list exchange system.
 
-## What is Herald?
+## What is Herald Backend?
 
-Herald prevents list tailoring by using cryptographic hashing to ensure both players commit to their army lists simultaneously. Neither player can see the opponent's list until both have been submitted and locked.
+The Herald backend is a **pure JSON API** built with FastAPI. It handles all business logic, database operations, and cryptographic hash generation for the Herald list exchange system.
+
+## Architecture
+
+Herald uses a **frontend/backend separation**:
+
+- **Backend (this service)**: FastAPI JSON API at `/api/herald/*`
+- **Frontend**: Separate Alpine.js SPA (see `../frontend/`)
+- **Communication**: Frontend calls backend via JSON API
+- **Nginx**: Routes `/api/*` to backend, everything else to frontend
 
 ## Features
 
-- **Cryptographic Security**: SHA-256 hashing ensures lists cannot be modified after submission
-- **No Registration**: Completely anonymous, no accounts required
-- **Auto-Delete**: Exchanges automatically deleted after 7 days
-- **Client-Side Verification**: Hash verification happens in the browser
-- **Real-Time Updates**: Auto-refresh when opponent submits
+- **Pure JSON API**: No HTML rendering, only JSON responses
+- **Cryptographic Security**: SHA-256 hashing for list integrity
+- **Database**: PostgreSQL for persistent storage
 - **Rate Limiting**: Prevents abuse
-
-## How It Works
-
-1. **Player A Creates**: Paste army list → Get unique URL → Hash locked
-2. **Player B Responds**: Opens URL → Sees hash proof → Submits their list
-3. **Both Revealed**: Lists instantly revealed to both players with timestamps
+- **Health Checks**: `/health` endpoint for monitoring
+- **Stats Endpoint**: `/api/herald/stats` provides system statistics
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python 3.11)
+- **Framework**: FastAPI (Python 3.11)
 - **Database**: PostgreSQL (shared with other modules)
-- **Frontend**: TailwindCSS + Alpine.js
-- **Deployment**: Docker containers
+- **Deployment**: Docker container
 
 ## API Endpoints
 
+All endpoints are JSON-only. The frontend (separate service) handles HTML rendering.
+
 ### Public Endpoints
 
-- `GET /` - Home page
-- `POST /exchange/create` - Create new exchange
-- `GET /exchange/{id}` - View exchange (adaptive UI)
-- `POST /exchange/{id}/respond` - Submit Player B's list
-- `GET /exchange/{id}/status` - Check if complete (polling)
+- `POST /api/herald/exchange/create` - Create new exchange
+  - Returns: `{"id": "...", "hash_a": "...", "url": "..."}`
+- `GET /api/herald/exchange/{id}` - Get exchange data
+  - Returns: Exchange object with lists (if both submitted)
+- `POST /api/herald/exchange/{id}/respond` - Submit Player B's list
+  - Returns: Complete exchange with both lists
+- `GET /api/herald/exchange/{id}/status` - Check if complete
+  - Returns: `{"complete": true/false}`
+- `GET /api/herald/stats` - System statistics
+  - Returns: `{"version": "...", "exchanges": {...}, "uptime": ...}`
 - `GET /health` - Health check
+  - Returns: `{"status": "healthy", "module": "herald", "database": "connected"}`
 
 ### Admin Endpoints
 
@@ -54,11 +64,22 @@ MODULE_NAME=herald
 
 ## Development
 
+The backend is typically run via Docker Compose alongside the frontend:
+
 ```bash
+# From project root
+just dev              # Starts both backend and frontend
+
+# Backend logs
+just logs-squig
+
+# Backend-only development (if needed)
 cd herald
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8001
 ```
+
+**Note**: The backend expects requests at `/api/herald/*` paths when behind nginx. For local development without nginx, use the full path or adjust your frontend to call `http://localhost:8001/exchange/create` instead of `/api/herald/exchange/create`.
 
 ## Database Schema
 
@@ -107,23 +128,40 @@ Runs on Hetzner CX23:
 - 1 Uvicorn worker
 - 512MB memory limit
 - PostgreSQL connection pooling
-- Nginx reverse proxy
+- Nginx reverse proxy (routes `/api/*` to this service)
+- Separate frontend service for static files
+
+## Docker Images
+
+Built as multi-arch images (amd64/arm64):
+- Backend: `ogdowski/private:squigleague-VERSION`
+- Frontend: `ogdowski/private:squigleague-frontend-VERSION`
+
+Both images are built and pushed together:
+```bash
+just push  # Builds and pushes both backend and frontend
+```
 
 ## Monitoring
 
 Check server health:
 ```bash
-curl https://herald.squigleague.com/health
+curl https://squigleague.com/health
+```
+
+View system stats:
+```bash
+curl https://squigleague.com/api/herald/stats
 ```
 
 View resources (requires admin key):
 ```bash
-curl "https://herald.squigleague.com/admin/resources?admin_key=YOUR_KEY"
+curl "https://squigleague.com/admin/resources?admin_key=YOUR_KEY"
 ```
 
 Check for abusive IPs:
 ```bash
-curl "https://herald.squigleague.com/admin/abuse-report?admin_key=YOUR_KEY&min_requests=100"
+curl "https://squigleague.com/admin/abuse-report?admin_key=YOUR_KEY&min_requests=100"
 ```
 
 ## Future Enhancements (Phase 3)

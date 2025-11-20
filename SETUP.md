@@ -123,7 +123,8 @@ Expected response:
 
 **Access the application:**
 - Open browser: http://localhost:8000
-- You should see the Herald home page
+- You should see the Herald home page (served by frontend service)
+- Backend API available at: http://localhost:8000/api/herald/*
 
 ### 5. Stop Services
 
@@ -146,7 +147,7 @@ just up               # Start in background
 just down             # Stop services
 just restart          # Restart services
 just logs             # View all logs
-just logs-herald      # Herald logs only
+just logs-squig       # Backend logs only
 just logs-db          # Database logs only
 
 # Environment
@@ -214,7 +215,7 @@ lsof -i :5432
 
 ### Database Connection Failed
 
-**Problem:** Herald can't connect to PostgreSQL
+**Problem:** Backend can't connect to PostgreSQL
 
 **Solution:**
 ```bash
@@ -274,7 +275,8 @@ docker ps
    ```
 3. **View logs** for errors:
    ```bash
-   just logs-herald
+   just logs-squig  # Backend logs
+   just logs        # All services
    ```
 
 ### Database Changes
@@ -294,19 +296,57 @@ just db-backup
 just db-reset
 ```
 
+## Architecture
+
+Squig League uses a **frontend/backend separation** architecture:
+
+```
+┌─────────────┐
+│   Nginx     │  Routes: /api/* → backend, /* → frontend
+└──────┬──────┘
+       │
+   ┌───┴────┐
+   │        │
+   ▼        ▼
+Backend  Frontend
+(API)    (Alpine.js SPA)
+   │
+   ▼
+PostgreSQL
+```
+
+### Services
+
+1. **Backend (squig)**: FastAPI JSON API at `/api/herald/*`
+2. **Frontend**: Alpine.js SPA serving static HTML/JS/CSS
+3. **Nginx**: Reverse proxy and static file server
+4. **PostgreSQL**: Shared database for all modules
+
+### Benefits
+
+- Independent scaling of frontend and backend
+- Clean API contracts with JSON-only backend
+- Easier testing and development
+- Static frontend can be cached/CDN'd
+- Backend can serve multiple frontends
+
 ## Project Structure
 
 ```
 squig_league/
-├── herald/              # Herald module (list exchange)
+├── herald/              # Backend (JSON API)
 │   ├── main.py         # FastAPI application
 │   ├── database.py     # Database operations
-│   ├── models.py       # Pydantic models
-│   ├── templates/      # HTML templates
-│   └── static/         # CSS, JS, images
+│   └── models.py       # Pydantic models
+├── frontend/           # Frontend (Alpine.js SPA)
+│   ├── index.html      # Main page
+│   ├── view.html       # Exchange view
+│   ├── style.css       # Global styles
+│   └── Dockerfile      # Frontend container
 ├── database/           # PostgreSQL initialization
 │   └── init.sql        # Database schema
 ├── nginx/              # Nginx configuration
+│   └── nginx.conf      # Routing and proxy config
 ├── .env.local.example  # Environment template
 ├── docker-compose.yml  # Base Docker config
 ├── docker-compose.dev.yml  # Dev overrides

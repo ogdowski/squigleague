@@ -148,31 +148,75 @@ chore(docker): upgrade PostgreSQL to version 16
 
 ```
 squig_league/
-├── app/                    # FastAPI application
-│   ├── models/            # Database models
-│   ├── routes/            # API routes
-│   ├── schemas/           # Pydantic schemas
-│   ├── services/          # Business logic
-│   └── templates/         # HTML templates
-├── alembic/               # Database migrations
-├── static/                # Static files (CSS, JS)
-├── tests/                 # Test files
-└── docker-compose.yml     # Docker configuration
+├── herald/                # Backend (JSON API)
+│   ├── main.py           # FastAPI application
+│   ├── database.py       # Database operations
+│   └── models.py         # Pydantic models
+├── frontend/             # Frontend (Alpine.js SPA)
+│   ├── index.html        # Main page
+│   ├── view.html         # Exchange view
+│   └── style.css         # Global styles
+├── database/             # PostgreSQL initialization
+│   └── init.sql          # Database schema
+├── nginx/                # Nginx configuration
+├── docker-compose.yml    # Base Docker config
+├── docker-compose.dev.yml  # Dev overrides
+└── justfile              # Command definitions
 ```
+
+## Architecture
+
+Squig League uses **frontend/backend separation**:
+- **Backend** (herald/): FastAPI JSON API at `/api/herald/*`
+- **Frontend** (frontend/): Alpine.js SPA for UI
+- **Nginx**: Routes `/api/*` to backend, everything else to frontend
 
 ## Testing
 
 Before submitting a PR, ensure your changes don't break existing functionality:
 
 ```bash
-# Run tests (if test suite exists)
-docker-compose exec web pytest
+# Start development environment
+just dev
 
 # Manual testing checklist:
 # - Test the specific feature you changed
 # - Test related features that might be affected
 # - Test on different browsers if UI changes
-# - Verify no console errors
+# - Verify no console errors in browser developer tools
+# - Check backend logs: just logs-squig
+# - Test API endpoints directly with curl if backend changes
+```
+
+### Testing Backend Changes
+
+```bash
+# Test API endpoints directly
+curl -X POST http://localhost:8000/api/herald/exchange/create \
+  -H "Content-Type: application/json" \
+  -d '{"list_content":"Test Army List"}'
+
+# Check health
+curl http://localhost:8000/health
+
+# View stats
+curl http://localhost:8000/api/herald/stats
+```
+
+### Testing Frontend Changes
+
+```bash
+# Start services and open browser
+just dev
+open http://localhost:8000
+
+# Check browser console for errors
+# Test all user flows:
+# 1. Create exchange
+# 2. Copy URL
+# 3. Open URL in incognito/private window
+# 4. Submit response
+# 5. Verify both lists appear
 ```
 
 ## Getting Help

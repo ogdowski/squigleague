@@ -8,6 +8,17 @@ Open-source Warhammer management platform with integrated modules for fair play,
 
 **Live:** [squigleague.com](https://squigleague.com)
 
+## Architecture
+
+Squig League uses a modern frontend/backend separation architecture:
+
+- **Backend** (herald/): FastAPI JSON API serving `/api/herald/*` endpoints
+- **Frontend** (frontend/): Alpine.js SPA serving static UI
+- **Nginx**: Routes `/api/*` to backend, everything else to frontend
+- **Database**: PostgreSQL (shared by all modules)
+
+This architecture enables independent scaling, easier testing, and clean separation of concerns.
+
 ## Modules
 
 ### Active

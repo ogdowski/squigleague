@@ -55,6 +55,11 @@ help:
     @echo "  just version          - Show current version"
     @echo "  just bump VERSION     - Bump version (e.g., just bump 0.2)"
     @echo ""
+    @echo "Releases:"
+    @echo "  just tag VERSION      - Create git tag for version"
+    @echo "  just release VERSION  - Create and push git tag"
+    @echo "  just gh-release VERSION - Create GitHub release (requires gh CLI)"
+    @echo ""
     @echo "Database:"
     @echo "  just db-connect       - Connect to PostgreSQL shell"
     @echo "  just db-backup        - Backup database"
@@ -223,9 +228,50 @@ bump VERSION:
     @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod
     @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example
     @echo "✅ Version bumped to {{VERSION}} in all env files"
+    @echo ""
     @echo "Next steps:"
-    @echo "  1. just push         - Build and push new version"
-    @echo "  2. just vps-update   - Deploy to VPS"
+    @echo "  1. Update CHANGELOG.md with release notes"
+    @echo "  2. git add -A && git commit -m 'Bump version to {{VERSION}}'"
+    @echo "  3. just release {{VERSION}}  - Create git tag and GitHub release"
+    @echo "  4. just push                 - Build and push new version"
+    @echo "  5. just vps-update           - Deploy to VPS"
+
+# Create git tag for version
+tag VERSION:
+    @echo "🏷️  Creating git tag v{{VERSION}}..."
+    git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
+    @echo "✅ Tag v{{VERSION}} created"
+    @echo "Push tag with: git push origin v{{VERSION}}"
+
+# Create and push git tag
+release VERSION:
+    @echo "🚀 Creating release v{{VERSION}}..."
+    @if ! git diff-index --quiet HEAD --; then \
+        echo "❌ You have uncommitted changes. Commit them first."; \
+        exit 1; \
+    fi
+    @echo "📝 Creating git tag..."
+    git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
+    @echo "📤 Pushing tag to GitHub..."
+    git push origin v{{VERSION}}
+    @echo "✅ Release v{{VERSION}} created and pushed!"
+    @echo ""
+    @echo "🌐 Create GitHub release at:"
+    @echo "   https://github.com/ogdowski/squigleague/releases/new?tag=v{{VERSION}}"
+    @echo ""
+    @echo "Or use GitHub CLI: gh release create v{{VERSION}} --generate-notes"
+
+# Create GitHub release with notes (requires gh CLI)
+gh-release VERSION:
+    @echo "🚀 Creating GitHub release v{{VERSION}}..."
+    @if ! command -v gh >/dev/null 2>&1; then \
+        echo "❌ GitHub CLI (gh) not installed."; \
+        echo "Install: brew install gh"; \
+        exit 1; \
+    fi
+    gh release create v{{VERSION}} --generate-notes --title "v{{VERSION}}"
+    @echo "✅ GitHub release v{{VERSION}} created!"
+    @echo "View at: https://github.com/ogdowski/squigleague/releases/tag/v{{VERSION}}"
 
 # ═══════════════════════════════════════════════
 # BUILDING
