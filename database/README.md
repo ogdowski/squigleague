@@ -12,11 +12,11 @@ PostgreSQL database shared by all Squig League modules.
 
 ## Schema Organization
 - `core_*` tables: Shared authentication and user management
-- `herald_*` tables: List exchange module (Phase 1)
-- `scribe_*` tables: List builder (Phase 2 - future)
-- `patron_*` tables: Tournament platform (Phase 4 - future)
-- `keeper_*` tables: Collection manager (Phase 5 - future)
-- `squire_*` tables: Battle tracker (Phase 6 - future)
+- `herald_*` tables: List exchange module 
+- `scribe_*` tables: List builder 
+- `patron_*` tables: Tournament platform 
+- `keeper_*` tables: Collection manager
+- `squire_*` tables: Battle tracker
 
 ## Accessing Database
 ```bash
