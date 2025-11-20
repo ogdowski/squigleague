@@ -27,7 +27,7 @@ This architecture enables independent scaling, easier testing, and clean separat
 
 ### Roadmap
 
-- **Herald**: Mission randomizer (AoS and 40k) - hardcoded for now
+- **Herald**: Mission randomizer (AoS and 40k) - hardcoded until we integrate with BS Data
 - **Archivist**: BSData integration
 - **Herald**: Mission randomizer using BSData
 - **Squire**: Score tracker and battle assistant
