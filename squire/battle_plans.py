@@ -49,90 +49,170 @@ class BattlePlan:
 
 
 # ═══════════════════════════════════════════════
-# AGE OF SIGMAR 4TH EDITION - SPEARHEAD
+# AGE OF SIGMAR 4TH EDITION - MATCHED PLAY
+# General's Handbook 2025-2026
 # ═══════════════════════════════════════════════
 
-AOS_DEPLOYMENTS = {
-    DeploymentType.FRONTAL_ASSAULT: {
-        "name": "Frontal Assault",
-        "description": "Players deploy in opposite halves of the battlefield, divided by a line down the center. Standard battle lines 9\" from center.",
-        "zones": "Player zones: 18\" from center line on your side"
+AOS_BATTLE_PLANS = [
+    {
+        "name": "Passing Seasons",
+        "deployment": "Long edge deployment",
+        "objectives": [
+            {"name": "Gnarlroot 1", "location": "24\" from long edge, 12\" from center"},
+            {"name": "Oakenbrow 1", "location": "24\" from long edge, 12\" from center (opposite side)"},
+            {"name": "Gnarlroot 2", "location": "48\" from long edge, 12\" from center"},
+            {"name": "Oakenbrow 2", "location": "48\" from long edge, 12\" from center (opposite side)"}
+        ],
+        "scoring": "Alternating turns: even turns score Gnarlroot objectives (5 VP each), odd turns score Oakenbrow objectives (5 VP each)",
+        "underdog_ability": "If behind on VP, can choose which objective type scores this turn (Gnarlroot or Oakenbrow)",
+        "special_rules": ["Seasonal rotation mechanic", "4 objectives total"]
     },
-    DeploymentType.ENCIRCLE: {
-        "name": "Encircle",
-        "description": "Players deploy in opposite diagonal corners. Deployment zones are 12\" triangles in corners.",
-        "zones": "Diagonal deployment: NW corner vs SE corner (or NE vs SW)"
+    {
+        "name": "Paths of the Fey",
+        "deployment": "Long edge deployment",
+        "objectives": [
+            {"name": "Central Heartwood", "location": "Center of battlefield"},
+            {"name": "Gnarlroot", "location": "12\" from center toward each long edge"},
+            {"name": "Oakenbrow", "location": "12\" from center toward each long edge"},
+            {"name": "Winterleaf", "location": "24\" from center on battlefield quarters"}
+        ],
+        "scoring": "Central objective: 5 VP. Other objectives: 3 VP each. End of turn scoring.",
+        "underdog_ability": "Teleport one unit wholly within 6\" of an objective to within 6\" of another objective",
+        "special_rules": ["5 objectives total", "Fey teleportation mechanic"]
     },
-    DeploymentType.HAMMER_AND_ANVIL: {
-        "name": "Hammer and Anvil",
-        "description": "Players deploy on opposite short table edges. 9\" deployment zones from short edges.",
-        "zones": "Deploy within 9\" of your short table edge"
+    {
+        "name": "Roiling Roots",
+        "deployment": "Diagonal corner deployment",
+        "objectives": [
+            {"name": "Diagonal Row 1", "location": "6 objectives in diagonal line across battlefield"},
+        ],
+        "scoring": "Control objectives: 3 VP each. Bonus 2 VP if you control more than opponent.",
+        "underdog_ability": "Units contesting objectives you control cause enemies to strike last",
+        "special_rules": ["6 objectives in diagonal formation", "Strike-last defensive ability"]
     },
-    DeploymentType.CLASH: {
-        "name": "Clash",
-        "description": "Both players deploy in 12\" circles 24\" apart in center of battlefield.",
-        "zones": "12\" radius deployment circles, 24\" apart, centered on table"
+    {
+        "name": "Cyclic Shifts",
+        "deployment": "Diagonal corner deployment",
+        "objectives": [
+            {"name": "Diagonal Row", "location": "6 objectives in diagonal rows, 3 per player's side"},
+        ],
+        "scoring": "3 VP per objective controlled. At end of each battle round, remove the objective furthest from the center.",
+        "underdog_ability": "Choose which objective is removed instead of automatic removal",
+        "special_rules": ["6 objectives diminishing to 1", "Shrinking battlefield mechanic"]
+    },
+    {
+        "name": "Surge of Slaughter",
+        "deployment": "Long edge deployment",
+        "objectives": [
+            {"name": "Central Heartwood", "location": "Center"},
+            {"name": "4 Corner Objectives", "location": "Near each corner of battlefield"}
+        ],
+        "scoring": "Central: 5 VP, corners: 3 VP each",
+        "underdog_ability": "All your units gain +1 Rend to melee weapons",
+        "special_rules": ["5 objectives total", "Aggressive combat bonus for underdog"]
+    },
+    {
+        "name": "Linked Ley Lines",
+        "deployment": "Long edge deployment",
+        "objectives": [
+            {"name": "Ley Line Network", "location": "5 objectives in diamond formation"},
+        ],
+        "scoring": "3 VP per objective. Bonus 5 VP if you control 3+ linked objectives.",
+        "underdog_ability": "Bonuses to manifestations and prayers near controlled objectives",
+        "special_rules": ["5 objectives", "Linked objective bonuses", "Magic/prayer enhancement"]
+    },
+    {
+        "name": "Noxious Nexus",
+        "deployment": "Quadrant deployment",
+        "objectives": [
+            {"name": "3 Nexus Points", "location": "Spread across battlefield"},
+        ],
+        "scoring": "5 VP per objective controlled. Bonus 10 VP if you control all objectives at end of any turn.",
+        "underdog_ability": "Deal D3 mortal wounds to enemy units within 6\" of objectives you control",
+        "special_rules": ["3 objectives", "Mortal wound damage ability", "All-or-nothing bonus"]
+    },
+    {
+        "name": "The Liferoots",
+        "deployment": "Diagonal corner deployment",
+        "objectives": [
+            {"name": "2 Liferoot Markers", "location": "On diagonal, 24\" apart"},
+        ],
+        "scoring": "10 VP per objective controlled at end of battle round",
+        "underdog_ability": "Return D3 slain models to a friendly unit within 6\" of objective you control",
+        "special_rules": ["2 objectives", "Diagonal obscuring terrain", "Model resurrection mechanic"]
+    },
+    {
+        "name": "Bountiful Equinox",
+        "deployment": "Long edge deployment",
+        "objectives": [
+            {"name": "5 Objective Spread", "location": "Distributed across battlefield"},
+        ],
+        "scoring": "3 VP per objective. Bonus VP for controlling specific objective combinations.",
+        "underdog_ability": "Heal D3 wounds on a friendly monster within 6\" of objective you control",
+        "special_rules": ["5 objectives", "Combination scoring bonuses", "Healing mechanic"]
+    },
+    {
+        "name": "Lifecycle",
+        "deployment": "Long edge deployment",
+        "objectives": [
+            {"name": "4 Lifecycle Objectives", "location": "Symmetrical placement across battlefield"},
+        ],
+        "scoring": "One objective is primary each turn (5 VP), others are secondary (2 VP). Primary objective rotates clockwise.",
+        "underdog_ability": "Choose direction of primary objective rotation (clockwise or counter-clockwise)",
+        "special_rules": ["4 objectives", "Rotating primary objective mechanic"]
+    },
+    {
+        "name": "Creeping Corruption",
+        "deployment": "Long edge deployment",
+        "objectives": [
+            {"name": "6 Objective Grid", "location": "Evenly spaced across battlefield"},
+        ],
+        "scoring": "2 VP per objective. Draw lines between controlled objectives - each line through enemy territory: +1 VP.",
+        "underdog_ability": "Corrupt an objective: propagate control to adjacent objective",
+        "special_rules": ["6 objectives", "Line-drawing propagation mechanic", "Territory corruption"]
+    },
+    {
+        "name": "Grasp of Thorns",
+        "deployment": "Quadrant deployment",
+        "objectives": [
+            {"name": "4 Thorn Objectives", "location": "One in each table quarter"},
+        ],
+        "scoring": "5 VP per objective controlled",
+        "underdog_ability": "Entangle enemy units within 6\" of objectives you control - they cannot make normal moves",
+        "special_rules": ["4 objectives", "Movement restriction mechanic", "Entanglement effect"]
     }
-}
-
-AOS_PRIMARY_OBJECTIVES = [
-    "Control the Center - Hold the central objective marker",
-    "Secure the Flanks - Control objective markers in left and right table quarters",
-    "Domination - Control more objectives than your opponent at end of each turn",
-    "Breakthrough - Control objectives in enemy territory",
-    "King of the Hill - Hold central terrain feature for victory points"
-]
-
-AOS_SECONDARY_OBJECTIVES = [
-    "Slay the Leader - Destroy enemy general",
-    "Break Their Ranks - Destroy half of enemy's starting models",
-    "Hold the Line - No enemies in your deployment zone at battle end",
-    "Aggressive Expansion - Have units in all four table quarters",
-    "Tactical Supremacy - Complete more battle tactics than opponent"
-]
-
-AOS_BATTLE_TACTICS = [
-    "Fierce Conquerors - Control an objective you didn't control at start of turn",
-    "Endless Legions - Return destroyed unit to battlefield",
-    "Aggressive Expansion - Move a unit into enemy territory",
-    "Unstoppable Advance - Charge with 3+ units this turn",
-    "Magical Dominance - Successfully cast 3+ spells this turn",
-    "Slaughter and Plunder - Destroy enemy unit and control objective",
-    "Strategic Withdrawal - Fall back and still shoot/charge",
-    "Hold or Die - Keep control of an objective all turn"
 ]
 
 
 def generate_aos_battle_plan() -> BattlePlan:
-    """Generate randomized Age of Sigmar Spearhead battle plan"""
+    """Generate randomized Age of Sigmar Matched Play battle plan from General's Handbook 2025-2026"""
     
-    deployment_type = random.choice(list(AOS_DEPLOYMENTS.keys()))
-    deployment_info = AOS_DEPLOYMENTS[deployment_type]
+    battle_plan = random.choice(AOS_BATTLE_PLANS)
     
-    primary = random.choice(AOS_PRIMARY_OBJECTIVES)
+    # Extract objective names for display
+    objective_list = []
+    if "objectives" in battle_plan and isinstance(battle_plan["objectives"], list):
+        objective_list = [obj.get("name", "") for obj in battle_plan["objectives"] if "name" in obj]
     
-    # Select 2-3 random secondary objectives
-    num_secondaries = random.randint(2, 3)
-    secondaries = random.sample(AOS_SECONDARY_OBJECTIVES, num_secondaries)
-    
-    # Select battle tactics for the game
-    battle_tactics = random.sample(AOS_BATTLE_TACTICS, 6)  # 6 tactics available per game
+    # Build special rules list
+    special_rules = battle_plan.get("special_rules", [])
+    special_rules.extend([
+        "Matched Play format: 2000 points",
+        "General's Handbook 2025-2026",
+        f"Underdog Ability: {battle_plan.get('underdog_ability', 'Special ability for player behind on VP')}"
+    ])
     
     return BattlePlan(
-        name=f"AoS Spearhead - {deployment_info['name']}",
+        name=battle_plan["name"],
         game_system=GameSystem.AOS,
-        deployment=deployment_type,
-        deployment_description=f"{deployment_info['description']}\n{deployment_info['zones']}",
-        primary_objective=primary,
-        secondary_objectives=secondaries,
-        victory_conditions="Score victory points from primary objective, secondary objectives, and completed battle tactics. Most VP at end of Round 5 wins.",
-        battle_tactics=battle_tactics,
+        deployment=DeploymentType.FRONTAL_ASSAULT,  # Placeholder - actual deployment varies by mission
+        deployment_description=battle_plan.get("deployment", "Standard deployment"),
+        primary_objective=battle_plan.get("scoring", "Control objectives for victory points"),
+        secondary_objectives=objective_list,
+        victory_conditions="Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+        battle_tactics=None,
         turn_limit=5,
-        special_rules=[
-            "Spearhead format: 1000 points maximum",
-            "First turn determined by priority roll",
-            "Battle tactics chosen secretly each turn"
-        ]
+        special_rules=special_rules
     )
 
 

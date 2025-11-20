@@ -23,31 +23,29 @@ The Squire module provides automated battle plan generation for tournament organ
 
 ## Supported Game Systems
 
-### Age of Sigmar (4th Edition - Spearhead)
+### Age of Sigmar (4th Edition - Matched Play)
 
-**Format**: 1000 points, 5 rounds, Battle Tactics system
+**Format**: 2000 points, 5 battle rounds, General's Handbook 2025-2026
 
-**Deployments**:
-- Frontal Assault (opposing halves)
-- Encircle (diagonal corners)
-- Hammer and Anvil (short edges)
-- Clash (center circles)
+**Battle Plans** (12 official missions):
+1. **Passing Seasons** - Alternating objective scoring with seasonal rotation
+2. **Paths of the Fey** - Central objective with fey teleportation mechanics
+3. **Roiling Roots** - Diagonal objectives with strike-last defensive ability
+4. **Cyclic Shifts** - Shrinking battlefield as objectives are removed
+5. **Surge of Slaughter** - Aggressive combat bonuses for underdog
+6. **Linked Ley Lines** - Connected objectives with magic/prayer enhancement
+7. **Noxious Nexus** - Mortal wound damage and all-or-nothing bonus
+8. **The Liferoots** - Model resurrection on obscuring diagonal
+9. **Bountiful Equinox** - Combination scoring with healing mechanic
+10. **Lifecycle** - Rotating primary objective system
+11. **Creeping Corruption** - Territory corruption with line propagation
+12. **Grasp of Thorns** - Movement restriction and entanglement effects
 
-**Primary Objectives**:
-- Control the Center
-- Secure the Flanks
-- Domination
-- Breakthrough
-- King of the Hill
-
-**Secondary Objectives**:
-- Slay the Leader
-- Break Their Ranks
-- Hold the Line
-- Aggressive Expansion
-- Tactical Supremacy
-
-**Battle Tactics**: 8 available tactics, 6 randomly selected per game
+**Key Mechanics**:
+- Ghyranite objective naming (Gnarlroot, Oakenbrow, Winterleaf, Heartwood)
+- Underdog abilities (special powers for player behind on VP)
+- Mission-specific deployment types (long edge, diagonal, quadrant)
+- Unique victory point scoring per mission
 
 ---
 
