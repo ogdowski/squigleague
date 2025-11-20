@@ -40,16 +40,16 @@ class BattlePlanResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "name": "AoS Spearhead - Frontal Assault",
+                "name": "Grasp of Thorns",
                 "game_system": "age_of_sigmar",
                 "deployment": "frontal_assault",
-                "deployment_description": "Players deploy in opposite halves...",
-                "primary_objective": "Control the Center",
-                "secondary_objectives": ["Slay the Leader", "Hold the Line"],
-                "victory_conditions": "Score victory points from objectives...",
+                "deployment_description": "Quadrant deployment",
+                "primary_objective": "5 VP per objective controlled",
+                "secondary_objectives": ["Gnarlroot 1", "Oakenbrow 1", "Winterleaf 1", "Heartwood 1"],
+                "victory_conditions": "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
                 "turn_limit": 5,
-                "special_rules": ["Spearhead format: 1000 points"],
-                "battle_tactics": ["Fierce Conquerors", "Unstoppable Advance"]
+                "special_rules": ["Matched Play format: 2000 points", "General's Handbook 2025-2026", "Underdog Ability: Entangle enemy units within 6\" of objectives you control - they cannot make normal moves"],
+                "battle_tactics": null
             }
         }
 
@@ -157,7 +157,7 @@ async def get_supported_systems():
         SystemInfoResponse(
             game_system="age_of_sigmar",
             deployments=[d.value for d in AOS_DEPLOYMENTS.keys()],
-            description="Age of Sigmar 4th Edition Spearhead format"
+            description="Age of Sigmar 4th Edition Matched Play - General's Handbook 2025-2026"
         ),
         SystemInfoResponse(
             game_system="warhammer_40k",

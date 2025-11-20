@@ -20,7 +20,7 @@ class GameSystem(str, Enum):
 
 class DeploymentType(str, Enum):
     """Standard deployment zone configurations"""
-    # Age of Sigmar Spearhead deployments
+    # Age of Sigmar deployments
     FRONTAL_ASSAULT = "frontal_assault"  # Opposing edges
     ENCIRCLE = "encircle"  # Corner vs corner diagonal
     HAMMER_AND_ANVIL = "hammer_and_anvil"  # Short edges

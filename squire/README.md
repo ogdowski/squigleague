@@ -118,31 +118,27 @@ curl "http://localhost:8000/api/squire/battle-plan/random?system=age_of_sigmar"
 **Example Response**:
 ```json
 {
-  "name": "AoS Spearhead - Frontal Assault",
+  "name": "Lifecycle",
   "game_system": "age_of_sigmar",
   "deployment": "frontal_assault",
-  "deployment_description": "Players deploy in opposite halves of the battlefield, divided by a line down the center. Standard battle lines 9\" from center.\nPlayer zones: 18\" from center line on your side",
-  "primary_objective": "Control the Center - Hold the central objective marker",
+  "deployment_description": "Long edge deployment",
+  "primary_objective": "One objective is primary each turn (5 VP), others are secondary (2 VP). Primary objective rotates clockwise.",
   "secondary_objectives": [
-    "Hold the Line - No enemies in your deployment zone at battle end",
-    "Break Their Ranks - Destroy half of enemy's starting models",
-    "Aggressive Expansion - Have units in all four table quarters"
+    "Gnarlroot 1",
+    "Oakenbrow 1",
+    "Winterleaf 1",
+    "Heartwood 1"
   ],
-  "victory_conditions": "Score victory points from primary objective, secondary objectives, and completed battle tactics. Most VP at end of Round 5 wins.",
+  "victory_conditions": "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
   "turn_limit": 5,
   "special_rules": [
-    "Spearhead format: 1000 points maximum",
-    "First turn determined by priority roll",
-    "Battle tactics chosen secretly each turn"
+    "4 objectives",
+    "Rotating primary objective mechanic",
+    "Matched Play format: 2000 points",
+    "General's Handbook 2025-2026",
+    "Underdog Ability: Choose direction of primary objective rotation (clockwise or counter-clockwise)"
   ],
-  "battle_tactics": [
-    "Fierce Conquerors - Control an objective you didn't control at start of turn",
-    "Unstoppable Advance - Charge with 3+ units this turn",
-    "Magical Dominance - Successfully cast 3+ spells this turn",
-    "Slaughter and Plunder - Destroy enemy unit and control objective",
-    "Strategic Withdrawal - Fall back and still shoot/charge",
-    "Endless Legions - Return destroyed unit to battlefield"
-  ]
+  "battle_tactics": null
 }
 ```
 
@@ -197,7 +193,7 @@ curl "http://localhost:8000/api/squire/systems"
   {
     "game_system": "age_of_sigmar",
     "deployments": ["frontal_assault", "encircle", "hammer_and_anvil", "clash"],
-    "description": "Age of Sigmar 4th Edition Spearhead format"
+    "description": "Age of Sigmar 4th Edition Matched Play - General's Handbook 2025-2026"
   },
   {
     "game_system": "warhammer_40k",
