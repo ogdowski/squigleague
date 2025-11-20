@@ -1,0 +1,21 @@
+# docker-compose.dev.yml - Development override
+services:
+  # Expose Squig port directly for development/debugging
+  squig:
+    ports:
+      - "8000:8000"
+
+  # Use development nginx config without SSL
+  nginx:
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      # Override to remove SSL certificate volumes for development
+      - /dev/null:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+    # Don't expose 443 in development
+
+  # Disable certbot in development (not needed)
+  certbot:
+    profiles:
+      - production-only

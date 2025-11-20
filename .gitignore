@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+ENV/
+
+# Environment
+.env
+.env.local
+.env.prod
+
+# Database
+*.db
+*.db-journal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+.dockerignore
+docker-images/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Other
+TODO.md

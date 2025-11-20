@@ -1,0 +1,34 @@
+# Production Docker Compose Override
+# Uses pre-built images from Docker Hub instead of building locally
+#
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  squig:
+    # Use pre-built image from Docker Hub
+    # Version is controlled by SQUIG_VERSION in .env.prod
+    image: ${IMAGE_PREFIX:-ogdowski}/${IMAGE_NAME:-private}:squigleague-${SQUIG_VERSION:-0.1}
+
+    # Production-specific settings
+    restart: always
+
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    # Use pre-built image from Docker Hub
+    image: ${IMAGE_PREFIX:-ogdowski}/${IMAGE_NAME:-private}:squigleague-frontend-${SQUIG_VERSION:-0.1}
+
+    # Production-specific settings
+    restart: always
+
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

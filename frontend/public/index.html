@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Herald - Fair and secure army list exchange for Warhammer players. Prevent list tailoring with cryptographic hashing.">
+    <meta name="keywords" content="warhammer, army list, fair play, list exchange, wargaming, herald, squig league">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="Herald - Fair Army List Exchange">
+    <meta property="og:description" content="Secure blind army list exchange for competitive Warhammer games. Cryptographic hashing prevents list tailoring.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://herald.squigleague.com">
+
+    <title id="page-title">Herald - Fair Army List Exchange | Squig League</title>
+
+    <!-- TailwindCSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#dd0028',
+                            dark: '#a8001f',
+                            light: '#fb4768',
+                        },
+                        bg: {
+                            darkest: '#0F1419',
+                            darker: '#1A1F2E',
+                            dark: '#252A3A',
+                            medium: '#2F3546',
+                        },
+                        text: {
+                            primary: '#E8E6E3',
+                            secondary: '#B8B5B0',
+                            muted: '#7A7670',
+                        },
+                        accent: {
+                            light: '#77daec',
+                            mid: '#3393a5',
+                            dark: '#157485',
+
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js via CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        /* Hide Alpine.js elements until loaded */
+        [x-cloak] { display: none !important; }
+
+        /* Custom styles */
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .animate-spin {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-bg-darkest text-text-primary" x-data="app()" x-cloak>
+
+    <!-- Navigation Header -->
+    <header class="bg-bg-darker shadow-lg border-b border-bg-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo / Home Link -->
+                <div class="flex items-center">
+                    <a href="/" @click.prevent="navigate('/')" class="flex items-center gap-4 hover:opacity-80 transition">
+                        <img src="/static/logo_no_bg.png" alt="Squig League Logo" class="h-16 w-auto">
+                        <span class="text-2xl font-bold text-primary">Squig League</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-full" id="app-content">
+        <!-- Dynamic content loaded here -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-bg-darker border-t border-bg-dark py-6 mt-auto" x-data="footerStats()">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+            <p class="text-sm text-text-secondary">
+                © <span x-text="new Date().getFullYear()"></span> Ariel Ogdowski. All Rights Reserved.
+            </p>
+            <p class="text-xs mt-1 text-text-muted">
+                Part of <a href="#" onclick="window.location.href = window.location.protocol + '//squigleague.com'; return false;" class="hover:text-accent-light underline transition">SquigLeague.com</a>
+                • v<span x-text="version"></span>
+                • <span x-text="completedExchanges"></span> exchanges completed
+            </p>
+        </div>
+    </footer>
+
+    <!-- App Script -->
+    <script src="/src/main.js"></script>
+    <script src="/modules/herald/home.js"></script>
+    <script src="/modules/herald/waiting.js"></script>
+    <script src="/modules/herald/respond.js"></script>
+    <script src="/modules/herald/reveal.js"></script>
+
+</body>
+</html>
