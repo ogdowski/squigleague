@@ -10,6 +10,10 @@ import hashlib
 import os
 import logging
 import psutil
+import sys
+
+# Add parent directory to path for squire module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import local modules
 import database
@@ -22,6 +26,9 @@ from models import (
     HealthCheckResponse,
     ResourcesResponse
 )
+
+# Import Squire routes
+from squire.routes import router as squire_router
 
 # Application version (from environment or default)
 APP_VERSION = os.getenv("SQUIG_VERSION", "0.1.0")
@@ -39,6 +46,9 @@ app = FastAPI(
     description="API for fair and secure army list exchange",
     version=APP_VERSION
 )
+
+# Include Squire router for battle plan randomization
+app.include_router(squire_router)
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)

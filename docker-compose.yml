@@ -33,7 +33,9 @@ services:
   # Squig League Application (Herald + Future Modules)
   # ═══════════════════════════════════════════════
   squig:
-    build: ./herald
+    build:
+      context: .
+      dockerfile: ./herald/Dockerfile
     container_name: squig
     restart: unless-stopped
     depends_on:
