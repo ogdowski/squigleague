@@ -5,6 +5,7 @@ Tests all CRUD operations, cleanup functions, and monitoring.
 Uses real PostgreSQL database with table truncation for isolation.
 """
 
+import uuid
 from datetime import datetime, timedelta
 
 import pytest
@@ -18,7 +19,7 @@ class TestCreateExchange:
 
     def test_create_exchange__success(self, test_engine):
         """Test successful exchange creation"""
-        exchange_id = "test-exchange-001"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
         list_content = "Test Army List\n1000 points"
         hash_value = "abc123def456"
         timestamp = datetime.now()
@@ -46,7 +47,7 @@ class TestCreateExchange:
 
     def test_create_exchange__saves_all_fields(self, test_engine):
         """Test that all fields are saved correctly"""
-        exchange_id = "test-exchange-002"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
         list_content = "Complete Army List"
         hash_value = "full_hash_value"
         timestamp = datetime(2025, 11, 20, 10, 30, 0)
@@ -75,7 +76,7 @@ class TestCreateExchange:
 
     def test_create_exchange__duplicate_id_fails(self):
         """Test that creating exchange with duplicate ID fails"""
-        exchange_id = "duplicate-id"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create first exchange
         database.create_exchange(
@@ -101,7 +102,7 @@ class TestExchangeExists:
 
     def test_exchange_exists__returns_true_when_exists(self, create_test_exchange):
         """Test that exchange_exists returns True for existing exchange"""
-        exchange_id = create_test_exchange(exchange_id="existing-exchange")
+        exchange_id = create_test_exchange()
 
         exists = database.exchange_exists(exchange_id)
 
@@ -372,7 +373,7 @@ class TestDeleteOldExchanges:
 
     def test_delete_old_exchanges__preserves_recent(self, create_test_exchange):
         """Test that recent exchanges are preserved"""
-        exchange_id = create_test_exchange(exchange_id="recent")
+        exchange_id = create_test_exchange()
 
         database.delete_old_exchanges(days=30)
 
@@ -472,9 +473,9 @@ class TestGetStats:
 
     def test_get_stats__returns_all_counts(self, create_test_exchange):
         """Test returns dictionary with all statistics"""
-        # Create test data
-        create_test_exchange(exchange_id="stat-1", list_a="A", list_b="B")
-        create_test_exchange(exchange_id="stat-2", list_a="A", list_b=None)
+        # Create test data - use auto-generated UUIDs
+        create_test_exchange(list_a="A", list_b="B")
+        create_test_exchange(list_a="A", list_b=None)
 
         stats = database.get_stats()
 
@@ -484,8 +485,8 @@ class TestGetStats:
 
     def test_get_stats__counts_complete_exchanges(self, create_test_exchange):
         """Test correctly counts complete exchanges"""
-        create_test_exchange(exchange_id="complete-1", list_a="A", list_b="B")
-        create_test_exchange(exchange_id="complete-2", list_a="A", list_b="B")
+        create_test_exchange(list_a="A", list_b="B")
+        create_test_exchange(list_a="A", list_b="B")
 
         stats = database.get_stats()
 
@@ -493,8 +494,8 @@ class TestGetStats:
 
     def test_get_stats__counts_pending_exchanges(self, create_test_exchange):
         """Test correctly counts pending exchanges"""
-        create_test_exchange(exchange_id="pending-1", list_a="A", list_b=None)
-        create_test_exchange(exchange_id="pending-2", list_a="A", list_b=None)
+        create_test_exchange(list_a="A", list_b=None)
+        create_test_exchange(list_a="A", list_b=None)
 
         stats = database.get_stats()
 

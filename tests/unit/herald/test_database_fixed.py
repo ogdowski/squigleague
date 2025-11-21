@@ -5,6 +5,7 @@ Tests all CRUD operations, cleanup functions, and monitoring.
 Uses real PostgreSQL database with transaction rollback for isolation.
 """
 
+import uuid
 from datetime import datetime, timedelta
 
 import pytest
@@ -18,7 +19,7 @@ class TestCreateExchange:
 
     def test_create_exchange__success(self, get_db_exchange, test_engine):
         """Test successful exchange creation"""
-        exchange_id = "test-exchange-001"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
         list_content = "Test Army List\n1000 points"
         hash_value = "abc123def456"
         timestamp = datetime.now()
@@ -49,7 +50,7 @@ class TestCreateExchange:
 
     def test_create_exchange__saves_all_fields(self, get_db_exchange, test_engine):
         """Test that all fields are saved correctly"""
-        exchange_id = "test-exchange-002"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
         list_content = "Complete Army List"
         hash_value = "full_hash_value"
         timestamp = datetime(2025, 11, 20, 10, 30, 0)
@@ -80,7 +81,7 @@ class TestCreateExchange:
 
     def test_create_exchange__duplicate_id_fails(self, get_db_exchange, test_engine):
         """Test that creating exchange with duplicate ID fails"""
-        exchange_id = "duplicate-id"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create first exchange
         database.create_exchange(
@@ -108,7 +109,7 @@ class TestExchangeExists:
         self, get_db_exchange, test_engine
     ):
         """Test that exchange_exists returns True for existing exchange"""
-        exchange_id = "existing-exchange"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create exchange
         test_engine.connect().execute(
@@ -144,7 +145,7 @@ class TestGetExchange:
 
     def test_get_exchange__returns_exchange_data(self, get_db_exchange, test_engine):
         """Test that get_exchange returns correct exchange data"""
-        exchange_id = "get-test-001"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
         list_a = "Player A List"
         hash_a = "hash_a_value"
         timestamp_a = datetime.now()
@@ -188,7 +189,7 @@ class TestGetExchange:
         self, get_db_exchange, test_engine
     ):
         """Test that get_exchange includes list_b for complete exchange"""
-        exchange_id = "complete-exchange"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
         list_b = "Player B List"
         hash_b = "hash_b_value"
         timestamp_b = datetime.now()
@@ -227,7 +228,7 @@ class TestUpdateExchangeWithListB:
 
     def test_update_exchange_with_list_b__success(self, get_db_exchange, test_engine):
         """Test successful update of exchange with Player B's list"""
-        exchange_id = "update-test-001"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create pending exchange
         test_engine.connect().execute(
@@ -277,7 +278,7 @@ class TestUpdateExchangeWithListB:
         self, get_db_exchange, test_engine
     ):
         """Test that update only works when list_b is NULL"""
-        exchange_id = "already-complete"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create complete exchange
         test_engine.connect().execute(
@@ -343,7 +344,7 @@ class TestExchangeIsComplete:
         self, get_db_exchange, test_engine
     ):
         """Test that exchange_is_complete returns True for complete exchange"""
-        exchange_id = "complete-check-001"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create complete exchange
         test_engine.connect().execute(
@@ -373,7 +374,7 @@ class TestExchangeIsComplete:
         self, get_db_exchange, test_engine
     ):
         """Test that exchange_is_complete returns False for pending exchange"""
-        exchange_id = "pending-check-001"
+        exchange_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create pending exchange
         test_engine.connect().execute(
@@ -571,7 +572,7 @@ class TestDeleteOldExchanges:
 
     def test_delete_old_exchanges__preserves_recent(self, get_db_exchange, test_engine):
         """Test that delete_old_exchanges preserves recent exchanges"""
-        recent_id = "recent-exchange"
+        recent_id = f"test-{uuid.uuid4().hex[:12]}"
 
         # Create recent exchange
         test_engine.connect().execute(

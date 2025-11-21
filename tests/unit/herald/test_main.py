@@ -325,9 +325,9 @@ class TestGetStats:
 
     def test_get_stats__returns_statistics(self, test_client, create_test_exchange):
         """Test that stats returns exchange counts"""
-        # Create some test data
-        create_test_exchange(exchange_id="stat-1", list_a="A", list_b="B")
-        create_test_exchange(exchange_id="stat-2", list_a="A", list_b=None)
+        # Create some test data - use auto-generated UUIDs
+        create_test_exchange(list_a="A", list_b="B")
+        create_test_exchange(list_a="A", list_b=None)
 
         response = test_client.get("/api/herald/stats")
         data = response.json()
