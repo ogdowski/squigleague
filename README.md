@@ -27,14 +27,18 @@ This architecture enables independent scaling, easier testing, and clean separat
 
 ### Roadmap
 
-- **Herald**: Mission randomizer (AoS and 40k) - hardcoded until we integrate with BS Data
+- **Squire**: Battle plan randomizer (AoS, 40k, Old World) + score tracker and battle assistant
 - **Archivist**: BSData integration
 - **Herald**: Mission randomizer using BSData
-- **Squire**: Score tracker and battle assistant
 - **Marshal**: Army builder
 - **Keeper**: Personal army tracker
 - **Patron**: Tournament management system
-- **Archivist**: Rules and unit viewer
+
+**Supported Game Systems**:
+- Warhammer Age of Sigmar (4th Edition)
+- Warhammer 40,000 (10th Edition)
+- Warhammer: The Old World
+- *More systems coming...*
 
 ## Getting Started
 

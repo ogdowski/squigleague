@@ -1,0 +1,32 @@
+# Docker Compose configuration for testing
+# Use tmpfs for PostgreSQL data (in-memory for speed)
+
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: squigleague_test_db
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_squigleague
+    ports:
+      - "5433:5432"  # Different port from production (5432)
+    tmpfs:
+      # Store database in memory for speed
+      - /var/lib/postgresql/data
+    volumes:
+      # Initialize database with extensions
+      - ./init-test-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_squigleague"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

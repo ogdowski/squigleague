@@ -1,0 +1,39 @@
+# Development dependencies for testing
+
+# Core testing framework
+pytest==7.4.4
+pytest-cov==4.1.0
+
+# Async testing support
+pytest-asyncio==0.23.3
+
+# Docker container testing
+pytest-docker==2.0.1
+
+# HTTP testing for FastAPI
+httpx==0.26.0
+
+# Test data generation
+faker==22.2.0
+factory-boy==3.3.0
+
+# Test utilities
+pytest-mock==3.12.0
+pytest-xdist==3.5.0  # Parallel test execution
+pytest-timeout==2.2.0  # Test timeout enforcement
+pytest-watch==4.2.0  # Watch mode for continuous testing
+
+# Database testing
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Code quality
+black==24.1.1
+isort==5.13.2
+flake8==7.0.0
+mypy==1.8.0
+pylint==3.0.3
+
+# Type checking stubs
+types-requests==2.31.0.20240106

@@ -6,72 +6,181 @@ from typing import Optional
 # 50 ADJECTIVES - Colors, traits, war terms
 ADJECTIVES = [
     # Colors (15)
-    "crimson", "purple", "darken", "silver", "emerald", "azure",
-    "obsidian", "jade", "scarlet", "cobalt", "bronze", "amber",
-    "ivory", "onyx", "ruby",
-
+    "crimson",
+    "purple",
+    "darken",
+    "silver",
+    "emerald",
+    "azure",
+    "obsidian",
+    "jade",
+    "scarlet",
+    "cobalt",
+    "bronze",
+    "amber",
+    "ivory",
+    "onyx",
+    "ruby",
     # Positive traits (15)
-    "ancient", "blessed", "eternal", "holy", "mighty", "noble",
-    "radiant", "sacred", "valiant", "glorious", "imperial", "legendary",
-    "supreme", "divine", "exalted",
-
+    "ancient",
+    "blessed",
+    "eternal",
+    "holy",
+    "mighty",
+    "noble",
+    "radiant",
+    "sacred",
+    "valiant",
+    "glorious",
+    "imperial",
+    "legendary",
+    "supreme",
+    "divine",
+    "exalted",
     # Negative/chaos traits (10)
-    "cursed", "doomed", "fallen", "twisted", "corrupted",
-    "warp", "chaos", "bed", "plagued", "tainted",
-
+    "cursed",
+    "doomed",
+    "fallen",
+    "twisted",
+    "corrupted",
+    "warp",
+    "chaos",
+    "bed",
+    "plagued",
+    "tainted",
     # Neutral/war traits (10)
-    "furious", "grim", "iron", "raging", "savage",
-    "storm", "thunder", "vengeful", "void", "zealous"
+    "furious",
+    "grim",
+    "iron",
+    "raging",
+    "savage",
+    "storm",
+    "thunder",
+    "vengeful",
+    "void",
+    "zealous",
 ]
 
 # 50 WARHAMMER NOUNS - Units, races, characters
 NOUNS_WARHAMMER = [
     # Orks (5)
-    "ork", "grot", "nob", "warboss", "weirdboy",
-
+    "ork",
+    "grot",
+    "nob",
+    "warboss",
+    "weirdboy",
     # Space Marines (10)
-    "marine", "captain", "chaplain", "dreadnought", "terminator",
-    "scout", "apothecary", "techmarine", "librarian", "sergeant",
-
+    "marine",
+    "captain",
+    "chaplain",
+    "dreadnought",
+    "terminator",
+    "scout",
+    "apothecary",
+    "techmarine",
+    "librarian",
+    "sergeant",
     # Eldar (6)
-    "eldar", "farseer", "banshee", "guardian", "wraithknight", "autarch",
-
+    "eldar",
+    "farseer",
+    "banshee",
+    "guardian",
+    "wraithknight",
+    "autarch",
     # Tau (5)
-    "tau", "crisis", "riptide", "kroot", "ethereal",
-
+    "tau",
+    "crisis",
+    "riptide",
+    "kroot",
+    "ethereal",
     # Necrons (6)
-    "necron", "lord", "warrior", "wraith", "scarab", "immortal",
-
+    "necron",
+    "lord",
+    "warrior",
+    "wraith",
+    "scarab",
+    "immortal",
     # Tyranids (6)
-    "tyranid", "carnifex", "hive", "genestealer", "termagant", "lictor",
-
+    "tyranid",
+    "carnifex",
+    "hive",
+    "genestealer",
+    "termagant",
+    "lictor",
     # Chaos (6)
-    "daemon", "bloodletter", "plaguebearer", "herald", "cultist", "sorcerer",
-
+    "daemon",
+    "bloodletter",
+    "plaguebearer",
+    "herald",
+    "cultist",
+    "sorcerer",
     # Imperial Guard/Knights (6)
-    "knight", "titan", "sentinel", "chimera", "basilisk", "valkyrie"
+    "knight",
+    "titan",
+    "sentinel",
+    "chimera",
+    "basilisk",
+    "valkyrie",
 ]
 
 # 50 VERBS - Battle actions
 VERBS = [
     # Combat actions (20)
-    "charges", "strikes", "shoots", "smites", "purges",
-    "slays", "crushes", "destroys", "annihilates", "decimates",
-    "assaults", "attacks", "raids", "invades", "sieges",
-    "storms", "conquers", "vanquishes", "battles", "fights",
-
+    "charges",
+    "strikes",
+    "shoots",
+    "smites",
+    "purges",
+    "slays",
+    "crushes",
+    "destroys",
+    "annihilates",
+    "decimates",
+    "assaults",
+    "attacks",
+    "raids",
+    "invades",
+    "sieges",
+    "storms",
+    "conquers",
+    "vanquishes",
+    "battles",
+    "fights",
     # Mobility actions (10)
-    "flies", "teleports", "advances", "marches", "rushes",
-    "leaps", "dashes", "surges", "sweeps", "descends",
-
+    "flies",
+    "teleports",
+    "advances",
+    "marches",
+    "rushes",
+    "leaps",
+    "dashes",
+    "surges",
+    "sweeps",
+    "descends",
     # Special/power actions (10)
-    "awakens", "rises", "emerges", "manifests", "summons",
-    "channels", "casts", "conjures", "invokes", "unleashes",
-
+    "awakens",
+    "rises",
+    "emerges",
+    "manifests",
+    "summons",
+    "channels",
+    "casts",
+    "conjures",
+    "invokes",
+    "unleashes",
     # Characteristic actions (10)
-    "waaagh", "roars", "howls", "screams", "bellows",
-    "commands", "leads", "guards", "defends", "endures"
+    "waaagh",
+    "roars",
+    "howls",
+    "screams",
+    "bellows",
+    "commands",
+    "leads",
+    "guards",
+    "defends",
+    "endures",
 ]
+
 
 def generate_exchange_id(check_exists_callback: Optional[callable] = None) -> str:
     """
@@ -105,6 +214,7 @@ def generate_exchange_id(check_exists_callback: Optional[callable] = None) -> st
     # Fallback: use longer hash (extremely rare)
     return f"{adj}-{noun}-{verb}-{secrets.token_hex(3)}"
 
+
 def validate_exchange_id(exchange_id: str) -> bool:
     """
     Validate exchange ID format
@@ -115,7 +225,7 @@ def validate_exchange_id(exchange_id: str) -> bool:
     Returns:
         bool: True if valid format
     """
-    parts = exchange_id.split('-')
+    parts = exchange_id.split("-")
 
     if len(parts) != 4:
         return False
@@ -140,6 +250,7 @@ def validate_exchange_id(exchange_id: str) -> bool:
         return False
 
     return True
+
 
 # Example generated IDs:
 # crimson-captain-charges-7a2f

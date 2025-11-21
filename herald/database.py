@@ -1,17 +1,17 @@
 # herald/database.py
+import logging
 import os
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-import logging
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
 # Database URL from environment
 DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://squig:password@postgres:5432/squigleague"
+    "DATABASE_URL", "postgresql://squig:password@postgres:5432/squigleague"
 )
 
 # Create SQLAlchemy engine
@@ -20,11 +20,12 @@ engine = create_engine(
     pool_size=5,
     max_overflow=10,
     pool_pre_ping=True,  # Verify connections before using
-    echo=False  # Set to True for SQL query debugging
+    echo=False,  # Set to True for SQL query debugging
 )
 
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 @contextmanager
 def get_db():
@@ -40,11 +41,15 @@ def get_db():
     finally:
         db.close()
 
+
 # ═══════════════════════════════════════════════
 # EXCHANGE OPERATIONS
 # ═══════════════════════════════════════════════
 
-def create_exchange(exchange_id: str, list_a: str, hash_a: str, timestamp_a: datetime) -> bool:
+
+def create_exchange(
+    exchange_id: str, list_a: str, hash_a: str, timestamp_a: datetime
+) -> bool:
     """
     Create new exchange
 
@@ -59,20 +64,26 @@ def create_exchange(exchange_id: str, list_a: str, hash_a: str, timestamp_a: dat
     """
     try:
         with get_db() as db:
-            query = text("""
+            query = text(
+                """
                 INSERT INTO herald_exchanges (id, list_a, hash_a, timestamp_a)
                 VALUES (:id, :list_a, :hash_a, :timestamp_a)
-            """)
-            db.execute(query, {
-                "id": exchange_id,
-                "list_a": list_a,
-                "hash_a": hash_a,
-                "timestamp_a": timestamp_a
-            })
+            """
+            )
+            db.execute(
+                query,
+                {
+                    "id": exchange_id,
+                    "list_a": list_a,
+                    "hash_a": hash_a,
+                    "timestamp_a": timestamp_a,
+                },
+            )
         return True
     except Exception as e:
         logger.error(f"Error creating exchange: {e}")
         return False
+
 
 def exchange_exists(exchange_id: str) -> bool:
     """
@@ -92,6 +103,7 @@ def exchange_exists(exchange_id: str) -> bool:
     except Exception:
         return False
 
+
 def get_exchange(exchange_id: str) -> dict:
     """
     Get exchange by ID
@@ -104,11 +116,13 @@ def get_exchange(exchange_id: str) -> dict:
     """
     try:
         with get_db() as db:
-            query = text("""
+            query = text(
+                """
                 SELECT id, list_a, hash_a, timestamp_a, list_b, hash_b, timestamp_b, created_at
                 FROM herald_exchanges
                 WHERE id = :id
-            """)
+            """
+            )
             result = db.execute(query, {"id": exchange_id}).fetchone()
 
             if not result:
@@ -122,13 +136,16 @@ def get_exchange(exchange_id: str) -> dict:
                 "list_b": result[4],
                 "hash_b": result[5],
                 "timestamp_b": result[6],
-                "created_at": result[7]
+                "created_at": result[7],
             }
     except Exception as e:
         logger.error(f"Error getting exchange: {e}")
         return None
 
-def update_exchange_with_list_b(exchange_id: str, list_b: str, hash_b: str, timestamp_b: datetime) -> bool:
+
+def update_exchange_with_list_b(
+    exchange_id: str, list_b: str, hash_b: str, timestamp_b: datetime
+) -> bool:
     """
     Add Player B's list to exchange
 
@@ -143,23 +160,29 @@ def update_exchange_with_list_b(exchange_id: str, list_b: str, hash_b: str, time
     """
     try:
         with get_db() as db:
-            query = text("""
+            query = text(
+                """
                 UPDATE herald_exchanges
                 SET list_b = :list_b, hash_b = :hash_b, timestamp_b = :timestamp_b
                 WHERE id = :id AND list_b IS NULL
                 RETURNING id
-            """)
-            result = db.execute(query, {
-                "id": exchange_id,
-                "list_b": list_b,
-                "hash_b": hash_b,
-                "timestamp_b": timestamp_b
-            }).fetchone()
+            """
+            )
+            result = db.execute(
+                query,
+                {
+                    "id": exchange_id,
+                    "list_b": list_b,
+                    "hash_b": hash_b,
+                    "timestamp_b": timestamp_b,
+                },
+            ).fetchone()
 
             return result is not None
     except Exception as e:
         logger.error(f"Error updating exchange: {e}")
         return False
+
 
 def exchange_is_complete(exchange_id: str) -> bool:
     """
@@ -173,19 +196,23 @@ def exchange_is_complete(exchange_id: str) -> bool:
     """
     try:
         with get_db() as db:
-            query = text("""
+            query = text(
+                """
                 SELECT list_b IS NOT NULL as complete
                 FROM herald_exchanges
                 WHERE id = :id
-            """)
+            """
+            )
             result = db.execute(query, {"id": exchange_id}).fetchone()
             return result[0] if result else False
     except Exception:
         return False
 
+
 # ═══════════════════════════════════════════════
 # REQUEST LOGGING
 # ═══════════════════════════════════════════════
+
 
 def log_request(ip: str, endpoint: str, user_agent: str):
     """
@@ -198,17 +225,18 @@ def log_request(ip: str, endpoint: str, user_agent: str):
     """
     try:
         with get_db() as db:
-            query = text("""
+            query = text(
+                """
                 INSERT INTO herald_request_log (ip, endpoint, user_agent)
                 VALUES (:ip, :endpoint, :user_agent)
-            """)
-            db.execute(query, {
-                "ip": ip,
-                "endpoint": endpoint,
-                "user_agent": user_agent
-            })
+            """
+            )
+            db.execute(
+                query, {"ip": ip, "endpoint": endpoint, "user_agent": user_agent}
+            )
     except Exception as e:
         logger.error(f"Error logging request: {e}")
+
 
 def get_abusive_ips(min_requests: int = 100, hours: int = 1) -> list:
     """
@@ -223,27 +251,30 @@ def get_abusive_ips(min_requests: int = 100, hours: int = 1) -> list:
     """
     try:
         with get_db() as db:
-            query = text("""
+            query = text(
+                """
                 SELECT ip, COUNT(*) as request_count
                 FROM herald_request_log
                 WHERE timestamp > NOW() - INTERVAL '1 hour' * :hours
                 GROUP BY ip
                 HAVING COUNT(*) > :min_requests
                 ORDER BY request_count DESC
-            """)
-            results = db.execute(query, {
-                "hours": hours,
-                "min_requests": min_requests
-            }).fetchall()
+            """
+            )
+            results = db.execute(
+                query, {"hours": hours, "min_requests": min_requests}
+            ).fetchall()
 
             return [{"ip": str(row[0]), "count": row[1]} for row in results]
     except Exception as e:
         logger.error(f"Error getting abusive IPs: {e}")
         return []
 
+
 # ═══════════════════════════════════════════════
 # CLEANUP OPERATIONS
 # ═══════════════════════════════════════════════
+
 
 def delete_old_exchanges(days: int = 7) -> int:
     """
@@ -258,10 +289,12 @@ def delete_old_exchanges(days: int = 7) -> int:
     try:
         with get_db() as db:
             cutoff = datetime.now() - timedelta(days=days)
-            query = text("""
+            query = text(
+                """
                 DELETE FROM herald_exchanges
                 WHERE created_at < :cutoff
-            """)
+            """
+            )
             result = db.execute(query, {"cutoff": cutoff})
             count = result.rowcount
             logger.info(f"Deleted {count} old exchanges")
@@ -269,6 +302,7 @@ def delete_old_exchanges(days: int = 7) -> int:
     except Exception as e:
         logger.error(f"Error deleting old exchanges: {e}")
         return 0
+
 
 def delete_old_logs(days: int = 7) -> int:
     """
@@ -283,10 +317,12 @@ def delete_old_logs(days: int = 7) -> int:
     try:
         with get_db() as db:
             cutoff = datetime.now() - timedelta(days=days)
-            query = text("""
+            query = text(
+                """
                 DELETE FROM herald_request_log
                 WHERE timestamp < :cutoff
-            """)
+            """
+            )
             result = db.execute(query, {"cutoff": cutoff})
             count = result.rowcount
             logger.info(f"Deleted {count} old log entries")
@@ -295,9 +331,11 @@ def delete_old_logs(days: int = 7) -> int:
         logger.error(f"Error deleting old logs: {e}")
         return 0
 
+
 # ═══════════════════════════════════════════════
 # HEALTH & MONITORING
 # ═══════════════════════════════════════════════
+
 
 def check_database_health() -> bool:
     """
@@ -314,6 +352,7 @@ def check_database_health() -> bool:
         logger.error(f"Database health check failed: {e}")
         return False
 
+
 def get_stats() -> dict:
     """
     Get database statistics
@@ -324,22 +363,32 @@ def get_stats() -> dict:
     try:
         with get_db() as db:
             # Count total exchanges
-            total = db.execute(text("SELECT COUNT(*) FROM herald_exchanges")).fetchone()[0]
+            total = db.execute(
+                text("SELECT COUNT(*) FROM herald_exchanges")
+            ).fetchone()[0]
 
             # Count complete exchanges (both lists submitted)
-            complete = db.execute(text("""
+            complete = db.execute(
+                text(
+                    """
                 SELECT COUNT(*) FROM herald_exchanges WHERE list_b IS NOT NULL
-            """)).fetchone()[0]
+            """
+                )
+            ).fetchone()[0]
 
             # Count pending exchanges (waiting for Player B)
-            pending = db.execute(text("""
+            pending = db.execute(
+                text(
+                    """
                 SELECT COUNT(*) FROM herald_exchanges WHERE list_b IS NULL
-            """)).fetchone()[0]
+            """
+                )
+            ).fetchone()[0]
 
             return {
                 "total_exchanges": total,
                 "complete_exchanges": complete,
-                "pending_exchanges": pending
+                "pending_exchanges": pending,
             }
     except Exception as e:
         logger.error(f"Error getting stats: {e}")

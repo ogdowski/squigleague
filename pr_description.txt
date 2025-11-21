@@ -1,0 +1,29 @@
+## Summary
+
+Implements battle plan randomization API for Age of Sigmar, Warhammer 40k, and The Old World.
+
+## Changes
+
+- ✅ New Squire module with FastAPI endpoints
+- ✅ All 12 official AoS General's Handbook 2025-2026 missions
+- ✅ Random battle plan generation
+- ✅ Tournament mode (multiple rounds)
+- ✅ Docker integration
+- ✅ Comprehensive documentation
+- ✅ Test suite with 100% mission coverage
+
+## Tested
+
+- API health checks passing
+- All 12 AoS missions verified (Passing Seasons, Paths of the Fey, Roiling Roots, Cyclic Shifts, Surge of Slaughter, Linked Ley Lines, Noxious Nexus, The Liferoots, Bountiful Equinox, Lifecycle, Creeping Corruption, Grasp of Thorns)
+- Tournament mode generates 5 rounds successfully
+- Docker container running on port 8000
+
+## API Endpoints
+
+- GET /api/squire/health
+- GET /api/squire/battle-plan/random?system=age_of_sigmar
+- GET /api/squire/battle-plan/multiple?system=age_of_sigmar&count=5
+- GET /api/squire/systems
+
+Closes #1 (community priority feature)
