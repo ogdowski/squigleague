@@ -7,6 +7,7 @@ Uses table truncation for cleanup instead of transaction rollback.
 
 import os
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -35,22 +36,13 @@ def test_engine():
     engine.dispose()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=False)
 def cleanup_database(test_engine):
-    """Clean database after each test
+    """Clean database after each test - DISABLED to avoid deadlocks
 
-    Uses TRUNCATE with CASCADE to reset all tables.
-    Connection is explicitly closed after cleanup to prevent pool exhaustion.
+    Tests use unique IDs via unique_id() fixture instead of global cleanup.
     """
     yield
-
-    # Truncate tables after each test with autocommit to avoid locks
-    conn = test_engine.connect().execution_options(isolation_level="AUTOCOMMIT")
-    try:
-        conn.execute(text("TRUNCATE TABLE herald_exchanges RESTART IDENTITY CASCADE"))
-        conn.execute(text("TRUNCATE TABLE herald_request_log RESTART IDENTITY CASCADE"))
-    finally:
-        conn.close()  # Explicitly close connection to prevent pool exhaustion
 
 
 @pytest.fixture
@@ -68,7 +60,7 @@ def create_test_exchange(test_engine):
     """Factory for creating test exchanges directly in database"""
 
     def _create_exchange(
-        exchange_id: str = "test-exchange-001",
+        exchange_id: str = None,
         list_a: str = "Test List A",
         list_b: str = None,
         hash_a: str = "abc123",
@@ -76,6 +68,8 @@ def create_test_exchange(test_engine):
         timestamp_a: datetime = None,
         timestamp_b: datetime = None,
     ) -> str:
+        if exchange_id is None:
+            exchange_id = f"test-{uuid.uuid4().hex[:12]}"
         if timestamp_a is None:
             timestamp_a = datetime.now()
         if timestamp_b is None and list_b is not None:
@@ -141,6 +135,12 @@ def count_db_records(test_engine):
         return result.count
 
     return _count
+
+
+@pytest.fixture
+def unique_id():
+    """Generate unique test ID to avoid collisions without cleanup"""
+    return f"test-{uuid.uuid4().hex[:12]}"
 
 
 # Pytest configuration hooks
