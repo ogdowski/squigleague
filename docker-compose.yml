@@ -46,6 +46,8 @@ services:
       - ADMIN_KEY=${HERALD_ADMIN_KEY}
       - MODULE_NAME=herald
       - SQUIG_VERSION=${SQUIG_VERSION:-0.1.0}
+    ports:
+      - "8000:8000"
     networks:
       - squig-network
     healthcheck:

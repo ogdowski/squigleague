@@ -116,14 +116,15 @@ INVALID_EXCHANGE_IDS = [
 # SAMPLE EXCHANGES
 # ═══════════════════════════════════════════════
 
+
 def create_sample_exchange(
     exchange_id: str = "test-exchange-0001",
     list_a: str = SAMPLE_LIST_SPACE_MARINES,
-    list_b: str = None
+    list_b: str = None,
 ):
     """Create sample exchange dict"""
     hash_a = hashlib.sha256(list_a.strip().encode()).hexdigest()
-    
+
     exchange = {
         "id": exchange_id,
         "list_a": list_a.strip(),
@@ -131,28 +132,28 @@ def create_sample_exchange(
         "timestamp_a": datetime.now(),
         "list_b": None,
         "hash_b": None,
-        "timestamp_b": None
+        "timestamp_b": None,
     }
-    
+
     if list_b:
         hash_b = hashlib.sha256(list_b.strip().encode()).hexdigest()
         exchange["list_b"] = list_b.strip()
         exchange["hash_b"] = hash_b
         exchange["timestamp_b"] = datetime.now()
-    
+
     return exchange
 
 
 SAMPLE_PENDING_EXCHANGE = create_sample_exchange(
     exchange_id="crimson-marine-charges-7a2f",
     list_a=SAMPLE_LIST_SPACE_MARINES,
-    list_b=None
+    list_b=None,
 )
 
 SAMPLE_COMPLETE_EXCHANGE = create_sample_exchange(
     exchange_id="void-necron-awakens-b3e1",
     list_a=SAMPLE_LIST_SPACE_MARINES,
-    list_b=SAMPLE_LIST_ORKS
+    list_b=SAMPLE_LIST_ORKS,
 )
 
 # ═══════════════════════════════════════════════

@@ -13,7 +13,7 @@ from squire.battle_plans import (
     generate_battle_plan,
     GameSystem,
     BattlePlan,
-    DeploymentType
+    DeploymentType,
 )
 
 
@@ -24,8 +24,10 @@ router = APIRouter(prefix="/api/squire", tags=["squire"])
 # RESPONSE MODELS
 # ═══════════════════════════════════════════════
 
+
 class BattlePlanResponse(BaseModel):
     """Battle plan API response"""
+
     name: str
     game_system: str
     deployment: str
@@ -36,7 +38,7 @@ class BattlePlanResponse(BaseModel):
     turn_limit: int
     special_rules: Optional[List[str]] = None
     battle_tactics: Optional[List[str]] = None
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -45,24 +47,35 @@ class BattlePlanResponse(BaseModel):
                 "deployment": "frontal_assault",
                 "deployment_description": "Quadrant deployment",
                 "primary_objective": "5 VP per objective controlled",
-                "secondary_objectives": ["Gnarlroot 1", "Oakenbrow 1", "Winterleaf 1", "Heartwood 1"],
+                "secondary_objectives": [
+                    "Gnarlroot 1",
+                    "Oakenbrow 1",
+                    "Winterleaf 1",
+                    "Heartwood 1",
+                ],
                 "victory_conditions": "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
                 "turn_limit": 5,
-                "special_rules": ["Matched Play format: 2000 points", "General's Handbook 2025-2026", "Underdog Ability: Entangle enemy units within 6\" of objectives you control - they cannot make normal moves"],
-                "battle_tactics": null
+                "special_rules": [
+                    "Matched Play format: 2000 points",
+                    "General's Handbook 2025-2026",
+                    'Underdog Ability: Entangle enemy units within 6" of objectives you control - they cannot make normal moves',
+                ],
+                "battle_tactics": None,
             }
         }
 
 
 class BattlePlanSummary(BaseModel):
     """Condensed battle plan summary"""
+
     name: str
     deployment: str
     primary_objective: str
-    
+
 
 class SystemInfoResponse(BaseModel):
     """Supported game systems and their deployments"""
+
     game_system: str
     deployments: List[str]
     description: str
@@ -71,6 +84,7 @@ class SystemInfoResponse(BaseModel):
 # ═══════════════════════════════════════════════
 # HELPER FUNCTIONS
 # ═══════════════════════════════════════════════
+
 
 def battle_plan_to_response(plan: BattlePlan) -> BattlePlanResponse:
     """Convert BattlePlan dataclass to API response model"""
@@ -84,7 +98,7 @@ def battle_plan_to_response(plan: BattlePlan) -> BattlePlanResponse:
         victory_conditions=plan.victory_conditions,
         turn_limit=plan.turn_limit,
         special_rules=plan.special_rules,
-        battle_tactics=plan.battle_tactics
+        battle_tactics=plan.battle_tactics,
     )
 
 
@@ -92,16 +106,17 @@ def battle_plan_to_response(plan: BattlePlan) -> BattlePlanResponse:
 # ENDPOINTS
 # ═══════════════════════════════════════════════
 
+
 @router.get("/battle-plan/random", response_model=BattlePlanResponse)
 async def get_random_battle_plan(
     system: str = Query(
         default="age_of_sigmar",
-        description="Game system: age_of_sigmar, warhammer_40k, or the_old_world"
+        description="Game system: age_of_sigmar, warhammer_40k, or the_old_world",
     )
 ):
     """
     Generate a random battle plan for the specified game system
-    
+
     Returns complete battle plan with deployment, objectives, and victory conditions
     """
     try:
@@ -109,9 +124,9 @@ async def get_random_battle_plan(
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid game system. Must be: age_of_sigmar, warhammer_40k, or the_old_world"
+            detail=f"Invalid game system. Must be: age_of_sigmar, warhammer_40k, or the_old_world",
         )
-    
+
     plan = generate_battle_plan(game_system)
     return battle_plan_to_response(plan)
 
@@ -120,18 +135,15 @@ async def get_random_battle_plan(
 async def get_multiple_battle_plans(
     system: str = Query(
         default="age_of_sigmar",
-        description="Game system: age_of_sigmar, warhammer_40k, or the_old_world"
+        description="Game system: age_of_sigmar, warhammer_40k, or the_old_world",
     ),
     count: int = Query(
-        default=3,
-        ge=1,
-        le=10,
-        description="Number of battle plans to generate (1-10)"
-    )
+        default=3, ge=1, le=10, description="Number of battle plans to generate (1-10)"
+    ),
 ):
     """
     Generate multiple random battle plans for tournament planning
-    
+
     Useful for pre-generating tournament rounds or giving players options
     """
     try:
@@ -139,9 +151,9 @@ async def get_multiple_battle_plans(
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid game system. Must be: age_of_sigmar, warhammer_40k, or the_old_world"
+            detail=f"Invalid game system. Must be: age_of_sigmar, warhammer_40k, or the_old_world",
         )
-    
+
     plans = [generate_battle_plan(game_system) for _ in range(count)]
     return [battle_plan_to_response(plan) for plan in plans]
 
@@ -151,26 +163,30 @@ async def get_supported_systems():
     """
     List all supported game systems and their available deployments
     """
-    from squire.battle_plans import AOS_DEPLOYMENTS, W40K_DEPLOYMENTS, OLD_WORLD_DEPLOYMENTS
-    
+    from squire.battle_plans import (
+        AOS_DEPLOYMENTS,
+        W40K_DEPLOYMENTS,
+        OLD_WORLD_DEPLOYMENTS,
+    )
+
     systems = [
         SystemInfoResponse(
             game_system="age_of_sigmar",
             deployments=[d.value for d in AOS_DEPLOYMENTS.keys()],
-            description="Age of Sigmar 4th Edition Matched Play - General's Handbook 2025-2026"
+            description="Age of Sigmar 4th Edition Matched Play - General's Handbook 2025-2026",
         ),
         SystemInfoResponse(
             game_system="warhammer_40k",
             deployments=[d.value for d in W40K_DEPLOYMENTS.keys()],
-            description="Warhammer 40,000 10th Edition matched play"
+            description="Warhammer 40,000 10th Edition matched play",
         ),
         SystemInfoResponse(
             game_system="the_old_world",
             deployments=[d.value for d in OLD_WORLD_DEPLOYMENTS.keys()],
-            description="Warhammer: The Old World legacy battles"
-        )
+            description="Warhammer: The Old World legacy battles",
+        ),
     ]
-    
+
     return systems
 
 
@@ -181,5 +197,5 @@ async def squire_health():
         "module": "squire",
         "status": "operational",
         "features": ["battle_plans"],
-        "version": "0.1.0"
+        "version": "0.1.0",
     }

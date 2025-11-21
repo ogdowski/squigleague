@@ -1,4 +1,5 @@
 """Quick test of AoS mission randomization"""
+
 from squire.battle_plans import generate_aos_battle_plan
 
 print("Testing Age of Sigmar General's Handbook 2025-2026 Battle Plans\n")

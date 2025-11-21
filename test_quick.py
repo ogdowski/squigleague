@@ -1,4 +1,5 @@
 """Quick test to debug the issue"""
+
 import os
 import sys
 from pathlib import Path
@@ -8,7 +9,9 @@ herald_path = Path(__file__).parent / "herald"
 sys.path.insert(0, str(herald_path))
 
 # Set test database
-os.environ["DATABASE_URL"] = "postgresql://test_user:test_password@localhost:5433/test_squigleague"
+os.environ["DATABASE_URL"] = (
+    "postgresql://test_user:test_password@localhost:5433/test_squigleague"
+)
 
 # Now import
 from herald import database
