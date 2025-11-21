@@ -6,8 +6,9 @@ Note: These tests verify rate limiting exists but may not hit limits
 due to test isolation. Full rate limit testing requires specific setup.
 """
 
-import pytest
 import time
+
+import pytest
 
 
 class TestRateLimiting:

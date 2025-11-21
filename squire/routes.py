@@ -4,18 +4,14 @@ Squire API Routes - Battle Plan Randomization Endpoints
 Provides REST API for generating random battle plans for AoS, 40k, and The Old World
 """
 
+from enum import Enum
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
-from typing import List, Optional
-from enum import Enum
 
-from squire.battle_plans import (
-    generate_battle_plan,
-    GameSystem,
-    BattlePlan,
-    DeploymentType,
-)
-
+from squire.battle_plans import (BattlePlan, DeploymentType, GameSystem,
+                                 generate_battle_plan)
 
 router = APIRouter(prefix="/api/squire", tags=["squire"])
 
@@ -163,11 +159,8 @@ async def get_supported_systems():
     """
     List all supported game systems and their available deployments
     """
-    from squire.battle_plans import (
-        AOS_DEPLOYMENTS,
-        W40K_DEPLOYMENTS,
-        OLD_WORLD_DEPLOYMENTS,
-    )
+    from squire.battle_plans import (AOS_DEPLOYMENTS, OLD_WORLD_DEPLOYMENTS,
+                                     W40K_DEPLOYMENTS)
 
     systems = [
         SystemInfoResponse(

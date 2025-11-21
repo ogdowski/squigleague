@@ -6,9 +6,9 @@ Follows official matched play formats including deployment zones, objectives, an
 """
 
 import random
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
-from dataclasses import dataclass
 
 
 class GameSystem(str, Enum):

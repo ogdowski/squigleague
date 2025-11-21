@@ -5,11 +5,12 @@ Tests all API endpoints, middleware, scheduler, and error handlers.
 Uses FastAPI TestClient with real database.
 """
 
+import hashlib
+from datetime import datetime
+from unittest.mock import Mock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
-from datetime import datetime
-import hashlib
 
 
 class TestMiddleware:

@@ -4,9 +4,10 @@ Integration tests for Herald admin endpoints
 Tests admin functionality including authentication and resource monitoring.
 """
 
-import pytest
-from unittest.mock import patch
 import os
+from unittest.mock import patch
+
+import pytest
 
 
 class TestAdminResourcesEndpoint:

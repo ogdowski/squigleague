@@ -6,14 +6,10 @@ Tests input validation for API request/response models.
 
 import pytest
 from pydantic import ValidationError
-from herald.models import (
-    CreateExchangeRequest,
-    RespondExchangeRequest,
-    CreateExchangeResponse,
-    ExchangeStatusResponse,
-    HealthCheckResponse,
-    ResourcesResponse,
-)
+
+from herald.models import (CreateExchangeRequest, CreateExchangeResponse,
+                           ExchangeStatusResponse, HealthCheckResponse,
+                           ResourcesResponse, RespondExchangeRequest)
 
 
 class TestCreateExchangeRequest:

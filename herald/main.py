@@ -1,32 +1,28 @@
 # herald/main.py
-from fastapi import FastAPI, Request, HTTPException, status
+import hashlib
+import logging
+import os
+import sys
+from datetime import datetime
+
+import psutil
+from apscheduler.schedulers.background import BackgroundScheduler
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
-import hashlib
-import os
-import logging
-import psutil
-import sys
+from slowapi.util import get_remote_address
 
 # Add parent directory to path for squire module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import words
+from models import (CreateExchangeRequest, CreateExchangeResponse,
+                    ExchangeStatusResponse, HealthCheckResponse,
+                    ResourcesResponse, RespondExchangeRequest)
+
 # Import local modules
 import database
-import words
-from models import (
-    CreateExchangeRequest,
-    RespondExchangeRequest,
-    CreateExchangeResponse,
-    ExchangeStatusResponse,
-    HealthCheckResponse,
-    ResourcesResponse,
-)
-
 # Import Squire routes
 from squire.routes import router as squire_router
 

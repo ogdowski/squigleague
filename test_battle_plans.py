@@ -6,7 +6,8 @@ from pathlib import Path
 # Add squire to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from squire.battle_plans import generate_battle_plan, GameSystem, format_battle_plan
+from squire.battle_plans import (GameSystem, format_battle_plan,
+                                 generate_battle_plan)
 
 
 def test_all_systems():

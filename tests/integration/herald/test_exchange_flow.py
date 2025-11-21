@@ -4,9 +4,10 @@ Integration tests for Herald exchange workflows
 Tests complete end-to-end exchange flows with real database and API.
 """
 
-import pytest
-from datetime import datetime
 import hashlib
+from datetime import datetime
+
+import pytest
 
 
 class TestFullExchangeWorkflow:

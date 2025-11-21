@@ -3,9 +3,10 @@ Test script to verify Squire battle plan API is working correctly
 Tests all 12 AoS missions are present and returning valid data
 """
 
-import requests
 import json
 from collections import Counter
+
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"User-Agent": "Squire-Test-Suite/1.0"}

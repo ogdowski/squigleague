@@ -4,11 +4,12 @@ Test data factories using Factory Boy
 Generates realistic test data for Herald exchanges and other entities.
 """
 
+import hashlib
+import random
+from datetime import datetime, timedelta
+
 import factory
 from faker import Faker
-import hashlib
-from datetime import datetime, timedelta
-import random
 
 fake = Faker()
 Faker.seed(12345)  # Deterministic test data
