@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS herald_exchanges (
 -- Herald request logging
 CREATE TABLE IF NOT EXISTS herald_request_log (
     id SERIAL PRIMARY KEY,
-    ip INET NOT NULL,
+    ip TEXT,
     endpoint TEXT NOT NULL,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
     user_agent TEXT
