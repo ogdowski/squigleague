@@ -38,7 +38,7 @@ def test_engine():
 @pytest.fixture(autouse=True)
 def cleanup_database(test_engine):
     """Clean database after each test
-    
+
     Uses TRUNCATE with CASCADE to reset all tables.
     Connection is explicitly closed after cleanup to prevent pool exhaustion.
     """
