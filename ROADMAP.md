@@ -15,7 +15,7 @@ Squig League is being developed in phases, with each phase adding new modules or
 | Phase | Module | Status | Priority | Target |
 |-------|--------|--------|----------|--------|
 | Phase 1 | Herald | ✅ Complete | - | Live |
-| Phase 2 | Squire | 🔨 In Planning | HIGH | Q1 2026 |
+| Phase 2 | Squire | 🔨 In Progress | HIGH | Q1 2026 |
 | Phase 3 | Core Auth | 📋 Planned | HIGH | Q2 2026 |
 | Phase 4 | Archivist | 📋 Planned | MEDIUM | Q3 2026 |
 | Phase 5 | Marshal | 📋 Planned | MEDIUM | Q4 2026 |
@@ -48,13 +48,23 @@ Squig League is being developed in phases, with each phase adding new modules or
 
 ---
 
-## Phase 2: Squire 🔨 IN PLANNING
+## Phase 2: Squire 🔨 IN PROGRESS
 
 **Purpose**: Battle score tracking, matchup history, and player statistics
 
 **Priority**: HIGH - Requested by community  
 **Target**: Q1 2026  
 **Dependencies**: None (can start immediately)
+
+### Completed Features (v0.1.0)
+- ✅ Battle Plan Randomization API
+  - ✅ All 12 official AoS General's Handbook 2025-2026 missions
+  - ✅ Warhammer 40k 10th Edition missions
+  - ✅ The Old World missions
+  - ✅ Random mission generation endpoint
+  - ✅ Tournament mode (multiple rounds)
+  - ✅ Docker integration
+  - ✅ Comprehensive test suite
 
 ### Core Features
 
