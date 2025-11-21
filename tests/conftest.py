@@ -35,17 +35,22 @@ def test_engine():
     engine.dispose()
 
 
-@pytest.fixture(
-    autouse=False
-)  # DISABLED - causes deadlocks when running multiple test files
+@pytest.fixture(autouse=True)
 def cleanup_database(test_engine):
-    """Clean database after each test"""
+    """Clean database after each test
+    
+    Uses TRUNCATE with CASCADE to reset all tables.
+    Connection is explicitly closed after cleanup to prevent pool exhaustion.
+    """
     yield
 
     # Truncate tables after each test with autocommit to avoid locks
-    with test_engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+    conn = test_engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
         conn.execute(text("TRUNCATE TABLE herald_exchanges RESTART IDENTITY CASCADE"))
         conn.execute(text("TRUNCATE TABLE herald_request_log RESTART IDENTITY CASCADE"))
+    finally:
+        conn.close()  # Explicitly close connection to prevent pool exhaustion
 
 
 @pytest.fixture
