@@ -46,6 +46,12 @@ jobs:
           pip install -r herald/requirements.txt
           pip install -r requirements-dev.txt
 
+      - name: Initialize test database schema
+        env:
+          PGPASSWORD: test_password
+        run: |
+          psql -h localhost -p 5433 -U test_user -d test_squigleague -f init-test-db.sql
+
       - name: Run linting - Black
         run: black --check .
 
