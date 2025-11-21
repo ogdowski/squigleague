@@ -7,8 +7,13 @@ in the format: adjective-noun-verb-XXXX
 
 import pytest
 
-from herald.words import (ADJECTIVES, NOUNS_WARHAMMER, VERBS,
-                          generate_exchange_id, validate_exchange_id)
+from herald.words import (
+    ADJECTIVES,
+    NOUNS_WARHAMMER,
+    VERBS,
+    generate_exchange_id,
+    validate_exchange_id,
+)
 
 
 class TestGenerateExchangeID:

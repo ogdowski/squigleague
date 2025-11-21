@@ -10,8 +10,12 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from squire.battle_plans import (BattlePlan, DeploymentType, GameSystem,
-                                 generate_battle_plan)
+from squire.battle_plans import (
+    BattlePlan,
+    DeploymentType,
+    GameSystem,
+    generate_battle_plan,
+)
 
 router = APIRouter(prefix="/api/squire", tags=["squire"])
 
@@ -159,8 +163,11 @@ async def get_supported_systems():
     """
     List all supported game systems and their available deployments
     """
-    from squire.battle_plans import (AOS_DEPLOYMENTS, OLD_WORLD_DEPLOYMENTS,
-                                     W40K_DEPLOYMENTS)
+    from squire.battle_plans import (
+        AOS_DEPLOYMENTS,
+        OLD_WORLD_DEPLOYMENTS,
+        W40K_DEPLOYMENTS,
+    )
 
     systems = [
         SystemInfoResponse(
