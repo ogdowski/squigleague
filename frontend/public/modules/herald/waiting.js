@@ -15,7 +15,7 @@ function renderWaitingPage(exchangeId, data) {
     return `
 <div class="max-w-3xl mx-auto mt-10 px-4" x-data="waitingPageLogic('${exchangeId}', '${data.hash_a}')">
     <div class="bg-bg-dark rounded-lg shadow-lg p-8 border border-bg-medium">
-        <h1 class="text-3xl font-bold text-center mb-6 text-accent-light">Waiting for Opponent</h1>
+        <h1 class="text-3xl font-montserrat text-center mb-6 text-accent-light">Waiting for Opponent</h1>
 
         <!-- Prominent Share Link Box -->
         <div class="bg-accent-dark border-2 border-accent-light p-6 rounded-lg mb-6">

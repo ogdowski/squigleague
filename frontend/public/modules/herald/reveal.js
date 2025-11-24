@@ -14,7 +14,7 @@ window.heraldRevealPage = function(exchangeId) {
 function renderRevealPage(data) {
     return `
 <div class="max-w-6xl mx-auto mt-10 px-4" x-data="revealPageLogic()">
-    <h1 class="text-3xl font-bold text-center mb-4 text-accent-light">Exchange Complete</h1>
+    <h1 class="text-3xl font-montserrat text-center mb-4 text-accent-light">Exchange Complete</h1>
     <p class="text-center text-sm text-text-muted mb-8">⚠️ Lists are stored for 30 days only. Save them now if needed.</p>
 
     <div class="grid md:grid-cols-2 gap-6">
