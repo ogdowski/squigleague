@@ -1,0 +1,70 @@
+# Coverage configuration for pytest-cov
+
+[run]
+# Source packages to measure coverage
+source = herald, squire
+
+# Files to omit from coverage
+omit =
+    # Test files
+    tests/*
+    */tests/*
+    # Virtual environment
+    .venv/*
+    venv/*
+    */venv/*
+    # Configuration
+    */conftest.py
+    # Development scripts
+    scripts/*
+    # Database migrations
+    */migrations/*
+    */alembic/*
+
+# Enable branch coverage
+branch = True
+
+# Enable concurrency measurement for async code
+concurrency = thread
+
+[report]
+# Show missing lines
+show_missing = True
+
+# Minimum coverage percentage (fail if below)
+fail_under = 100
+
+# Precision for percentage
+precision = 2
+
+# Skip empty files
+skip_empty = True
+
+# Exclude lines matching these patterns
+exclude_lines =
+    # Pragma directives
+    pragma: no cover
+    # Debugging code
+    def __repr__
+    # Abstract methods
+    raise NotImplementedError
+    # Type checking blocks
+    if TYPE_CHECKING:
+    # Pass statements
+    pass
+    # Ellipsis
+    \.\.\.
+    # Main block
+    if __name__ == .__main__.:
+
+[html]
+# HTML report directory
+directory = htmlcov
+
+[xml]
+# XML report file
+output = coverage.xml
+
+[json]
+# JSON report file
+output = coverage.json
