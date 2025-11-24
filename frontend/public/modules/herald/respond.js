@@ -15,7 +15,7 @@ function renderRespondPage(exchangeId, data) {
     return `
 <div class="max-w-3xl mx-auto mt-10 px-4" x-data="respondPageLogic('${exchangeId}', '${data.hash_a}')">
     <div class="bg-bg-dark rounded-lg shadow-lg p-8 border border-bg-medium">
-        <h1 class="text-3xl font-bold text-center mb-6 text-accent-light">Submit Your List</h1>
+        <h1 class="text-3xl font-montserrat text-center mb-6 text-accent-light">Submit Your List</h1>
 
         <div class="bg-bg-darker border-l-4 border-accent-light p-4 mb-6 rounded-r-lg">
             <h3 class="font-semibold text-accent-light mb-2">Important: Opponent's Hash</h3>
