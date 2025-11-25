@@ -16,6 +16,7 @@ from squire.battle_plans import (
     GameSystem,
     generate_battle_plan,
 )
+from squire.matchup import create_matchup, get_matchup, submit_list
 
 router = APIRouter(prefix="/api/squire", tags=["squire"])
 
@@ -79,6 +80,50 @@ class SystemInfoResponse(BaseModel):
     game_system: str
     deployments: List[str]
     description: str
+
+
+class MatchupCreateRequest(BaseModel):
+    """Request to create a new matchup"""
+
+    game_system: str = Field(
+        ..., description="Game system: age_of_sigmar, warhammer_40k, or the_old_world"
+    )
+
+
+class MatchupCreateResponse(BaseModel):
+    """Response after creating matchup"""
+
+    matchup_id: str
+    game_system: str
+    share_url: str
+
+
+class ListSubmitRequest(BaseModel):
+    """Request to submit army list to matchup"""
+
+    player_name: str = Field(..., min_length=1, max_length=100)
+    army_list: str = Field(..., min_length=10)
+
+
+class MatchupPlayerResponse(BaseModel):
+    """Player information in matchup"""
+
+    name: str
+    army_list: str
+    submitted_at: str
+
+
+class MatchupResponse(BaseModel):
+    """Full matchup details"""
+
+    matchup_id: str
+    game_system: str
+    created_at: str
+    player1: Optional[MatchupPlayerResponse] = None
+    player2: Optional[MatchupPlayerResponse] = None
+    battle_plan: Optional[BattlePlanResponse] = None
+    is_complete: bool
+    waiting_count: int
 
 
 # ═══════════════════════════════════════════════
@@ -188,6 +233,122 @@ async def get_supported_systems():
     ]
 
     return systems
+
+
+# ═══════════════════════════════════════════════
+# MATCHUP ENDPOINTS
+# ═══════════════════════════════════════════════
+
+
+@router.post("/matchup/create", response_model=MatchupCreateResponse)
+async def create_new_matchup(request: MatchupCreateRequest):
+    """
+    Create a new matchup for exchanging lists and generating battle plan
+
+    Args:
+        request: Matchup creation request with game system
+
+    Returns:
+        Matchup ID and share URL
+    """
+    # Validate game system
+    try:
+        game_system = GameSystem(request.game_system)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid game system: {request.game_system}. Must be one of: age_of_sigmar, warhammer_40k, the_old_world",
+        )
+
+    matchup = create_matchup(game_system)
+
+    return MatchupCreateResponse(
+        matchup_id=matchup.matchup_id,
+        game_system=matchup.game_system.value,
+        share_url=f"/squire/matchup/{matchup.matchup_id}",
+    )
+
+
+@router.post("/matchup/{matchup_id}/submit", response_model=MatchupResponse)
+async def submit_army_list(matchup_id: str, request: ListSubmitRequest):
+    """
+    Submit an army list to a matchup
+
+    Args:
+        matchup_id: The matchup ID
+        request: Player name and army list
+
+    Returns:
+        Updated matchup (lists hidden until both submitted)
+    """
+    try:
+        matchup = submit_list(matchup_id, request.player_name, request.army_list)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    # Convert matchup to response
+    return _matchup_to_response(matchup)
+
+
+@router.get("/matchup/{matchup_id}", response_model=MatchupResponse)
+async def get_matchup_details(matchup_id: str):
+    """
+    Get matchup details
+
+    Args:
+        matchup_id: The matchup ID
+
+    Returns:
+        Matchup details (lists only shown if both players submitted)
+    """
+    matchup = get_matchup(matchup_id)
+    if matchup is None:
+        raise HTTPException(status_code=404, detail=f"Matchup {matchup_id} not found")
+
+    return _matchup_to_response(matchup)
+
+
+def _matchup_to_response(matchup) -> MatchupResponse:
+    """Convert Matchup to API response"""
+    is_complete = matchup.is_complete()
+
+    # Helper to convert battle plan
+    def battle_plan_to_response(bp):
+        if bp is None:
+            return None
+        return BattlePlanResponse(
+            name=bp.name,
+            game_system=bp.game_system.value,
+            deployment=bp.deployment.value,
+            deployment_description=bp.deployment_description,
+            primary_objective=bp.primary_objective,
+            secondary_objectives=bp.secondary_objectives,
+            victory_conditions=bp.victory_conditions,
+            turn_limit=bp.turn_limit,
+            special_rules=bp.special_rules,
+            battle_tactics=bp.battle_tactics,
+        )
+
+    # Helper to convert player
+    def player_to_response(player):
+        if player is None:
+            return None
+        return MatchupPlayerResponse(
+            name=player.name,
+            army_list=player.army_list,
+            submitted_at=player.submitted_at.isoformat(),
+        )
+
+    return MatchupResponse(
+        matchup_id=matchup.matchup_id,
+        game_system=matchup.game_system.value,
+        created_at=matchup.created_at.isoformat(),
+        player1=player_to_response(matchup.player1) if is_complete else None,
+        player2=player_to_response(matchup.player2) if is_complete else None,
+        battle_plan=battle_plan_to_response(matchup.battle_plan) if is_complete else None,
+        is_complete=is_complete,
+        waiting_count=matchup.get_waiting_count(),
+    )
 
 
 @router.get("/health")

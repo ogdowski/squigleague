@@ -174,7 +174,7 @@ function createExchange() {
                 });
 
                 if (response.status === 429) {
-                    this.error = '⏱️ Rate limit exceeded. Please wait and try again.';
+                    this.error = 'Rate limit exceeded. Please wait and try again.';
                     return;
                 }
 

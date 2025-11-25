@@ -15,7 +15,7 @@ function renderRevealPage(data) {
     return `
 <div class="max-w-6xl mx-auto mt-10 px-4" x-data="revealPageLogic()">
     <h1 class="text-3xl font-montserrat text-center mb-4 text-accent-light">Exchange Complete</h1>
-    <p class="text-center text-sm text-text-muted mb-8">⚠️ Lists are stored for 30 days only. Save them now if needed.</p>
+    <p class="text-center text-sm text-text-muted mb-8">Lists are stored for 30 days only. Save them now if needed.</p>
 
     <div class="grid md:grid-cols-2 gap-6">
         <!-- Player A -->
@@ -30,7 +30,7 @@ function renderRevealPage(data) {
                 <code class="text-xs break-all text-text-secondary">${data.hash_a}</code>
                 <button @click="verifyA('${escapeForJS(data.list_a)}', '${data.hash_a}')" class="mt-2 bg-accent-mid hover:bg-primary-dark text-white px-3 py-1 rounded text-xs w-full font-semibold">Verify</button>
                 <div x-show="verifiedA !== null" :class="verifiedA ? 'bg-primary bg-opacity-20 text-primary' : 'bg-accent-mid bg-opacity-20 text-accent-mid'"
-                    class="mt-2 p-2 rounded text-xs" x-text="verifiedA ? '✓ Hash verified!' : '✗ Hash mismatch!'"></div>
+                    class="mt-2 p-2 rounded text-xs" x-text="verifiedA ? 'Hash verified!' : 'Hash mismatch!'"></div>
                 <p class="text-xs text-text-muted mt-2">${data.timestamp_a}</p>
             </div>
         </div>
@@ -47,7 +47,7 @@ function renderRevealPage(data) {
                 <code class="text-xs break-all text-text-secondary">${data.hash_b}</code>
                 <button @click="verifyB('${escapeForJS(data.list_b)}', '${data.hash_b}')" class="mt-2 bg-accent-mid hover:bg-primary-dark text-white px-3 py-1 rounded text-xs w-full font-semibold">Verify</button>
                 <div x-show="verifiedB !== null" :class="verifiedB ? 'bg-primary bg-opacity-20 text-primary' : 'bg-accent-mid bg-opacity-20 text-accent-mid'"
-                    class="mt-2 p-2 rounded text-xs" x-text="verifiedB ? '✓ Hash verified!' : '✗ Hash mismatch!'"></div>
+                    class="mt-2 p-2 rounded text-xs" x-text="verifiedB ? 'Hash verified!' : 'Hash mismatch!'"></div>
                 <p class="text-xs text-text-muted mt-2">${data.timestamp_b}</p>
             </div>
         </div>

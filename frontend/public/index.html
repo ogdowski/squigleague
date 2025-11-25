@@ -100,6 +100,30 @@
                         <span class="text-2xl font-montserrat font-bold text-text-primary">SQUIG LEAGUE</span>
                     </a>
                 </div>
+                
+                <!-- Navigation Links -->
+                <nav class="flex items-center gap-6">
+                    <a href="/" @click.prevent="navigate('/')" 
+                       :class="currentRoute === '/' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Herald
+                    </a>
+                    <a href="/squire/battle-plan" @click.prevent="navigate('/squire/battle-plan')" 
+                       :class="currentRoute === '/squire/battle-plan' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Battle Plans
+                    </a>
+                    <a href="/squire/battle-plan-reference" @click.prevent="navigate('/squire/battle-plan-reference')" 
+                       :class="currentRoute === '/squire/battle-plan-reference' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Reference
+                    </a>
+                    <a href="/squire/matchup" @click.prevent="navigate('/squire/matchup')" 
+                       :class="currentRoute === '/squire/matchup' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Matchup
+                    </a>
+                </nav>
             </div>
         </div>
     </header>
@@ -129,6 +153,9 @@
     <script src="/modules/herald/waiting.js"></script>
     <script src="/modules/herald/respond.js"></script>
     <script src="/modules/herald/reveal.js"></script>
+    <script src="/modules/squire/battleplan.js"></script>
+    <script src="/modules/squire/battleplan-reference.js"></script>
+    <script src="/modules/squire/matchup.js"></script>
 
 </body>
 </html>
