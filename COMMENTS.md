@@ -15,6 +15,7 @@ Squire
 - Add information on minimium and maximum characters count for army list - lets keep it at 40 chars minimum and 10000 maximum
 - lets keep 30 day removal clause, after which data is not avaialable under matchup url, but we will be able to access it for stats etc
 - do not use browser prompts for copying data into clipboard, a little information popup which not require any action will be sufficient
+- we can keep url simpler as squigleague.com/matchup/CODE, matchup will be our logical name for Squire i guess
 
 Herald
 - we want to remove herald functionality and use matchup instead, so remove it from app and views, but keep urls for backward compatibility, so people already exchanged their lists have an access for them untile they will be deleted
