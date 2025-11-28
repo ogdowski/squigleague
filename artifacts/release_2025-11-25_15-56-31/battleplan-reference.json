@@ -1,0 +1,407 @@
+{
+    "warhammer_40k":  [
+                          {
+                              "name":  "40k 10th Edition - Crucible of Battle",
+                              "game_system":  "warhammer_40k",
+                              "deployment":  "crucible_of_battle",
+                              "deployment_description":  "Center circle deployment with 24\" gap.\nDeploy in 9\" circles, 24\" apart, along center line",
+                              "primary_objective":  "The Ritual - Perform actions on objective markers",
+                              "secondary_objectives":  [
+                                                           "First Strike - Destroy units in first battle round",
+                                                           "Assassinate - Destroy enemy characters",
+                                                           "Overwhelming Force - Destroy units with specific weapon types"
+                                                       ],
+                              "victory_conditions":  "Score VP from primary mission and secondary objectives. Most VP at end of Round 5 wins.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "Matched Play: 2000 points",
+                                                    "Roll for first turn after deployment",
+                                                    "Score primary objective each command phase"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "40k 10th Edition - Dawn of War",
+                              "game_system":  "warhammer_40k",
+                              "deployment":  "dawn_of_war",
+                              "deployment_description":  "Standard battle lines on opposite short table edges.\nDeploy wholly within 6\" of your short table edge",
+                              "primary_objective":  "Scorched Earth - Destroy terrain objectives",
+                              "secondary_objectives":  [
+                                                           "Assassinate - Destroy enemy characters",
+                                                           "Behind Enemy Lines - Have units in enemy deployment zone",
+                                                           "Overwhelming Force - Destroy units with specific weapon types"
+                                                       ],
+                              "victory_conditions":  "Score VP from primary mission and secondary objectives. Most VP at end of Round 5 wins.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "Matched Play: 2000 points",
+                                                    "Roll for first turn after deployment",
+                                                    "Score primary objective each command phase"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "40k 10th Edition - Search and Destroy",
+                              "game_system":  "warhammer_40k",
+                              "deployment":  "search_and_destroy",
+                              "deployment_description":  "Diagonal corner deployment zones.\nDeploy in opposite diagonal corners within 6\" of corner",
+                              "primary_objective":  "Purge the Foe - Destroy enemy units for VP",
+                              "secondary_objectives":  [
+                                                           "Assassinate - Destroy enemy characters",
+                                                           "Overwhelming Force - Destroy units with specific weapon types",
+                                                           "Behind Enemy Lines - Have units in enemy deployment zone"
+                                                       ],
+                              "victory_conditions":  "Score VP from primary mission and secondary objectives. Most VP at end of Round 5 wins.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "Matched Play: 2000 points",
+                                                    "Roll for first turn after deployment",
+                                                    "Score primary objective each command phase"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "40k 10th Edition - Sweeping Engagement",
+                              "game_system":  "warhammer_40k",
+                              "deployment":  "sweeping_engagement",
+                              "deployment_description":  "Offset deployment on long table edges.\nDeploy on long edges, offset 12\" from corners",
+                              "primary_objective":  "Vital Ground - Control objectives in no man\u0027s land",
+                              "secondary_objectives":  [
+                                                           "Bring It Down - Destroy enemy vehicles/monsters",
+                                                           "First Strike - Destroy units in first battle round",
+                                                           "Overwhelming Force - Destroy units with specific weapon types"
+                                                       ],
+                              "victory_conditions":  "Score VP from primary mission and secondary objectives. Most VP at end of Round 5 wins.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "Matched Play: 2000 points",
+                                                    "Roll for first turn after deployment",
+                                                    "Score primary objective each command phase"
+                                                ],
+                              "battle_tactics":  null
+                          }
+                      ],
+    "the_old_world":  [
+                          {
+                              "name":  "The Old World - Corner Deployment",
+                              "game_system":  "the_old_world",
+                              "deployment":  "encircle",
+                              "deployment_description":  "Armies deploy in opposite corners.\nDeploy in 18\" square in your corner",
+                              "primary_objective":  "Hold the Ground - Control central terrain",
+                              "secondary_objectives":  [
+                                                           "Slay the General",
+                                                           "Break Their Lines"
+                                                       ],
+                              "victory_conditions":  "Complete primary scenario objective. Additional VP from breaking units and killing characters.",
+                              "turn_limit":  6,
+                              "special_rules":  [
+                                                    "2000 points standard",
+                                                    "Random game length: Roll at end of turn 6",
+                                                    "Leadership tests for broken units"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "The Old World - Meeting Engagement",
+                              "game_system":  "the_old_world",
+                              "deployment":  "hammer_and_anvil",
+                              "deployment_description":  "Short edge deployment.\nDeploy within 12\" of short table edge",
+                              "primary_objective":  "Capture the Flags - Control battlefield standards",
+                              "secondary_objectives":  [
+                                                           "Slay the General",
+                                                           "Break Their Lines"
+                                                       ],
+                              "victory_conditions":  "Complete primary scenario objective. Additional VP from breaking units and killing characters.",
+                              "turn_limit":  6,
+                              "special_rules":  [
+                                                    "2000 points standard",
+                                                    "Random game length: Roll at end of turn 6",
+                                                    "Leadership tests for broken units"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "The Old World - Pitched Battle",
+                              "game_system":  "the_old_world",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Classic battle lines facing each other across the field.\nDeploy within 12\" of your table edge",
+                              "primary_objective":  "Capture the Flags - Control battlefield standards",
+                              "secondary_objectives":  [
+                                                           "Slay the General",
+                                                           "Break Their Lines"
+                                                       ],
+                              "victory_conditions":  "Complete primary scenario objective. Additional VP from breaking units and killing characters.",
+                              "turn_limit":  6,
+                              "special_rules":  [
+                                                    "2000 points standard",
+                                                    "Random game length: Roll at end of turn 6",
+                                                    "Leadership tests for broken units"
+                                                ],
+                              "battle_tactics":  null
+                          }
+                      ],
+    "age_of_sigmar":  [
+                          {
+                              "name":  "Bountiful Equinox",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Long edge deployment",
+                              "primary_objective":  "3 VP per objective. Bonus VP for controlling specific objective combinations.",
+                              "secondary_objectives":  [
+                                                           "5 Objective Spread"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "5 objectives",
+                                                    "Combination scoring bonuses",
+                                                    "Healing mechanic",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Heal D3 wounds on a friendly monster within 6\" of objective you control"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Creeping Corruption",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Long edge deployment",
+                              "primary_objective":  "2 VP per objective. Draw lines between controlled objectives - each line through enemy territory: +1 VP.",
+                              "secondary_objectives":  [
+                                                           "6 Objective Grid"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "6 objectives",
+                                                    "Line-drawing propagation mechanic",
+                                                    "Territory corruption",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Corrupt an objective: propagate control to adjacent objective",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Corrupt an objective: propagate control to adjacent objective"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Cyclic Shifts",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Diagonal corner deployment",
+                              "primary_objective":  "3 VP per objective controlled. At end of each battle round, remove the objective furthest from the center.",
+                              "secondary_objectives":  [
+                                                           "Diagonal Row"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "6 objectives diminishing to 1",
+                                                    "Shrinking battlefield mechanic",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Choose which objective is removed instead of automatic removal"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Grasp of Thorns",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Quadrant deployment",
+                              "primary_objective":  "5 VP per objective controlled",
+                              "secondary_objectives":  [
+                                                           "4 Thorn Objectives"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "4 objectives",
+                                                    "Movement restriction mechanic",
+                                                    "Entanglement effect",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Entangle enemy units within 6\" of objectives you control - they cannot make normal moves"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Lifecycle",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Long edge deployment",
+                              "primary_objective":  "One objective is primary each turn (5 VP), others are secondary (2 VP). Primary objective rotates clockwise.",
+                              "secondary_objectives":  [
+                                                           "4 Lifecycle Objectives"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "4 objectives",
+                                                    "Rotating primary objective mechanic",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Choose direction of primary objective rotation (clockwise or counter-clockwise)"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Linked Ley Lines",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Long edge deployment",
+                              "primary_objective":  "3 VP per objective. Bonus 5 VP if you control 3+ linked objectives.",
+                              "secondary_objectives":  [
+                                                           "Ley Line Network"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "5 objectives",
+                                                    "Linked objective bonuses",
+                                                    "Magic/prayer enhancement",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Bonuses to manifestations and prayers near controlled objectives"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Noxious Nexus",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Quadrant deployment",
+                              "primary_objective":  "5 VP per objective controlled. Bonus 10 VP if you control all objectives at end of any turn.",
+                              "secondary_objectives":  [
+                                                           "3 Nexus Points"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "3 objectives",
+                                                    "Mortal wound damage ability",
+                                                    "All-or-nothing bonus",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Deal D3 mortal wounds to enemy units within 6\" of objectives you control"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Passing Seasons",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Long edge deployment",
+                              "primary_objective":  "Alternating turns: even turns score Gnarlroot objectives (5 VP each), odd turns score Oakenbrow objectives (5 VP each)",
+                              "secondary_objectives":  [
+                                                           "Gnarlroot 1",
+                                                           "Oakenbrow 1",
+                                                           "Gnarlroot 2",
+                                                           "Oakenbrow 2"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "Seasonal rotation mechanic",
+                                                    "4 objectives total",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: If behind on VP, can choose which objective type scores this turn (Gnarlroot or Oakenbrow)"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Paths of the Fey",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Long edge deployment",
+                              "primary_objective":  "Central objective: 5 VP. Other objectives: 3 VP each. End of turn scoring.",
+                              "secondary_objectives":  [
+                                                           "Central Heartwood",
+                                                           "Gnarlroot",
+                                                           "Oakenbrow",
+                                                           "Winterleaf"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "5 objectives total",
+                                                    "Fey teleportation mechanic",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Teleport one unit wholly within 6\" of an objective to within 6\" of another objective"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Roiling Roots",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Diagonal corner deployment",
+                              "primary_objective":  "Control objectives: 3 VP each. Bonus 2 VP if you control more than opponent.",
+                              "secondary_objectives":  [
+                                                           "Diagonal Row 1"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "6 objectives in diagonal formation",
+                                                    "Strike-last defensive ability",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Units contesting objectives you control cause enemies to strike last",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Units contesting objectives you control cause enemies to strike last"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "Surge of Slaughter",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Long edge deployment",
+                              "primary_objective":  "Central: 5 VP, corners: 3 VP each",
+                              "secondary_objectives":  [
+                                                           "Central Heartwood",
+                                                           "4 Corner Objectives"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "5 objectives total",
+                                                    "Aggressive combat bonus for underdog",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: All your units gain +1 Rend to melee weapons"
+                                                ],
+                              "battle_tactics":  null
+                          },
+                          {
+                              "name":  "The Liferoots",
+                              "game_system":  "age_of_sigmar",
+                              "deployment":  "frontal_assault",
+                              "deployment_description":  "Diagonal corner deployment",
+                              "primary_objective":  "10 VP per objective controlled at end of battle round",
+                              "secondary_objectives":  [
+                                                           "2 Liferoot Markers"
+                                                       ],
+                              "victory_conditions":  "Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                              "turn_limit":  5,
+                              "special_rules":  [
+                                                    "2 objectives",
+                                                    "Diagonal obscuring terrain",
+                                                    "Model resurrection mechanic",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Return D3 slain models to a friendly unit within 6\" of objective you control",
+                                                    "Matched Play format: 2000 points",
+                                                    "General\u0027s Handbook 2025-2026",
+                                                    "Underdog Ability: Return D3 slain models to a friendly unit within 6\" of objective you control"
+                                                ],
+                              "battle_tactics":  null
+                          }
+                      ]
+}

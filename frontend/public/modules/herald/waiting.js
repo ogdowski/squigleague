@@ -29,10 +29,10 @@ function renderWaitingPage(exchangeId, data) {
             <div class="flex gap-2 mb-3">
                 <input readonly :value="exchangeUrl" class="flex-1 px-4 py-3 border-2 border-accent-mid rounded-lg font-mono text-sm bg-bg-darkest text-text-primary focus:outline-none focus:border-accent-light">
                 <button @click="copyUrl" class="bg-primary hover:bg-primary-dark text-bg-darkest px-6 py-3 rounded-lg font-bold text-base shadow-lg transition">
-                    <span x-text="urlCopied ? '✓ Copied!' : 'Copy Link'"></span>
+                    <span x-text="urlCopied ? 'Copied!' : 'Copy Link'"></span>
                 </button>
             </div>
-            <p class="text-xs text-text-secondary italic">⚠️ Keep this page open - it will auto-refresh when your opponent submits their list</p>
+            <p class="text-xs text-text-secondary italic">Keep this page open - it will auto-refresh when your opponent submits their list</p>
         </div>
 
         <div class="bg-bg-darker p-6 rounded-lg mb-6 border border-bg-medium">

@@ -1,0 +1,129 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20251125155744
+Username: ASUSGAMING\admin
+RunAs User: ASUSGAMING\admin
+Configuration Name: 
+Machine: ASUSGAMING (Microsoft Windows NT 10.0.26100.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command try { . "c:\Users\admin\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 9504
+PSVersion: 5.1.26100.6899
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.6899
+BuildVersion: 10.0.26100.6899
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is artifacts/test-results_2025-11-25_15-57-44.txt
+
+========================================
+TEST RUN - 2025-11-25_15-57-44
+========================================
+[1/3] Checking services...
+   OK: Containers running
+
+[2/3] Running API tests...
+
+Running Matchup System Tests...
+Testing: Create Age of Sigmar matchup
+  PASSED
+Testing: Create Warhammer 40k matchup
+  PASSED
+Testing: Create The Old World matchup
+  PASSED
+Testing: Reject invalid game system
+PS>TerminatingError(Invoke-RestMethod): "{"detail":"Invalid game system: invalid_system. Must be one of: age_of_sigmar, warhammer_40k, the_old_world"}"
+  PASSED
+Testing: First player can submit
+  PASSED
+Testing: Second player submission generates battle plan
+  PASSED
+Testing: Third player cannot join
+PS>TerminatingError(Invoke-RestMethod): "{"error":"Not found","message":"Matchup already has two players"}"
+  PASSED
+Testing: GET incomplete matchup hides army lists
+  PASSED
+Testing: GET complete matchup reveals all data
+  PASSED
+Testing: Battle plan health check
+  PASSED
+Testing: Generate random Age of Sigmar battle plan
+  PASSED
+Testing: Generate random 40k battle plan
+  PASSED
+Testing: Generate random Old World battle plan
+  PASSED
+Testing: Reject empty player name
+PS>TerminatingError(Invoke-RestMethod): "{"detail":[{"type":"string_too_short","loc":["body","player_name"],"msg":"String should have at least 1 character","input":"","ctx":{"min_length":1},"url":"https://errors.pydantic.dev/2.5/v/string_too_short"},{"type":"string_too_short","loc":["body","army_list"],"msg":"String should have at least 10 characters","input":"Test","ctx":{"min_length":10},"url":"https://errors.pydantic.dev/2.5/v/string_too_short"}]}"
+  PASSED
+Testing: Reject empty army list
+PS>TerminatingError(Invoke-RestMethod): "{"detail":[{"type":"string_too_short","loc":["body","army_list"],"msg":"String should have at least 10 characters","input":"","ctx":{"min_length":10},"url":"https://errors.pydantic.dev/2.5/v/string_too_short"}]}"
+  PASSED
+
+ + = *50
+TEST RESULTS
+= *50
+Passed: 15
+Failed: 0
+Total:  15
+
+ALL TESTS PASSED!
+
+[3/3] Running matchup flow test...
+
+Testing Complete Matchup Flow...
+[1] Player 1 creates matchup...
+   Matchup ID: 2j18R_iZamnWirvQ
+   Share URL: http://localhost/squire/matchup/2j18R_iZamnWirvQ
+
+[2] Checking initial state...
+   Complete: False
+   Player 1:
+   Player 2:
+   Battle Plan: Not generated
+
+[3] Player 1 submits their list...
+   Complete: False
+   Player 1:
+   Player 2:
+   Battle Plan: Waiting for Player 2...
+
+[4] Player 2 visits share link...
+   Player 2 can see:
+     - Matchup ID: 2j18R_iZamnWirvQ
+     - Game System: age_of_sigmar
+     - Player 1 Name:
+     - Player 1 List: Hidden (until complete)
+
+[5] Player 2 submits their list...
+   Complete: True
+   Player 1: Alice
+   Player 2: Bob
+   Battle Plan: @{name=The Liferoots; game_system=age_of_sigmar; deployment=frontal_assault; deployment_description=Diagonal corner deployment; primary_objective=10 VP per objective controlled at end of battle round; secondary_objectives=System.Object[]; victory_conditions=Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.; turn_limit=5; special_rules=System.Object[]; battle_tactics=}
+
+[6] Verifying GET endpoint shows full results...
+   Battle Plan: @{name=The Liferoots; game_system=age_of_sigmar; deployment=frontal_assault; deployment_description=Diagonal corner deployment; primary_objective=10 VP per objective controlled at end of battle round; secondary_objectives=System.Object[]; victory_conditions=Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.; turn_limit=5; special_rules=System.Object[]; battle_tactics=}
+   Player 1: Alice
+   Player 2: Bob
+   Both lists visible: True
+
+ + = *50
+TEST COMPLETE
+= *50
+
+Share URL for browser testing:
+http://localhost/squire/matchup/2j18R_iZamnWirvQ
+
+
+========================================
+TEST SUMMARY
+========================================
+API Tests:      PASSED
+Matchup Flow:   PASSED
+Report:         artifacts/test-results_2025-11-25_15-57-44.txt
+**********************
+Windows PowerShell transcript end
+End time: 20251125155745
+**********************

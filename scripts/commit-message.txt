@@ -1,0 +1,11 @@
+Add matchup system with battle plan randomizer
+
+- Implement matchup creation and player submission endpoints
+- Add share link functionality for second player
+- Create battle plan reference page for all game systems
+- Remove all emoji from UI components (Herald and Squire modules)
+- Fix nginx configuration for development environment
+- Add comprehensive test suite (15 API tests + flow tests)
+- Create automation scripts for build, test, and release
+- Export battle plan reference (19 total: 12 AoS, 4 40k, 3 Old World)
+- All tests passing, ready for UAT
