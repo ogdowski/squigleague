@@ -14,6 +14,11 @@
 
     <title id="page-title">Herald - Fair Army List Exchange | Squig League</title>
 
+    <!-- Google Fonts - Montserrat -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+
     <!-- TailwindCSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -22,11 +27,14 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                    },
                     colors: {
                         primary: {
-                            DEFAULT: '#dd0028',
-                            dark: '#a8001f',
-                            light: '#fb4768',
+                            DEFAULT: '#ecaa03',
+                            dark: '#956a00',
+                            light: '#fff0a6',
                         },
                         bg: {
                             darkest: '#0F1419',
@@ -58,6 +66,12 @@
         /* Hide Alpine.js elements until loaded */
         [x-cloak] { display: none !important; }
 
+        /* Montserrat Bold for headers and logo */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+        }
+
         /* Custom styles */
         .animate-pulse-slow {
             animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -83,9 +97,33 @@
                 <div class="flex items-center">
                     <a href="/" @click.prevent="navigate('/')" class="flex items-center gap-4 hover:opacity-80 transition">
                         <img src="/static/logo_no_bg.png" alt="Squig League Logo" class="h-16 w-auto">
-                        <span class="text-2xl font-bold text-primary">Squig League</span>
+                        <span class="text-2xl font-montserrat font-bold text-text-primary">SQUIG LEAGUE</span>
                     </a>
                 </div>
+                
+                <!-- Navigation Links -->
+                <nav class="flex items-center gap-6">
+                    <a href="/" @click.prevent="navigate('/')" 
+                       :class="currentRoute === '/' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Herald
+                    </a>
+                    <a href="/squire/battle-plan" @click.prevent="navigate('/squire/battle-plan')" 
+                       :class="currentRoute === '/squire/battle-plan' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Battle Plans
+                    </a>
+                    <a href="/squire/battle-plan-reference" @click.prevent="navigate('/squire/battle-plan-reference')" 
+                       :class="currentRoute === '/squire/battle-plan-reference' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Reference
+                    </a>
+                    <a href="/squire/matchup" @click.prevent="navigate('/squire/matchup')" 
+                       :class="currentRoute === '/squire/matchup' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+                       class="font-semibold transition">
+                        Matchup
+                    </a>
+                </nav>
             </div>
         </div>
     </header>
@@ -115,6 +153,9 @@
     <script src="/modules/herald/waiting.js"></script>
     <script src="/modules/herald/respond.js"></script>
     <script src="/modules/herald/reveal.js"></script>
+    <script src="/modules/squire/battleplan.js"></script>
+    <script src="/modules/squire/battleplan-reference.js"></script>
+    <script src="/modules/squire/matchup.js"></script>
 
 </body>
 </html>

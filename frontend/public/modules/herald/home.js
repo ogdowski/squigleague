@@ -5,7 +5,7 @@ window.heraldHomePage = function() {
 
     <!-- Hero Section -->
     <div class="text-center mb-8 sm:mb-12">
-        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 text-accent-light">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-montserrat mb-3 sm:mb-4 text-primary">
             Herald
         </h1>
         <p class="text-lg sm:text-xl mb-2 text-text-accent-mid">
@@ -15,7 +15,7 @@ window.heraldHomePage = function() {
 
     <!-- Problem/Solution Section -->
     <div class="border-l-4 border-accent-light p-4 sm:p-6 mb-6 sm:mb-8 rounded-r-lg bg-bg-dark">
-        <h2 class="text-xl sm:text-2xl font-bold mb-3 text-accent-light">
+        <h2 class="text-xl sm:text-2xl font-montserrat  mb-3 text-accent-light">
             Why Herald?
         </h2>
         <div class="text-sm sm:text-base space-y-3 text-text-primary">
@@ -33,7 +33,7 @@ window.heraldHomePage = function() {
 
     <!-- How It Works -->
     <div class="bg-bg-dark rounded-lg shadow-lg p-6 sm:p-8 mb-6 sm:mb-8 border border-bg-medium">
-        <h2 class="text-xl sm:text-2xl font-bold mb-6 text-center text-accent-mid">
+        <h2 class="text-xl sm:text-2xl font-montserrat  mb-6 text-center text-accent-mid">
             How It Works
         </h2>
 
@@ -72,7 +72,7 @@ window.heraldHomePage = function() {
 
     <!-- Create Form -->
     <div class="bg-bg-dark rounded-lg shadow-lg p-4 sm:p-8 border border-bg-medium">
-        <h2 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center text-accent-mid">
+        <h2 class="text-xl sm:text-2xl font-montserrat mb-4 sm:mb-6 text-center text-accent-mid">
             Create an Exchange
         </h2>
 
@@ -174,7 +174,7 @@ function createExchange() {
                 });
 
                 if (response.status === 429) {
-                    this.error = '⏱️ Rate limit exceeded. Please wait and try again.';
+                    this.error = 'Rate limit exceeded. Please wait and try again.';
                     return;
                 }
 

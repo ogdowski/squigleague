@@ -15,7 +15,7 @@ function renderWaitingPage(exchangeId, data) {
     return `
 <div class="max-w-3xl mx-auto mt-10 px-4" x-data="waitingPageLogic('${exchangeId}', '${data.hash_a}')">
     <div class="bg-bg-dark rounded-lg shadow-lg p-8 border border-bg-medium">
-        <h1 class="text-3xl font-bold text-center mb-6 text-accent-light">Waiting for Opponent</h1>
+        <h1 class="text-3xl font-montserrat text-center mb-6 text-accent-light">Waiting for Opponent</h1>
 
         <!-- Prominent Share Link Box -->
         <div class="bg-accent-dark border-2 border-accent-light p-6 rounded-lg mb-6">
@@ -29,10 +29,10 @@ function renderWaitingPage(exchangeId, data) {
             <div class="flex gap-2 mb-3">
                 <input readonly :value="exchangeUrl" class="flex-1 px-4 py-3 border-2 border-accent-mid rounded-lg font-mono text-sm bg-bg-darkest text-text-primary focus:outline-none focus:border-accent-light">
                 <button @click="copyUrl" class="bg-primary hover:bg-primary-dark text-bg-darkest px-6 py-3 rounded-lg font-bold text-base shadow-lg transition">
-                    <span x-text="urlCopied ? '✓ Copied!' : 'Copy Link'"></span>
+                    <span x-text="urlCopied ? 'Copied!' : 'Copy Link'"></span>
                 </button>
             </div>
-            <p class="text-xs text-text-secondary italic">⚠️ Keep this page open - it will auto-refresh when your opponent submits their list</p>
+            <p class="text-xs text-text-secondary italic">Keep this page open - it will auto-refresh when your opponent submits their list</p>
         </div>
 
         <div class="bg-bg-darker p-6 rounded-lg mb-6 border border-bg-medium">

@@ -26,6 +26,12 @@ function app() {
 
             if (path === '/') {
                 this.currentRoute = '/';
+            } else if (path === '/squire' || path === '/squire/battle-plan') {
+                this.currentRoute = '/squire/battle-plan';
+            } else if (path === '/squire/battle-plan-reference') {
+                this.currentRoute = '/squire/battle-plan-reference';
+            } else if (path.startsWith('/squire/matchup')) {
+                this.currentRoute = '/squire/matchup';
             } else if (path.startsWith('/exchange/')) {
                 const parts = path.split('/');
                 this.exchangeId = parts[2];
@@ -50,6 +56,12 @@ function app() {
 
             if (this.currentRoute === '/') {
                 content.innerHTML = window.heraldHomePage();
+            } else if (this.currentRoute === '/squire/battle-plan') {
+                content.innerHTML = window.renderSquireBattlePlan();
+            } else if (this.currentRoute === '/squire/battle-plan-reference') {
+                content.innerHTML = window.renderSquireBattlePlanReference();
+            } else if (this.currentRoute === '/squire/matchup') {
+                content.innerHTML = window.renderSquireMatchup();
             } else if (this.currentRoute === '/exchange') {
                 // Fetch exchange status to determine which page to show
                 try {
