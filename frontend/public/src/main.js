@@ -24,10 +24,8 @@ function app() {
             const path = window.location.pathname;
             const params = new URLSearchParams(window.location.search);
 
-            // All routes go to matchup (single interface)
-            if (path.startsWith('/matchup/')) {
-                const parts = path.split('/');
-                this.exchangeId = parts[2];
+            // Match /squire/matchup/{id} or /matchup/{id}
+            if (path.includes('/matchup/')) {
                 this.currentRoute = '/matchup';
             } else {
                 // Home page is also matchup
