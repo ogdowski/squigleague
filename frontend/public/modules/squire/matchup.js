@@ -235,7 +235,7 @@ window.renderSquireMatchup = function() {
 // Alpine.js component for matchup management
 function matchupManager() {
     return {
-        selectedSystem: null,
+        selectedSystem: 'age_of_sigmar', // AoS only - hardcoded
         matchupId: null,
         playerName: '',
         armyList: '',
