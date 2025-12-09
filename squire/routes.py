@@ -208,26 +208,25 @@ async def get_supported_systems():
     """
     List all supported game systems and their available deployments
     """
-    from squire.battle_plans import (
-        AOS_DEPLOYMENTS,
-        OLD_WORLD_DEPLOYMENTS,
-        W40K_DEPLOYMENTS,
-    )
+    from squire.battle_plans import AOS_BATTLE_PLANS
+
+    # Extract unique deployment types from AoS battle plans
+    aos_deployments = list(set([plan["deployment"] for plan in AOS_BATTLE_PLANS]))
 
     systems = [
         SystemInfoResponse(
             game_system="age_of_sigmar",
-            deployments=[d.value for d in AOS_DEPLOYMENTS.keys()],
+            deployments=aos_deployments,
             description="Age of Sigmar 4th Edition Matched Play - General's Handbook 2025-2026",
         ),
         SystemInfoResponse(
             game_system="warhammer_40k",
-            deployments=[d.value for d in W40K_DEPLOYMENTS.keys()],
+            deployments=["Hammer and Anvil", "Search and Destroy", "Sweeping Engagement", "Crucible of Battle"],
             description="Warhammer 40,000 10th Edition matched play",
         ),
         SystemInfoResponse(
             game_system="the_old_world",
-            deployments=[d.value for d in OLD_WORLD_DEPLOYMENTS.keys()],
+            deployments=["Pitched Battle", "Flank Attack", "Meeting Engagement"],
             description="Warhammer: The Old World legacy battles",
         ),
     ]

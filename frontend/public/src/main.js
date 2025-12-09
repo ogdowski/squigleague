@@ -24,19 +24,14 @@ function app() {
             const path = window.location.pathname;
             const params = new URLSearchParams(window.location.search);
 
-            if (path === '/') {
-                this.currentRoute = '/';
-            } else if (path === '/squire' || path === '/squire/battle-plan') {
-                this.currentRoute = '/squire/battle-plan';
-            } else if (path === '/squire/battle-plan-reference') {
-                this.currentRoute = '/squire/battle-plan-reference';
-            } else if (path.startsWith('/squire/matchup')) {
-                this.currentRoute = '/squire/matchup';
-            } else if (path.startsWith('/exchange/')) {
+            // All routes go to matchup (single interface)
+            if (path.startsWith('/matchup/')) {
                 const parts = path.split('/');
                 this.exchangeId = parts[2];
-                this.isCreator = params.get('creator') === 'true';
-                this.currentRoute = '/exchange';
+                this.currentRoute = '/matchup';
+            } else {
+                // Home page is also matchup
+                this.currentRoute = '/';
             }
         },
 
@@ -54,38 +49,8 @@ function app() {
         async loadPage() {
             const content = document.getElementById('app-content');
 
-            if (this.currentRoute === '/') {
-                content.innerHTML = window.heraldHomePage();
-            } else if (this.currentRoute === '/squire/battle-plan') {
-                content.innerHTML = window.renderSquireBattlePlan();
-            } else if (this.currentRoute === '/squire/battle-plan-reference') {
-                content.innerHTML = window.renderSquireBattlePlanReference();
-            } else if (this.currentRoute === '/squire/matchup') {
-                content.innerHTML = window.renderSquireMatchup();
-            } else if (this.currentRoute === '/exchange') {
-                // Fetch exchange status to determine which page to show
-                try {
-                    const response = await fetch(`/api/herald/exchange/${this.exchangeId}`);
-
-                    if (!response.ok) {
-                        content.innerHTML = this.errorPage('Exchange not found');
-                        return;
-                    }
-
-                    const data = await response.json();
-
-                    if (data.status === 'complete') {
-                        content.innerHTML = window.heraldRevealPage(this.exchangeId);
-                    } else if (this.isCreator) {
-                        content.innerHTML = window.heraldWaitingPage(this.exchangeId);
-                    } else {
-                        content.innerHTML = window.heraldRespondPage(this.exchangeId);
-                    }
-                } catch (err) {
-                    console.error('Error loading exchange:', err);
-                    content.innerHTML = this.errorPage('Error loading exchange');
-                }
-            }
+            // Single interface - matchup system with battle plan
+            content.innerHTML = window.renderSquireMatchup();
         },
 
         errorPage(message) {

@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Herald - Fair and secure army list exchange for Warhammer players. Prevent list tailoring with cryptographic hashing.">
-    <meta name="keywords" content="warhammer, army list, fair play, list exchange, wargaming, herald, squig league">
+    <meta name="description" content="Squig League - Fair army list exchange with automatic battle plan generation for Warhammer Age of Sigmar.">
+    <meta name="keywords" content="warhammer, age of sigmar, army list, matchup, battle plan, fair play, wargaming, squig league">
 
     <!-- Open Graph / Social Media -->
-    <meta property="og:title" content="Herald - Fair Army List Exchange">
-    <meta property="og:description" content="Secure blind army list exchange for competitive Warhammer games. Cryptographic hashing prevents list tailoring.">
+    <meta property="og:title" content="Squig League - Matchup System">
+    <meta property="og:description" content="Exchange army lists and receive randomized battle plans for Age of Sigmar games.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://herald.squigleague.com">
+    <meta property="og:url" content="https://squigleague.com">
 
-    <title id="page-title">Herald - Fair Army List Exchange | Squig League</title>
+    <title id="page-title">Squig League - Matchup System</title>
 
     <!-- Google Fonts - Montserrat -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -101,28 +101,11 @@
                     </a>
                 </div>
                 
-                <!-- Navigation Links -->
+                <!-- Single Feature - Matchup with Battle Plan -->
                 <nav class="flex items-center gap-6">
-                    <a href="/" @click.prevent="navigate('/')" 
-                       :class="currentRoute === '/' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
-                       class="font-semibold transition">
-                        Herald
-                    </a>
-                    <a href="/squire/battle-plan" @click.prevent="navigate('/squire/battle-plan')" 
-                       :class="currentRoute === '/squire/battle-plan' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
-                       class="font-semibold transition">
-                        Battle Plans
-                    </a>
-                    <a href="/squire/battle-plan-reference" @click.prevent="navigate('/squire/battle-plan-reference')" 
-                       :class="currentRoute === '/squire/battle-plan-reference' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
-                       class="font-semibold transition">
-                        Reference
-                    </a>
-                    <a href="/squire/matchup" @click.prevent="navigate('/squire/matchup')" 
-                       :class="currentRoute === '/squire/matchup' ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
-                       class="font-semibold transition">
-                        Matchup
-                    </a>
+                    <span class="text-text-secondary font-semibold">
+                        List Exchange + Battle Plan Generator
+                    </span>
                 </nav>
             </div>
         </div>
@@ -149,12 +132,6 @@
 
     <!-- App Script -->
     <script src="/src/main.js"></script>
-    <script src="/modules/herald/home.js"></script>
-    <script src="/modules/herald/waiting.js"></script>
-    <script src="/modules/herald/respond.js"></script>
-    <script src="/modules/herald/reveal.js"></script>
-    <script src="/modules/squire/battleplan.js"></script>
-    <script src="/modules/squire/battleplan-reference.js"></script>
     <script src="/modules/squire/matchup.js"></script>
 
 </body>
