@@ -16,8 +16,8 @@ from slowapi.util import get_remote_address
 # Add parent directory to path for squire module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import words
-from models import (
+from herald import words
+from herald.models import (
     CreateExchangeRequest,
     CreateExchangeResponse,
     ExchangeStatusResponse,
@@ -27,7 +27,7 @@ from models import (
 )
 
 # Import local modules
-import database
+from herald import database
 
 # Import Squire routes
 from squire.routes import router as squire_router
