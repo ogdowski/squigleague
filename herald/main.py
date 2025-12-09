@@ -159,15 +159,17 @@ async def startup_event():
         scheduler.start()
         logger.info("Background scheduler started")
 
-    # Check database connection
-    if not database.check_database_health():
-        logger.error("❌ Database connection failed!")
-        raise Exception("Cannot connect to PostgreSQL")
-
-    logger.info("✅ Database connection successful")
-
-    # Run initial cleanup
-    cleanup_old_data()
+    # Check database connection (optional for Squire-only deployment)
+    db_required = os.environ.get("REQUIRE_DATABASE", "true").lower() == "true"
+    if db_required:
+        if not database.check_database_health():
+            logger.error("❌ Database connection failed!")
+            raise Exception("Cannot connect to PostgreSQL")
+        logger.info("✅ Database connection successful")
+        # Run initial cleanup
+        cleanup_old_data()
+    else:
+        logger.info("ℹ️ Database check skipped (REQUIRE_DATABASE=false)")
 
     logger.info("🎯 Herald ready!")
 
