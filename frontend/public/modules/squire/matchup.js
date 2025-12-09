@@ -265,7 +265,7 @@ function matchupManager() {
             this.error = null;
 
             try {
-                const response = await fetch('/api/squire/matchup/create', {
+                const response = await fetch(getApiUrl('/api/squire/matchup/create'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -303,7 +303,7 @@ function matchupManager() {
             this.error = null;
 
             try {
-                const response = await fetch(`/api/squire/matchup/${this.matchupId}/submit`, {
+                const response = await fetch(getApiUrl(`/api/squire/matchup/${this.matchupId}/submit`), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -340,7 +340,7 @@ function matchupManager() {
             this.error = null;
 
             try {
-                const response = await fetch(`/api/squire/matchup/${this.matchupId}`);
+                const response = await fetch(getApiUrl(`/api/squire/matchup/${this.matchupId}`));
                 
                 if (!response.ok) {
                     throw new Error(`Matchup not found: ${response.statusText}`);

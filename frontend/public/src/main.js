@@ -79,7 +79,7 @@ function footerStats() {
 
         async loadStats() {
             try {
-                const res = await fetch('/api/herald/stats');
+                const res = await fetch(getApiUrl('/api/herald/stats'));
                 if (res.ok) {
                     const data = await res.json();
                     this.completedExchanges = data.completed_exchanges || 0;

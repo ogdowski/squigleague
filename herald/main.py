@@ -8,6 +8,7 @@ from datetime import datetime
 import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -46,6 +47,21 @@ app = FastAPI(
     title="Herald API - Squig League",
     description="API for fair and secure army list exchange",
     version=APP_VERSION,
+)
+
+# CORS configuration for local development
+# Allows frontend on port 3000 to call backend on port 8000
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost",
+        "http://127.0.0.1",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include Squire router for battle plan randomization
