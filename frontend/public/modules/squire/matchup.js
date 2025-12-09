@@ -23,38 +23,17 @@ window.renderSquireMatchup = function() {
                 </h2>
                 
                 <div class="space-y-6">
-                    <!-- System Selection -->
+                    <!-- System Selection - AoS Only -->
                     <div>
                         <label class="block text-sm font-bold text-primary uppercase mb-3">
-                            Select Game System
+                            Game System
                         </label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button 
-                                @click="selectedSystem = 'age_of_sigmar'"
-                                :class="selectedSystem === 'age_of_sigmar' ? 'bg-primary border-primary text-bg-darkest' : 'bg-bg-medium border-bg-dark text-text-primary hover:border-primary'"
-                                class="p-4 rounded-lg border-2 transition"
-                            >
-                                <div class="font-bold text-lg">Age of Sigmar</div>
-                                <div class="text-sm mt-1 opacity-75">4th Edition</div>
-                            </button>
-
-                            <button 
-                                @click="selectedSystem = 'warhammer_40k'"
-                                :class="selectedSystem === 'warhammer_40k' ? 'bg-primary border-primary text-bg-darkest' : 'bg-bg-medium border-bg-dark text-text-primary hover:border-primary'"
-                                class="p-4 rounded-lg border-2 transition"
-                            >
-                                <div class="font-bold text-lg">Warhammer 40k</div>
-                                <div class="text-sm mt-1 opacity-75">10th Edition</div>
-                            </button>
-
-                            <button 
-                                @click="selectedSystem = 'the_old_world'"
-                                :class="selectedSystem === 'the_old_world' ? 'bg-primary border-primary text-bg-darkest' : 'bg-bg-medium border-bg-dark text-text-primary hover:border-primary'"
-                                class="p-4 rounded-lg border-2 transition"
-                            >
-                                <div class="font-bold text-lg">The Old World</div>
-                                <div class="text-sm mt-1 opacity-75">Legacy</div>
-                            </button>
+                        <div class="max-w-md mx-auto">
+                            <div class="p-6 bg-primary border-2 border-primary rounded-lg text-center">
+                                <div class="font-bold text-2xl text-bg-darkest mb-2">Age of Sigmar</div>
+                                <div class="text-bg-darkest opacity-75">4th Edition - General's Handbook 2025-2026</div>
+                                <div class="text-bg-darkest text-sm mt-2">12 Official Matched Play Missions</div>
+                            </div>
                         </div>
                     </div>
 
@@ -281,11 +260,7 @@ function matchupManager() {
         },
 
         async createMatchup() {
-            if (!this.selectedSystem) {
-                this.error = 'Please select a game system first';
-                return;
-            }
-
+            // AoS only - system is hardcoded
             this.creating = true;
             this.error = null;
 
