@@ -1,12 +1,82 @@
 # SESSION REVIVAL LOG
 
 **Active Persona**: BACKEND_CORE (Boris)  
-**Current Branch**: feature/battle-plan-randomizer  
-**Last Updated**: 2025-11-20
+**Current Branch**: release/v0.3.0-aos-matchups  
+**Last Updated**: 2025-12-10
 
 ---
 
-## Current Session Actions
+## CRITICAL ACTIVE ISSUE - NEXT AGENT MUST ADDRESS
+
+### 2025-12-10: JavaScript Error Handling Test Failures
+
+**Context**: Release v0.3.0 prep exposed that automated tests passed but didn't catch JavaScript bugs. User found `[object Object]` error instead of proper validation messages in browser.
+
+**What Was Fixed**:
+1. ✅ Fixed `frontend/public/modules/squire/matchup.js` error parsing in 3 methods:
+   - `createMatchup()` lines 262-280: Parse JSON error response, extract Pydantic messages
+   - `submitList()` lines 300-337: Extract validation error arrays
+   - `loadMatchup()` lines 343-367: Same error parsing pattern
+2. ✅ Error extraction logic handles:
+   - Array format: `errorData.detail.map(e => e.msg).join(', ')`
+   - String format: Direct passthrough
+   - Alternative formats: Check `message` field
+   - Fallback: `response.statusText`
+3. ✅ Created `frontend/public/test-error-handling.html` - JavaScript test suite with 8 edge cases
+4. ✅ Created `scripts/test-api-responses.ps1` - Diagnostic script to check actual API error formats
+
+**PROBLEM - BACKEND WON'T START**:
+- Uvicorn process runs but app doesn't load properly
+- Port 8000 shows TIME_WAIT connections but no LISTENING
+- All API requests fail with "Unable to connect to the remote server"
+- Error in startup likely related to module imports or database initialization
+- Task output shows SQLAlchemy warning and cleanup job running, but HTTP server not responding
+
+**DIAGNOSTIC FINDINGS**:
+- Created test-error-extraction.ps1 - PowerShell-based test that replicates JavaScript test logic
+- Tests show 7/8 passing when backend works, 1 failure on 404 error message format
+- Error extraction logic handles: detail arrays, detail strings, message field, error field
+- Both matchup.js and test-error-handling.html updated with comprehensive error parsing
+
+**NEXT STEPS FOR NEW AGENT**:
+- JavaScript test page at http://localhost:3000/test-error-handling.html shows failures
+- Task output from `test-api-responses.ps1` revealed Test 6 returns DIFFERENT error format:
+  ```json
+  {"error":"Not found","message":"Matchup FAKE_ID_123 not found"}
+  ```
+- Expected format: `{"detail": "..."}`
+- Actual format for 404: `{"error": "...", "message": "..."}`
+
+**ROOT CAUSE**: FastAPI 404 errors may use different JSON structure than validation errors
+
+**NEXT STEPS FOR NEW AGENT**:
+1. Check full output of `scripts/test-api-responses.ps1` to see ALL actual error formats
+2. Check `squire/routes.py` line 281 - the 404 HTTPException
+3. Update error parsing in BOTH files to handle `{"error":"...","message":"..."}` format:
+   - `frontend/public/modules/squire/matchup.js` (3 methods)
+   - `frontend/public/test-error-handling.html` (makeRequest function)
+4. Error parsing logic needs to check: `errorData.message || errorData.detail || errorData.error`
+5. Re-run JavaScript test page to verify all 8 tests pass
+6. Test actual matchup creation/submission flow in browser
+7. Run `scripts/test-comprehensive-gui.ps1` for full validation
+
+**FILES TO CHECK**:
+- `frontend/public/test-error-handling.html` - See which specific tests fail
+- `squire/routes.py` lines 280-290 - Check HTTPException format for 404
+- `frontend/public/modules/squire/matchup.js` - Error handling in all 3 methods
+
+**SERVERS RUNNING**:
+- Backend: http://localhost:8000 (FastAPI)
+- Frontend: http://localhost:3000 (spa-server.py)
+
+**TESTING PROTOCOL LEARNED**:
+- PowerShell tests hitting API directly don't catch JavaScript bugs
+- Must test actual browser JavaScript execution
+- Error message display is critical user experience
+
+---
+
+## Previous Session Actions
 
 ### 2025-11-20: AoS Battle Plan Data Replacement
 

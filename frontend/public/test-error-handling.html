@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Error Handling Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #444;
+        }
+        .pass { background: #1a3a1a; border-color: #2a5a2a; }
+        .fail { background: #3a1a1a; border-color: #5a2a2a; }
+        .running { background: #1a1a3a; border-color: #2a2a5a; }
+        .error-display {
+            margin-top: 5px;
+            padding: 5px;
+            background: #000;
+            font-size: 12px;
+        }
+        #summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>JavaScript Error Handling Tests</h1>
+    <p>Testing that error responses are properly parsed and displayed...</p>
+    
+    <div id="tests"></div>
+    <div id="summary"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const results = { passed: [], failed: [] };
+
+        function addTest(name, status, message = '') {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `
+                <strong>${status.toUpperCase()}</strong>: ${name}
+                ${message ? `<div class="error-display">${message}</div>` : ''}
+            `;
+            document.getElementById('tests').appendChild(div);
+        }
+
+        async function testCase(name, testFn, expectedErrorFragment = null) {
+            addTest(name, 'running', 'Testing...');
+            try {
+                await testFn();
+                
+                if (expectedErrorFragment) {
+                    // Expected an error but got success
+                    results.failed.push(name);
+                    addTest(name, 'fail', `Expected error containing "${expectedErrorFragment}" but got success`);
+                    return false;
+                } else {
+                    results.passed.push(name);
+                    addTest(name, 'pass');
+                    return true;
+                }
+            } catch (error) {
+                const errorMsg = error.message || String(error);
+                
+                if (expectedErrorFragment) {
+                    // Expected an error - check if it matches
+                    if (errorMsg.includes(expectedErrorFragment)) {
+                        results.passed.push(name);
+                        addTest(name, 'pass', `Got expected error: ${errorMsg}`);
+                        return true;
+                    } else {
+                        results.failed.push(name);
+                        addTest(name, 'fail', `Expected error with "${expectedErrorFragment}" but got: ${errorMsg}`);
+                        return false;
+                    }
+                } else {
+                    // Unexpected error
+                    results.failed.push(name);
+                    addTest(name, 'fail', `Unexpected error: ${errorMsg}`);
+                    return false;
+                }
+            }
+        }
+
+        async function makeRequest(endpoint, options = {}) {
+            const response = await fetch(`${API_BASE}${endpoint}`, options);
+            
+            if (!response.ok) {
+                // Parse error response
+                const errorData = await response.json().catch(() => ({}));
+                
+                // Extract meaningful error message - handle all FastAPI formats
+                let errorMessage;
+                if (Array.isArray(errorData.detail)) {
+                    // Pydantic validation errors - array format, extract all messages
+                    errorMessage = errorData.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+                } else if (typeof errorData.detail === 'string') {
+                    // HTTPException with detail string
+                    errorMessage = errorData.detail;
+                } else if (errorData.message) {
+                    // Custom error/message format (404s, etc)
+                    errorMessage = errorData.message;
+                } else if (errorData.error) {
+                    // Error field
+                    errorMessage = errorData.error;
+                } else {
+                    errorMessage = response.statusText;
+                }
+                
+                throw new Error(errorMessage);
+            }
+            
+            return await response.json();
+        }
+
+        async function runTests() {
+            // Test 1: Valid matchup creation
+            let matchupId;
+            await testCase('Create matchup - valid request', async () => {
+                const data = await makeRequest('/api/squire/matchup/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ game_system: 'age_of_sigmar' })
+                });
+                matchupId = data.matchup_id;
+                if (!matchupId) throw new Error('No matchup_id returned');
+            });
+
+            // Test 2: Invalid game system
+            await testCase('Create matchup - invalid system', async () => {
+                await makeRequest('/api/squire/matchup/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ game_system: 'fake_game' })
+                });
+            }, 'Invalid game system');
+
+            // Test 3: Missing required field
+            await testCase('Create matchup - missing game_system', async () => {
+                await makeRequest('/api/squire/matchup/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+            }, 'Field required');
+
+            // Test 4: Valid submission
+            await testCase('Submit list - valid data', async () => {
+                await makeRequest(`/api/squire/matchup/${matchupId}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_name: 'Test Player',
+                        army_list: 'This is a valid army list with enough characters'
+                    })
+                });
+            });
+
+            // Test 5: Army list too short (THE BUG YOU FOUND)
+            const newMatchup = await makeRequest('/api/squire/matchup/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game_system: 'age_of_sigmar' })
+            });
+
+            await testCase('Submit list - army list too short', async () => {
+                await makeRequest(`/api/squire/matchup/${newMatchup.matchup_id}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_name: 'Player',
+                        army_list: 'short'
+                    })
+                });
+            }, 'at least 10 characters');
+
+            // Test 6: Missing player name
+            await testCase('Submit list - missing player_name', async () => {
+                await makeRequest(`/api/squire/matchup/${newMatchup.matchup_id}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        army_list: 'Valid army list with enough characters'
+                    })
+                });
+            }, 'Field required');
+
+            // Test 7: Missing army list
+            await testCase('Submit list - missing army_list', async () => {
+                await makeRequest(`/api/squire/matchup/${newMatchup.matchup_id}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_name: 'Player'
+                    })
+                });
+            }, 'Field required');
+
+            // Test 8: Non-existent matchup
+            await testCase('Submit list - non-existent matchup', async () => {
+                await makeRequest('/api/squire/matchup/FAKE_ID_12345/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_name: 'Player',
+                        army_list: 'Valid army list text'
+                    })
+                });
+            }, 'Not found');
+
+            // Summary
+            const summary = document.getElementById('summary');
+            const total = results.passed.length + results.failed.length;
+            const passRate = ((results.passed.length / total) * 100).toFixed(1);
+            
+            summary.innerHTML = `
+                <div>PASSED: ${results.passed.length}/${total} (${passRate}%)</div>
+                ${results.failed.length > 0 ? `<div style="color: #ff6b6b">FAILED: ${results.failed.length}</div>` : ''}
+                <div style="margin-top: 10px; font-size: 14px;">
+                    ${results.failed.length === 0 ? 
+                        '✓ All error messages are properly parsed and displayed!' :
+                        '✗ Some error messages are not displaying correctly'}
+                </div>
+            `;
+            
+            summary.style.background = results.failed.length === 0 ? '#1a3a1a' : '#3a1a1a';
+        }
+
+        // Run tests on load
+        runTests().catch(error => {
+            document.getElementById('summary').innerHTML = `
+                <div style="color: #ff6b6b">TEST SUITE FAILED</div>
+                <div class="error-display">${error.message}</div>
+            `;
+            // Log failure to console
+            console.log('TEST_SUITE_FAILED:', error.message);
+        }).finally(() => {
+            // Log results to console for automated capture
+            const total = results.passed.length + results.failed.length;
+            const passRate = ((results.passed.length / total) * 100).toFixed(1);
+            
+            console.log('=== TEST RESULTS ===');
+            console.log(`TOTAL: ${total}`);
+            console.log(`PASSED: ${results.passed.length}`);
+            console.log(`FAILED: ${results.failed.length}`);
+            console.log(`PASS_RATE: ${passRate}%`);
+            console.log('PASSED_TESTS:', JSON.stringify(results.passed));
+            console.log('FAILED_TESTS:', JSON.stringify(results.failed));
+            console.log('=== END RESULTS ===');
+            
+            // Also write to a global variable for external access
+            window.testResults = {
+                total: total,
+                passed: results.passed.length,
+                failed: results.failed.length,
+                passRate: passRate,
+                passedTests: results.passed,
+                failedTests: results.failed
+            };
+        });
+    </script>
+</body>
+</html>

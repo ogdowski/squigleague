@@ -276,7 +276,27 @@ function matchupManager() {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to create matchup: ${response.statusText}`);
+                    // Get detailed error message from API response
+                    const errorData = await response.json().catch(() => ({}));
+                    let errorMessage;
+                    
+                    if (Array.isArray(errorData.detail)) {
+                        // Pydantic validation errors - array format
+                        errorMessage = errorData.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+                    } else if (typeof errorData.detail === 'string') {
+                        // HTTPException with detail string
+                        errorMessage = errorData.detail;
+                    } else if (errorData.message) {
+                        // Custom error/message format (404s, etc)
+                        errorMessage = errorData.message;
+                    } else if (errorData.error) {
+                        // Error field
+                        errorMessage = errorData.error;
+                    } else {
+                        errorMessage = response.statusText;
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json();
@@ -286,7 +306,8 @@ function matchupManager() {
                 window.history.pushState({}, '', `/squire/matchup/${this.matchupId}`);
                 
             } catch (err) {
-                this.error = err.message;
+                // Ensure error is a string, not an object
+                this.error = err.message || String(err) || 'Unknown error occurred';
                 console.error('Error creating matchup:', err);
             } finally {
                 this.creating = false;
@@ -315,8 +336,26 @@ function matchupManager() {
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || `Failed to submit list: ${response.statusText}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    let errorMessage;
+                    
+                    if (Array.isArray(errorData.detail)) {
+                        // Pydantic validation errors
+                        errorMessage = errorData.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+                    } else if (typeof errorData.detail === 'string') {
+                        // HTTPException with detail string
+                        errorMessage = errorData.detail;
+                    } else if (errorData.message) {
+                        // Custom error/message format (404s, etc)
+                        errorMessage = errorData.message;
+                    } else if (errorData.error) {
+                        // Error field
+                        errorMessage = errorData.error;
+                    } else {
+                        errorMessage = response.statusText;
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 this.matchup = await response.json();
@@ -343,7 +382,26 @@ function matchupManager() {
                 const response = await fetch(getApiUrl(`/api/squire/matchup/${this.matchupId}`));
                 
                 if (!response.ok) {
-                    throw new Error(`Matchup not found: ${response.statusText}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    let errorMessage;
+                    
+                    if (Array.isArray(errorData.detail)) {
+                        // Pydantic validation errors
+                        errorMessage = errorData.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+                    } else if (typeof errorData.detail === 'string') {
+                        // HTTPException with detail string
+                        errorMessage = errorData.detail;
+                    } else if (errorData.message) {
+                        // Custom error/message format (404s, etc)
+                        errorMessage = errorData.message;
+                    } else if (errorData.error) {
+                        // Error field
+                        errorMessage = errorData.error;
+                    } else {
+                        errorMessage = response.statusText;
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 this.matchup = await response.json();

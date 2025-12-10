@@ -28,7 +28,7 @@ try {
 
 # Start frontend
 Write-Host "`n[3/4] Starting frontend on port 3000..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd e:\repos\suigleague\frontend\public; python -m http.server 3000"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd e:\repos\suigleague\frontend\public; python spa-server.py"
 Start-Sleep -Seconds 2
 
 # Verify frontend
