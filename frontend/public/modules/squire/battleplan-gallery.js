@@ -16,7 +16,7 @@ class BattlePlanGallery {
             this.loading = true;
             this.error = null;
             
-            const response = await fetch(`${window.API_BASE_URL}/api/squire/battle-plans/gallery?system=age_of_sigmar`);
+            const response = await fetch(getApiUrl('/api/squire/battle-plans/gallery?system=age_of_sigmar'));
             
             if (!response.ok) {
                 throw new Error(`Failed to load battle plans: ${response.statusText}`);
