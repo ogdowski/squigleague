@@ -76,3 +76,9 @@ class BattlePlanGallery {
 
 // Export for Alpine.js
 window.BattlePlanGallery = BattlePlanGallery;
+
+// Alpine.js component function
+window.battlePlanGallery = function() {
+    const gallery = new BattlePlanGallery();
+    return gallery.init();
+};

@@ -5,7 +5,7 @@
 
 window.renderBattlePlanGallery = function() {
     return `
-        <div class="min-h-screen bg-bg-darkest py-8 px-4" x-data="(new BattlePlanGallery()).init()">
+        <div class="min-h-screen bg-bg-darkest py-8 px-4" x-data="battlePlanGallery()">
             <div class="max-w-7xl mx-auto">
                 <!-- Header -->
                 <div class="text-center mb-8">
