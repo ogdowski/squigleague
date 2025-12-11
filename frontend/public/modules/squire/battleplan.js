@@ -1,6 +1,6 @@
 /**
  * Squire Module - Battle Plan Randomizer
- * Generates random battle plans for Age of Sigmar, 40k, and The Old World
+ * Selects random battle plans for Age of Sigmar, 40k, and The Old World
  */
 
 window.renderSquireBattlePlan = function() {
@@ -12,13 +12,13 @@ window.renderSquireBattlePlan = function() {
                     Battle Plan Reference
                 </h1>
                 <p class="text-lg text-text-secondary max-w-2xl mx-auto">
-                    Browse and generate battle plans for practice and reference. 
+                    Browse and randomize battle plans for practice and reference. 
                     Supports Age of Sigmar (General's Handbook 2025-2026), Warhammer 40k, and The Old World.
                 </p>
                 <div class="mt-4 p-4 bg-bg-dark rounded-lg border border-primary/30 max-w-3xl mx-auto">
                     <p class="text-sm text-text-muted">
                         <strong class="text-primary">Note:</strong> This is a reference tool for practice. 
-                        In tournaments, battle plans are automatically generated when both players submit their lists.
+                        In tournaments, battle plans are automatically selected when both players submit their lists.
                     </p>
                 </div>
             </div>
@@ -64,14 +64,14 @@ window.renderSquireBattlePlan = function() {
                     </button>
                 </div>
 
-                <!-- Generate Button -->
+                <!-- Randomize Button -->
                 <div class="mt-8 text-center">
                     <button 
                         @click="generateBattlePlan()"
                         :disabled="!selectedSystem || loading"
                         class="px-8 py-4 bg-primary hover:bg-primary-dark text-bg-darkest font-bold text-lg rounded-lg shadow-lg transition duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                        <span x-show="!loading">Generate Random Battle Plan</span>
+                        <span x-show="!loading">Randomize Battle Plan</span>
                         <span x-show="loading">
                             <svg class="animate-spin h-5 w-5 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -177,9 +177,9 @@ window.renderSquireBattlePlan = function() {
                 <div class="flex gap-4 justify-center mt-8 pt-6 border-t border-bg-dark">
                     <button 
                         @click="generateBattlePlan()"
-                        class="px-6 py-3 bg-primary hover:bg-primary-dark text-bg-darkest font-bold rounded-lg transition"
+                        class="px-6 py-3 bg-primary hover:bg-primary-dark text-bg-darkest font-bold rounded-lg shadow-lg transition duration-300"
                     >
-                        Generate Another
+                        Randomize Another
                     </button>
                     <button 
                         @click="printBattlePlan()"
@@ -195,7 +195,7 @@ window.renderSquireBattlePlan = function() {
                 <h3 class="text-2xl font-montserrat font-bold text-text-primary mb-4">About This Tool</h3>
                 <div class="space-y-3 text-text-secondary">
                     <p><strong class="text-text-primary">Practice & Reference:</strong> Use this tool to familiarize yourself with mission types and practice different scenarios before tournaments.</p>
-                    <p><strong class="text-text-primary">Tournament Play:</strong> In official SquigLeague tournaments, battle plans are automatically generated when both players submit their army lists. You cannot manually generate or change the assigned battle plan.</p>
+                    <p><strong class="text-text-primary">Tournament Play:</strong> In official SquigLeague tournaments, battle plans are automatically selected when both players submit their army lists. You cannot manually select or change the assigned battle plan.</p>
                     <p><strong class="text-text-primary">Fair Competition:</strong> The automated system ensures unbiased mission selection and prevents players from cherry-picking favorable matchups.</p>
                 </div>
             </div>
@@ -203,7 +203,7 @@ window.renderSquireBattlePlan = function() {
     `;
 };
 
-// Alpine.js component for battle plan generator
+// Alpine.js component for battle plan randomizer
 function battlePlanGenerator() {
     return {
         selectedSystem: null,
@@ -233,7 +233,7 @@ function battlePlanGenerator() {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to generate battle plan: ${response.statusText}`);
+                    throw new Error(`Failed to randomize battle plan: ${response.statusText}`);
                 }
 
                 this.battlePlan = await response.json();
