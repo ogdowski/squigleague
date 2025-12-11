@@ -27,6 +27,8 @@ function app() {
             // Match /squire/matchup/{id} or /matchup/{id}
             if (path.includes('/matchup/')) {
                 this.currentRoute = '/matchup';
+            } else if (path === '/battle-plans' || path === '/squire/battle-plans') {
+                this.currentRoute = '/battle-plans';
             } else {
                 // Home page is also matchup
                 this.currentRoute = '/';
@@ -47,8 +49,18 @@ function app() {
         async loadPage() {
             const content = document.getElementById('app-content');
 
-            // Single interface - matchup system with battle plan
-            content.innerHTML = window.renderSquireMatchup();
+            // Route to appropriate interface
+            if (this.currentRoute === '/battle-plans') {
+                content.innerHTML = window.renderBattlePlanGallery();
+            } else {
+                // Single interface - matchup system with battle plan
+                content.innerHTML = window.renderSquireMatchup();
+            }
+            
+            // Re-initialize Alpine.js for the new content
+            if (window.Alpine) {
+                window.Alpine.initTree(content);
+            }
         },
 
         errorPage(message) {
