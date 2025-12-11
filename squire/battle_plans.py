@@ -49,6 +49,7 @@ class BattlePlan:
     special_rules: Optional[List[str]] = None
     battle_tactics: Optional[List[str]] = None
     turn_limit: int = 5
+    deployment_map_url: Optional[str] = None
 
 
 # ═══════════════════════════════════════════════
@@ -60,6 +61,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Passing Seasons",
         "deployment": "Long edge deployment",
+        "deployment_map_url": "/static/battle-plans/aos-passing-seasons.png",
         "objectives": [
             {"name": "Gnarlroot 1", "location": '24" from long edge, 12" from center'},
             {
@@ -79,6 +81,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Paths of the Fey",
         "deployment": "Long edge deployment",
+        "deployment_map_url": "/static/battle-plans/aos-paths-of-the-fey.png",
         "objectives": [
             {"name": "Central Heartwood", "location": "Center of battlefield"},
             {"name": "Gnarlroot", "location": '12" from center toward each long edge'},
@@ -95,6 +98,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Roiling Roots",
         "deployment": "Diagonal corner deployment",
+        "deployment_map_url": "/static/battle-plans/aos-roiling-roots.png",
         "objectives": [
             {
                 "name": "Diagonal Row 1",
@@ -111,6 +115,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Cyclic Shifts",
         "deployment": "Diagonal corner deployment",
+        "deployment_map_url": "/static/battle-plans/aos-cyclic-shifts.png",
         "objectives": [
             {
                 "name": "Diagonal Row",
@@ -127,6 +132,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Surge of Slaughter",
         "deployment": "Long edge deployment",
+        "deployment_map_url": "/static/battle-plans/aos-surge-of-slaughter.png",
         "objectives": [
             {"name": "Central Heartwood", "location": "Center"},
             {
@@ -141,6 +147,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Linked Ley Lines",
         "deployment": "Long edge deployment",
+        "deployment_map_url": "/static/battle-plans/aos-linked-ley-lines.png",
         "objectives": [
             {
                 "name": "Ley Line Network",
@@ -158,6 +165,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Noxious Nexus",
         "deployment": "Quadrant deployment",
+        "deployment_map_url": "/static/battle-plans/aos-noxious-nexus.png",
         "objectives": [
             {"name": "3 Nexus Points", "location": "Spread across battlefield"},
         ],
@@ -172,6 +180,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "The Liferoots",
         "deployment": "Diagonal corner deployment",
+        "deployment_map_url": "/static/battle-plans/aos-the-liferoots.png",
         "objectives": [
             {"name": "2 Liferoot Markers", "location": 'On diagonal, 24" apart'},
         ],
@@ -186,6 +195,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Bountiful Equinox",
         "deployment": "Long edge deployment",
+        "deployment_map_url": "/static/battle-plans/aos-bountiful-equinox.png",
         "objectives": [
             {
                 "name": "5 Objective Spread",
@@ -203,6 +213,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Lifecycle",
         "deployment": "Long edge deployment",
+        "deployment_map_url": "/static/battle-plans/aos-lifecycle.png",
         "objectives": [
             {
                 "name": "4 Lifecycle Objectives",
@@ -216,6 +227,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Creeping Corruption",
         "deployment": "Long edge deployment",
+        "deployment_map_url": "/static/battle-plans/aos-creeping-corruption.png",
         "objectives": [
             {
                 "name": "6 Objective Grid",
@@ -233,6 +245,7 @@ AOS_BATTLE_PLANS = [
     {
         "name": "Grasp of Thorns",
         "deployment": "Quadrant deployment",
+        "deployment_map_url": "/static/battle-plans/aos-grasp-of-thorns.png",
         "objectives": [
             {"name": "4 Thorn Objectives", "location": "One in each table quarter"},
         ],

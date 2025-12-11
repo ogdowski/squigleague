@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -66,6 +67,13 @@ app.add_middleware(
 
 # Include Squire router for battle plan randomization
 app.include_router(squire_router)
+
+# Mount static files for battle plan assets
+# Check if assets directory exists (won't exist in deployed environment without assets)
+assets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
+if os.path.exists(assets_path):
+    app.mount("/static", StaticFiles(directory=assets_path), name="static")
+    logger.info(f"Mounted static assets from {assets_path}")
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)

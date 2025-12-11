@@ -39,6 +39,7 @@ class BattlePlanResponse(BaseModel):
     turn_limit: int
     special_rules: Optional[List[str]] = None
     battle_tactics: Optional[List[str]] = None
+    deployment_map_url: Optional[str] = None
 
     class Config:
         json_schema_extra = {
@@ -144,6 +145,7 @@ def battle_plan_to_response(plan: BattlePlan) -> BattlePlanResponse:
         turn_limit=plan.turn_limit,
         special_rules=plan.special_rules,
         battle_tactics=plan.battle_tactics,
+        deployment_map_url=plan.deployment_map_url,
     )
 
 
@@ -160,7 +162,7 @@ async def get_random_battle_plan(
     )
 ):
     """
-    Generate a random battle plan for the specified game system
+    Randomly select a battle plan for the specified game system
 
     Returns complete battle plan with deployment, objectives, and victory conditions
     """
@@ -183,13 +185,13 @@ async def get_multiple_battle_plans(
         description="Game system: age_of_sigmar, warhammer_40k, or the_old_world",
     ),
     count: int = Query(
-        default=3, ge=1, le=10, description="Number of battle plans to generate (1-10)"
+        default=3, ge=1, le=10, description="Number of battle plans to select (1-10)"
     ),
 ):
     """
-    Generate multiple random battle plans for tournament planning
+    Randomly select multiple battle plans for tournament planning
 
-    Useful for pre-generating tournament rounds or giving players options
+    Useful for pre-selecting tournament rounds or giving players options
     """
     try:
         game_system = GameSystem(system)
@@ -234,6 +236,62 @@ async def get_supported_systems():
     return systems
 
 
+@router.get("/battle-plans/gallery", response_model=List[BattlePlanResponse])
+async def get_battle_plans_gallery(
+    system: str = Query(
+        default="age_of_sigmar",
+        description="Game system: age_of_sigmar, warhammer_40k, or the_old_world",
+    )
+):
+    """
+    Get all battle plans for a game system (for gallery display)
+    
+    Returns all available battle plans with deployment map URLs for the specified system.
+    Currently only Age of Sigmar has deployment maps.
+    """
+    try:
+        game_system = GameSystem(system)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid game system. Must be: age_of_sigmar, warhammer_40k, or the_old_world",
+        )
+    
+    if game_system == GameSystem.AOS:
+        from squire.battle_plans import AOS_BATTLE_PLANS
+        
+        # Convert AoS battle plans to BattlePlan objects
+        plans = []
+        for plan_dict in AOS_BATTLE_PLANS:
+            # Extract objective names from dict objectives
+            objective_list = []
+            if "objectives" in plan_dict and isinstance(plan_dict["objectives"], list):
+                objective_list = [
+                    obj.get("name", "") for obj in plan_dict["objectives"] if "name" in obj
+                ]
+            
+            plan = BattlePlan(
+                name=plan_dict["name"],
+                game_system=GameSystem.AOS,
+                deployment=DeploymentType.FRONTAL_ASSAULT,  # Placeholder
+                deployment_description=plan_dict["deployment"],
+                primary_objective=plan_dict["scoring"],  # scoring is the string
+                secondary_objectives=objective_list,  # List of objective names as strings
+                victory_conditions="Player with most Victory Points at end of 5 battle rounds wins. VP scored from controlling objectives per mission rules.",
+                turn_limit=5,
+                special_rules=plan_dict.get("special_rules", []),
+                deployment_map_url=plan_dict.get("deployment_map_url"),
+            )
+            plans.append(battle_plan_to_response(plan))
+        
+        return plans
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Gallery not available for {system}. Currently only age_of_sigmar battle plans have deployment maps.",
+        )
+
+
 # ═══════════════════════════════════════════════
 # MATCHUP ENDPOINTS
 # ═══════════════════════════════════════════════
@@ -242,7 +300,7 @@ async def get_supported_systems():
 @router.post("/matchup/create", response_model=MatchupCreateResponse)
 async def create_new_matchup(request: MatchupCreateRequest):
     """
-    Create a new matchup for exchanging lists and generating battle plan
+    Create a new matchup for exchanging lists and selecting random battle plan
 
     Args:
         request: Matchup creation request with game system
@@ -326,6 +384,7 @@ def _matchup_to_response(matchup) -> MatchupResponse:
             turn_limit=bp.turn_limit,
             special_rules=bp.special_rules,
             battle_tactics=bp.battle_tactics,
+            deployment_map_url=bp.deployment_map_url,
         )
 
     # Helper to convert player
