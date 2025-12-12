@@ -22,6 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code (preserving module structure)
 COPY herald/ ./herald/
 COPY squire/ ./squire/
+COPY assets/ ./assets/
 
 EXPOSE 8000
 
