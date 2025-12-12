@@ -162,26 +162,22 @@ docker logs squig-nginx
 **Port already in use:**
 - Change ports in commands or kill processes using those ports
 
-**What Changed in This Release**
+## What Changed in This Release
 
-**Deployment:**
-- ✅ Full Docker containerization (postgres, backend, frontend, nginx)
-- ✅ Just command runner for easy deployment (`just dev`)
-- ✅ PowerShell deployment script: `.\scripts\deploy-release-v0.3.0.ps1`
+See [PR_DETAILS.md](PR_DETAILS.md) for complete release notes.
 
-**New Features:**
-- ✅ Battle Plan Gallery with 12 AoS GH 2025-26 deployment maps
-- ✅ Battle plan data corrected to official Wahapedia source
-- ✅ Matchup system for list exchange + battle plan generation
-- ✅ API endpoints for battle plans and matchups
-- ✅ Frontend gallery components with Alpine.js
+**Quick Summary:**
+- ✅ Battle Plan Gallery: 12 AoS GH 2025-26 plans with deployment maps
+- ✅ Matchup System: Anonymous list exchange + battle plan randomization
+- ✅ Docker Deployment: Full containerization with nginx reverse proxy
+- ✅ Verified Data: All battle plans sourced from official Wahapedia GH 2025-26
+- ✅ 4 integration tests passing
+- ✅ 109 files changed, 10,987+ lines added
 
-**Files Changed:**
-- 109 files modified
-- 10,987 lines added
-- Battle plan images, gallery components, matchup system, tests
-
-**Testing:**
-- 4 gallery integration tests passing
-- Matchup system tests included
-- Manual GUI testing documented in docs/RELEASE_v0.3.0_GUI_TEST.md
+**Key Files:**
+- `squire/battle_plans.py` - Battle plan data
+- `squire/matchup.py` - Matchup system
+- `frontend/public/modules/squire/battleplan-gallery.js` - Gallery UI
+- `assets/battle-plans/*.png` - 12 deployment map images
+- `herald/Dockerfile` - Fixed module imports
+- `nginx/nginx-dev.conf` - Local development proxy config
