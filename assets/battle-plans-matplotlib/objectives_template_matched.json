@@ -1,0 +1,152 @@
+{
+  "aos-passing-seasons.png": {
+    "name": "Passing Seasons",
+    "objective_count": 4,
+    "objectives": [
+      {
+        "x": 44.6,
+        "y": 26.4
+      },
+      {
+        "x": 29.1,
+        "y": 26.4
+      },
+      {
+        "x": 14.4,
+        "y": 26.3
+      },
+      {
+        "x": 6.4,
+        "y": 36.1
+      }
+    ]
+  },
+  "aos-paths-of-the-fey.png": {
+    "name": "Paths of the Fey",
+    "objective_count": 4,
+    "objectives": [
+      {
+        "x": 35.8,
+        "y": 33.1
+      },
+      {
+        "x": 17.9,
+        "y": 26.1
+      },
+      {
+        "x": 20.8,
+        "y": 25.2
+      },
+      {
+        "x": 38.8,
+        "y": 32.2
+      }
+    ]
+  },
+  "aos-roiling-roots.png": {
+    "name": "Roiling Roots",
+    "objective_count": 1,
+    "objectives": [
+      {
+        "x": 52.3,
+        "y": 34.1
+      }
+    ]
+  },
+  "aos-cyclic-shifts.png": {
+    "name": "Cyclic Shifts",
+    "objective_count": 1,
+    "objectives": [
+      {
+        "x": 29.7,
+        "y": 26.8
+      }
+    ]
+  },
+  "aos-surge-of-slaughter.png": {
+    "name": "Surge of Slaughter",
+    "objective_count": 2,
+    "objectives": [
+      {
+        "x": 32.0,
+        "y": 27.6
+      },
+      {
+        "x": 42.5,
+        "y": 31.5
+      }
+    ]
+  },
+  "aos-linked-ley-lines.png": {
+    "name": "Linked Ley Lines",
+    "objective_count": 3,
+    "objectives": [
+      {
+        "x": 39.5,
+        "y": 28.0
+      },
+      {
+        "x": 42.5,
+        "y": 27.8
+      },
+      {
+        "x": 19.0,
+        "y": 28.5
+      }
+    ]
+  },
+  "aos-noxious-nexus.png": {
+    "name": "Noxious Nexus",
+    "objective_count": 2,
+    "objectives": [
+      {
+        "x": 23.2,
+        "y": 28.9
+      },
+      {
+        "x": 46.3,
+        "y": 29.9
+      }
+    ]
+  },
+  "aos-bountiful-equinox.png": {
+    "name": "Bountiful Equinox",
+    "objective_count": 1,
+    "objectives": [
+      {
+        "x": 44.7,
+        "y": 26.6
+      }
+    ]
+  },
+  "aos-lifecycle.png": {
+    "name": "Lifecycle",
+    "objective_count": 1,
+    "objectives": [
+      {
+        "x": 46.5,
+        "y": 32.5
+      }
+    ]
+  },
+  "aos-creeping-corruption.png": {
+    "name": "Creeping Corruption",
+    "objective_count": 1,
+    "objectives": [
+      {
+        "x": 52.9,
+        "y": 26.5
+      }
+    ]
+  },
+  "aos-grasp-of-thorns.png": {
+    "name": "Grasp of Thorns",
+    "objective_count": 1,
+    "objectives": [
+      {
+        "x": 21.9,
+        "y": 34.0
+      }
+    ]
+  }
+}

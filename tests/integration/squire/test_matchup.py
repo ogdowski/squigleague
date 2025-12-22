@@ -79,7 +79,7 @@ class TestMatchupSubmission:
         assert data["battle_plan"] is None  # Not revealed yet
 
     def test_second_player_submission_generates_battle_plan(self):
-        """Test that battle plan is generated when second player submits"""
+        """Test that battle plan is NOT auto-generated when second player submits (must be manually selected)"""
         # First player submits
         client.post(
             f"/api/squire/matchup/{self.matchup_id}/submit",
@@ -102,9 +102,22 @@ class TestMatchupSubmission:
         assert data["is_complete"] is True
         assert data["player1"]["name"] == "Alice"
         assert data["player2"]["name"] == "Bob"
+        # Battleplan should NOT be auto-generated
+        assert data["battle_plan"] is None
+        assert data["battleplan_locked"] is False
+        
+        # Now manually select the battleplan
+        response = client.post(
+            f"/api/squire/matchup/{self.matchup_id}/select-battleplan",
+            params={"selected_by": "Alice"}
+        )
+        assert response.status_code == 200
+        data = response.json()
         assert data["battle_plan"] is not None
         assert "name" in data["battle_plan"]
         assert data["battle_plan"]["game_system"] == "age_of_sigmar"
+        assert data["battleplan_locked"] is True
+        assert data["battleplan_selected_by"] == "Alice"
 
     def test_third_player_cannot_join(self):
         """Test that a third player cannot join a full matchup"""
@@ -159,7 +172,7 @@ class TestMatchupRetrieval:
         assert data["battle_plan"] is None
 
     def test_get_partial_matchup(self):
-        """Test retrieving a matchup with one submission"""
+        """Test retrieving a matchup with one submission shows player info"""
         client.post(
             f"/api/squire/matchup/{self.matchup_id}/submit",
             json={"player_name": "Alice", "army_list": "Alice's Army"}
@@ -170,11 +183,11 @@ class TestMatchupRetrieval:
         data = response.json()
         assert data["is_complete"] is False
         assert data["player1"]["name"] == "Alice"
-        # Army list should be hidden until complete
-        assert "army_list" not in data["player1"] or data["player1"]["army_list"] is None
+        assert data["player1"]["army_list"] == "Alice's Army"  # Player info now visible
+        assert data["player2"] is None
 
     def test_get_complete_matchup(self):
-        """Test retrieving a complete matchup reveals all data"""
+        """Test retrieving a complete matchup reveals all data (but battleplan must be manually selected)"""
         client.post(
             f"/api/squire/matchup/{self.matchup_id}/submit",
             json={"player_name": "Alice", "army_list": "Alice's Army"}
@@ -192,7 +205,9 @@ class TestMatchupRetrieval:
         assert data["player1"]["army_list"] == "Alice's Army"
         assert data["player2"]["name"] == "Bob"
         assert data["player2"]["army_list"] == "Bob's Army"
-        assert data["battle_plan"] is not None
+        # Battleplan no longer auto-generated
+        assert data["battle_plan"] is None
+        assert data["battleplan_locked"] is False
 
     def test_get_nonexistent_matchup(self):
         """Test retrieving a matchup that doesn't exist"""
@@ -204,7 +219,7 @@ class TestBattlePlanGeneration:
     """Test battle plan generation for different systems"""
 
     def test_battle_plan_contains_required_fields(self):
-        """Test that generated battle plans have all required fields"""
+        """Test that manually selected battle plans have all required fields"""
         # Create and complete a matchup
         response = client.post(
             "/api/squire/matchup/create",
@@ -214,13 +229,19 @@ class TestBattlePlanGeneration:
 
         client.post(
             f"/api/squire/matchup/{matchup_id}/submit",
-            json={"player_name": "Alice", "army_list": "Test"}
+            json={"player_name": "Alice", "army_list": "Test Army List for Alice"}
         )
-        response = client.post(
+        client.post(
             f"/api/squire/matchup/{matchup_id}/submit",
-            json={"player_name": "Bob", "army_list": "Test"}
+            json={"player_name": "Bob", "army_list": "Test Army List for Bob"}
         )
-
+        
+        # Manually select battleplan
+        response = client.post(
+            f"/api/squire/matchup/{matchup_id}/select-battleplan",
+            params={"selected_by": "Alice"}
+        )
+        
         battle_plan = response.json()["battle_plan"]
         assert "name" in battle_plan
         assert "game_system" in battle_plan
@@ -240,11 +261,17 @@ class TestBattlePlanGeneration:
 
             client.post(
                 f"/api/squire/matchup/{matchup_id}/submit",
-                json={"player_name": "P1", "army_list": "Test"}
+                json={"player_name": "P1", "army_list": "Test Army List P1"}
             )
-            response = client.post(
+            client.post(
                 f"/api/squire/matchup/{matchup_id}/submit",
-                json={"player_name": "P2", "army_list": "Test"}
+                json={"player_name": "P2", "army_list": "Test Army List P2"}
+            )
+            
+            # Manually select battleplan
+            response = client.post(
+                f"/api/squire/matchup/{matchup_id}/select-battleplan",
+                params={"selected_by": "P1"}
             )
 
             battle_plan = response.json()["battle_plan"]

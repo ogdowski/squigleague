@@ -1,0 +1,11 @@
+{
+  "aos-passing-seasons.png": {
+    "expected": 4,
+    "total_circular": 21,
+    "top_candidates": [
+      {
+        "position": [
+          52.3743842364532,
+          38.13922356091031
+        ],
+        "size": 

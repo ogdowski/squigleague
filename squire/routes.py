@@ -16,7 +16,7 @@ from squire.battle_plans import (
     GameSystem,
     generate_battle_plan,
 )
-from squire.matchup import create_matchup, get_matchup, submit_list
+from squire.matchup import create_matchup, get_matchup, select_battleplan, submit_list
 
 router = APIRouter(prefix="/api/squire", tags=["squire"])
 
@@ -125,6 +125,9 @@ class MatchupResponse(BaseModel):
     battle_plan: Optional[BattlePlanResponse] = None
     is_complete: bool
     waiting_count: int
+    battleplan_locked: bool = False
+    battleplan_selected_at: Optional[str] = None
+    battleplan_selected_by: Optional[str] = None
 
 
 # ═══════════════════════════════════════════════
@@ -365,6 +368,27 @@ async def get_matchup_details(matchup_id: str):
     return _matchup_to_response(matchup)
 
 
+@router.post("/matchup/{matchup_id}/select-battleplan", response_model=MatchupResponse)
+async def select_matchup_battleplan(matchup_id: str, selected_by: str = "unknown"):
+    """
+    Select and lock the battleplan for a matchup
+    Can only be done once after both players have submitted lists
+
+    Args:
+        matchup_id: The matchup ID
+        selected_by: Player name or IP who selected (default: "unknown")
+
+    Returns:
+        Updated matchup with selected battleplan
+    """
+    try:
+        matchup = select_battleplan(matchup_id, selected_by)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return _matchup_to_response(matchup)
+
+
 def _matchup_to_response(matchup) -> MatchupResponse:
     """Convert Matchup to API response"""
     is_complete = matchup.is_complete()
@@ -387,7 +411,7 @@ def _matchup_to_response(matchup) -> MatchupResponse:
             deployment_map_url=bp.deployment_map_url,
         )
 
-    # Helper to convert player
+    # Helper to convert player - show player info once they've submitted
     def player_to_response(player):
         if player is None:
             return None
@@ -401,11 +425,14 @@ def _matchup_to_response(matchup) -> MatchupResponse:
         matchup_id=matchup.matchup_id,
         game_system=matchup.game_system.value,
         created_at=matchup.created_at.isoformat(),
-        player1=player_to_response(matchup.player1) if is_complete else None,
-        player2=player_to_response(matchup.player2) if is_complete else None,
-        battle_plan=battle_plan_to_response(matchup.battle_plan) if is_complete else None,
+        player1=player_to_response(matchup.player1),
+        player2=player_to_response(matchup.player2),
+        battle_plan=battle_plan_to_response(matchup.battle_plan) if matchup.battleplan_locked else None,
         is_complete=is_complete,
         waiting_count=matchup.get_waiting_count(),
+        battleplan_locked=matchup.battleplan_locked,
+        battleplan_selected_at=matchup.battleplan_selected_at.isoformat() if matchup.battleplan_selected_at else None,
+        battleplan_selected_by=matchup.battleplan_selected_by,
     )
 
 

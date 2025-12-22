@@ -10,13 +10,10 @@ window.renderBattlePlanGallery = function() {
                 <!-- Header -->
                 <div class="text-center mb-8">
                     <h1 class="text-4xl font-montserrat font-bold text-primary mb-2">
-                        Age of Sigmar Battle Plans
+                        Age of Sigmar Missions
                     </h1>
                     <p class="text-text-secondary">
-                        General's Handbook 2025-2026 Deployment Maps
-                    </p>
-                    <p class="text-sm text-text-muted mt-2">
-                        Source: <a href="https://wahapedia.ru/aos4/the-rules/general-s-handbook-2025-26/" target="_blank" class="text-accent-light hover:text-accent-mid underline">Wahapedia</a>
+                        General's Handbook 2025-2026
                     </p>
                 </div>
 
@@ -43,23 +40,14 @@ window.renderBattlePlanGallery = function() {
                             class="bg-bg-darker border border-bg-dark rounded-lg overflow-hidden hover:border-primary transition-all cursor-pointer shadow-lg hover:shadow-primary/20"
                         >
                             <!-- Deployment Map Image -->
+                            <!-- Images temporarily removed - will be replaced with BSData-based diagrams -->
                             <div class="aspect-square bg-bg-dark flex items-center justify-center overflow-hidden">
-                                <template x-if="plan.deployment_map_url">
-                                    <img 
-                                        :src="plan.deployment_map_url" 
-                                        :alt="plan.name + ' deployment map'"
-                                        class="w-full h-full object-contain hover:scale-105 transition-transform"
-                                        loading="lazy"
-                                    />
-                                </template>
-                                <template x-if="!plan.deployment_map_url">
-                                    <div class="text-text-muted text-center p-4">
-                                        <svg class="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <p class="text-sm">No map available</p>
-                                    </div>
-                                </template>
+                                <div class="text-text-muted text-center p-4">
+                                    <svg class="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <p class="text-sm">Map coming soon</p>
+                                </div>
                             </div>
                             
                             <!-- Battle Plan Name -->
@@ -100,12 +88,12 @@ window.renderBattlePlanGallery = function() {
                                 <!-- Modal Content -->
                                 <div class="p-6">
                                     <!-- Deployment Map -->
-                                    <div class="mb-6 bg-bg-dark rounded-lg overflow-hidden">
-                                        <img 
-                                            :src="selectedPlan.deployment_map_url" 
-                                            :alt="selectedPlan.name + ' deployment map'"
-                                            class="w-full"
-                                        />
+                                    <!-- Images temporarily removed - will be replaced with BSData-based diagrams -->
+                                    <div class="mb-6 bg-bg-dark rounded-lg overflow-hidden p-8 text-center">
+                                        <svg class="w-24 h-24 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <p class="text-text-muted">Deployment map coming soon</p>
                                     </div>
 
                                     <!-- Battle Plan Details -->

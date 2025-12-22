@@ -27,10 +27,11 @@ function app() {
             // Match /squire/matchup/{id} or /matchup/{id}
             if (path.includes('/matchup/')) {
                 this.currentRoute = '/matchup';
-            } else if (path === '/battle-plans' || path === '/squire/battle-plans') {
-                this.currentRoute = '/battle-plans';
+            } else if (path === '/missions' || path === '/squire/missions' || path === '/battle-plans' || path === '/squire/battle-plans') {
+                // Support both old and new paths
+                this.currentRoute = '/missions';
             } else {
-                // Home page is also matchup
+                // Home page is matchup
                 this.currentRoute = '/';
             }
         },
@@ -50,7 +51,7 @@ function app() {
             const content = document.getElementById('app-content');
 
             // Route to appropriate interface
-            if (this.currentRoute === '/battle-plans') {
+            if (this.currentRoute === '/missions') {
                 content.innerHTML = window.renderBattlePlanGallery();
             } else {
                 // Single interface - matchup system with battle plan

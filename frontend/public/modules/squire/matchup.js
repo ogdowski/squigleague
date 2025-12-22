@@ -155,7 +155,7 @@ window.renderSquireMatchup = function() {
             </div>
 
             <!-- Matchup Summary (Both Lists + Battle Plan) -->
-            <div x-show="matchup?.is_complete" class="space-y-6">
+            <div x-show="matchup?.is_complete && matchup?.battle_plan" class="space-y-6">
                 <!-- Battle Plan -->
                 <div class="bg-bg-darker rounded-lg shadow-xl p-8 border border-primary/30">
                     <h2 class="text-2xl font-montserrat font-bold text-primary mb-6 text-center">
@@ -244,6 +244,7 @@ function matchupManager() {
         submitting: false,
         hasSubmitted: false,
         loadingMatchup: false,
+        selectingBattleplan: false,
         error: null,
         pollInterval: null,
 
@@ -361,7 +362,7 @@ function matchupManager() {
                 this.matchup = await response.json();
                 this.hasSubmitted = true;
                 
-                // Start polling if not complete
+                // Start polling if not complete (still waiting for opponent or battleplan)
                 if (!this.matchup.is_complete) {
                     this.startPolling();
                 }
@@ -456,6 +457,48 @@ function matchupManager() {
         hasOpponent() {
             // Has opponent if either player slot is filled
             return this.matchup && (this.matchup.player1 || this.matchup.player2);
+        },
+
+        async selectBattleplan() {
+            this.selectingBattleplan = true;
+            this.error = null;
+
+            try {
+                const response = await fetch(getApiUrl(`/api/squire/matchup/${this.matchupId}/select-battleplan?selected_by=${encodeURIComponent(this.playerName || 'unknown')}`), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    let errorMessage;
+                    
+                    if (Array.isArray(errorData.detail)) {
+                        errorMessage = errorData.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+                    } else if (typeof errorData.detail === 'string') {
+                        errorMessage = errorData.detail;
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    } else if (errorData.error) {
+                        errorMessage = errorData.error;
+                    } else {
+                        errorMessage = response.statusText;
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                this.matchup = await response.json();
+                this.stopPolling();
+                
+            } catch (err) {
+                this.error = err.message;
+                console.error('Error selecting battleplan:', err);
+            } finally {
+                this.selectingBattleplan = false;
+            }
         }
     };
 }
