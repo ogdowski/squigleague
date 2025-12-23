@@ -1,7 +1,7 @@
 // Herald respond page
-window.heraldRespondPage = function(exchangeId) {
+window.matchupRespondPage = function(exchangeId) {
     // Fetch exchange data
-    fetch(`/api/herald/exchange/${exchangeId}`)
+    fetch(`/api/matchup/exchange/${exchangeId}`)
         .then(res => res.json())
         .then(data => {
             const content = document.getElementById('app-content');
@@ -88,7 +88,7 @@ function respondPageLogic(exchangeId, opponentHash) {
             this.error = null;
 
             try {
-                const res = await fetch(`/api/herald/exchange/${exchangeId}/respond`, {
+                const res = await fetch(`/api/matchup/exchange/${exchangeId}/respond`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ list_content: this.listContent })

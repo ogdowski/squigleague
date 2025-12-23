@@ -1,7 +1,7 @@
 // Herald waiting page
-window.heraldWaitingPage = function(exchangeId) {
+window.matchupWaitingPage = function(exchangeId) {
     // Fetch exchange data
-    fetch(`/api/herald/exchange/${exchangeId}`)
+    fetch(`/api/matchup/exchange/${exchangeId}`)
         .then(res => res.json())
         .then(data => {
             const content = document.getElementById('app-content');
@@ -104,7 +104,7 @@ function waitingPageLogic(exchangeId, hash) {
 
         init() {
             setInterval(async () => {
-                const res = await fetch(`/api/herald/exchange/${exchangeId}/status`);
+                const res = await fetch(`/api/matchup/exchange/${exchangeId}/status`);
                 const data = await res.json();
                 if (data.ready) window.location.reload();
             }, 5000);

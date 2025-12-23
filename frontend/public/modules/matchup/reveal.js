@@ -1,7 +1,7 @@
 // Herald reveal page
-window.heraldRevealPage = function(exchangeId) {
+window.matchupRevealPage = function(exchangeId) {
     // Fetch exchange data
-    fetch(`/api/herald/exchange/${exchangeId}`)
+    fetch(`/api/matchup/exchange/${exchangeId}`)
         .then(res => res.json())
         .then(data => {
             const content = document.getElementById('app-content');

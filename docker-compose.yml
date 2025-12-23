@@ -30,24 +30,26 @@ services:
           memory: 128M
 
   # ═══════════════════════════════════════════════
-  # Squig League Application (Herald + Future Modules)
+  # Squig League API (Unified Backend)
   # ═══════════════════════════════════════════════
-  squig:
-    build: ./herald
-    container_name: squig
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: squig-api
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://squig:${DB_PASSWORD}@postgres:5432/squigleague
-      - ADMIN_KEY=${HERALD_ADMIN_KEY}
-      - MODULE_NAME=herald
-      - SQUIG_VERSION=${SQUIG_VERSION:-0.1.0}
+      - SQUIG_VERSION=${SQUIG_VERSION:-0.2.0}
+    ports:
+      - "8000:8000"
     networks:
       - squig-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/herald/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -79,15 +81,19 @@ services:
     image: nginx:alpine
     container_name: squig-nginx
     restart: unless-stopped
+    environment:
+      - ADMIN_IP=${ADMIN_IP}
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf.dev.template:/etc/nginx/nginx.conf.template:ro
+      - ./nginx/docker-entrypoint.sh:/docker-entrypoint.sh:ro
       - certbot-webroot:/var/www/certbot:ro
       - certbot-certs:/etc/letsencrypt:ro
+    entrypoint: ["/docker-entrypoint.sh"]
     depends_on:
-      - squig
+      - api
       - frontend
     networks:
       - squig-network

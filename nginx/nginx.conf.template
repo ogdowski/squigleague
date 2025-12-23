@@ -1,7 +1,7 @@
 events { worker_connections 1024; }
 
 http {
-    upstream squig_api { server squig:8000; }
+    upstream squig_api { server api:8000; }
     upstream frontend { server frontend:80; }
 
     # HTTP: squigleague.com redirect to herald
@@ -50,7 +50,7 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-just        # Admin routes go to backend (IP restricted)
+        # Admin routes go to backend (IP restricted)
         location /admin/ {
             allow ${ADMIN_IP};
             deny all;

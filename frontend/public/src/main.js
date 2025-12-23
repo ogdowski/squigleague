@@ -49,11 +49,11 @@ function app() {
             const content = document.getElementById('app-content');
 
             if (this.currentRoute === '/') {
-                content.innerHTML = window.heraldHomePage();
+                content.innerHTML = window.matchupHomePage();
             } else if (this.currentRoute === '/exchange') {
                 // Fetch exchange status to determine which page to show
                 try {
-                    const response = await fetch(`/api/herald/exchange/${this.exchangeId}`);
+                    const response = await fetch(`/api/matchup/exchange/${this.exchangeId}`);
 
                     if (!response.ok) {
                         content.innerHTML = this.errorPage('Exchange not found');
@@ -63,11 +63,11 @@ function app() {
                     const data = await response.json();
 
                     if (data.status === 'complete') {
-                        content.innerHTML = window.heraldRevealPage(this.exchangeId);
+                        content.innerHTML = window.matchupRevealPage(this.exchangeId);
                     } else if (this.isCreator) {
-                        content.innerHTML = window.heraldWaitingPage(this.exchangeId);
+                        content.innerHTML = window.matchupWaitingPage(this.exchangeId);
                     } else {
-                        content.innerHTML = window.heraldRespondPage(this.exchangeId);
+                        content.innerHTML = window.matchupRespondPage(this.exchangeId);
                     }
                 } catch (err) {
                     console.error('Error loading exchange:', err);
@@ -102,7 +102,7 @@ function footerStats() {
 
         async loadStats() {
             try {
-                const res = await fetch('/api/herald/stats');
+                const res = await fetch('/api/matchup/stats');
                 if (res.ok) {
                     const data = await res.json();
                     this.completedExchanges = data.completed_exchanges || 0;

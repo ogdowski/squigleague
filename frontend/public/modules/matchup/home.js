@@ -1,5 +1,5 @@
 // Herald home page
-window.heraldHomePage = function() {
+window.matchupHomePage = function() {
     return `
 <div class="max-w-4xl mx-auto mt-6 sm:mt-10 px-4 sm:px-6 pb-8" x-data="createExchange()">
 
@@ -167,7 +167,7 @@ function createExchange() {
             this.loading = true;
 
             try {
-                const response = await fetch('/api/herald/exchange/create', {
+                const response = await fetch('/api/matchup/exchange/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ list_content: this.listContent })
