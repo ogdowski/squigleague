@@ -39,6 +39,12 @@ def init_db() -> None:
     # Import all models here to ensure they're registered
     from app.users.models import User, OAuthAccount  # noqa: F401
     from app.matchup.models import Matchup  # noqa: F401
+    from app.elo.models import ELOConfig, ELORating, ELOHistory  # noqa: F401
     # Import other models as they're created
     
     SQLModel.metadata.create_all(engine)
+    
+    # Seed ELO configs if needed
+    from app.elo.service import seed_default_configs
+    with Session(engine) as session:
+        seed_default_configs(session)
