@@ -14,7 +14,9 @@ This document outlines the systematic migration from the current SquigLeague str
 - ✅ Phase 1: Backend Foundation (Complete)
 - ✅ Phase 2: Users Module with OAuth (Complete)
 - ✅ Phase 3: Matchup Module (Complete)
-- 🔄 Phase 4: ELO Module (Next)
+- ✅ Phase 4: ELO Module (Complete)
+- ✅ Phase 5: Leagues Module (Complete)
+- 🔄 Phase 6: Frontend Vue 3 Rewrite (Next)
 
 ---
 

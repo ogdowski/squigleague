@@ -40,7 +40,7 @@ def init_db() -> None:
     from app.users.models import User, OAuthAccount  # noqa: F401
     from app.matchup.models import Matchup  # noqa: F401
     from app.elo.models import ELOConfig, ELORating, ELOHistory  # noqa: F401
-    # Import other models as they're created
+    from app.leagues.models import League, LeagueParticipant, LeagueMatch, LeagueStandings  # noqa: F401
     
     SQLModel.metadata.create_all(engine)
     

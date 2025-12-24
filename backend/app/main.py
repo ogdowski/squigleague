@@ -84,14 +84,12 @@ async def root():
 from app.users.routes import router as users_router
 from app.matchup.routes import router as matchup_router
 from app.elo.routes import router as elo_router
+from app.leagues.routes import router as leagues_router
 
 app.include_router(users_router)
 app.include_router(matchup_router)
 app.include_router(elo_router)
-
-# Additional routers will be added as modules are implemented:
-# from app.leagues.routes import router as leagues_router
-# app.include_router(leagues_router)
+app.include_router(leagues_router)
 
 
 if __name__ == "__main__":
