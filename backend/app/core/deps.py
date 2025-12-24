@@ -4,8 +4,8 @@ Dependency Injection Functions
 Common dependencies for FastAPI routes.
 """
 
-from typing import Generator, Optional
-from fastapi import Depends, HTTPException, status
+from typing import Generator
+from fastapi import Depends
 from sqlmodel import Session
 from app.db import get_session
 
@@ -16,32 +16,21 @@ def get_db() -> Generator[Session, None, None]:
     return get_session()
 
 
-# User authentication dependencies will be added when FastAPI Users is integrated
-# For now, placeholder functions:
-
-async def get_current_user(session: Session = Depends(get_db)):
+# User authentication dependencies - imported from users.auth
+# These will be properly set up when users module is imported
+def get_current_user():
     """
     Get current authenticated user.
-    
-    TODO: Implement with FastAPI Users
+    Import from app.users.auth for actual implementation.
     """
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Authentication not yet implemented"
-    )
+    from app.users.auth import current_active_user
+    return current_active_user
 
 
-async def get_current_active_user(
-    current_user = Depends(get_current_user)
-):
+def get_current_active_user():
     """
     Get current active user.
-    
-    TODO: Implement with FastAPI Users
+    Import from app.users.auth for actual implementation.
     """
-    if not current_user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
-        )
-    return current_user
+    from app.users.auth import current_active_user
+    return current_active_user

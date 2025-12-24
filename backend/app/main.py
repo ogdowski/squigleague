@@ -39,7 +39,7 @@ async def startup_event():
     print(f"📝 Environment: {settings.ENVIRONMENT}")
     
     # Initialize database
-    # init_db()  # Commented out until models are ready
+    init_db()
     print("✅ Database initialized")
 
 
@@ -80,13 +80,15 @@ async def root():
 # ROUTERS
 # ═══════════════════════════════════════════════
 
-# Routers will be added as modules are implemented:
-# from app.users.routes import router as users_router
+# Import and include routers
+from app.users.routes import router as users_router
+
+app.include_router(users_router)
+
+# Additional routers will be added as modules are implemented:
 # from app.matchup.routes import router as matchup_router
 # from app.elo.routes import router as elo_router
 # from app.leagues.routes import router as leagues_router
-
-# app.include_router(users_router)
 # app.include_router(matchup_router)
 # app.include_router(elo_router)
 # app.include_router(leagues_router)

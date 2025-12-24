@@ -37,7 +37,7 @@ def init_db() -> None:
     from sqlmodel import SQLModel
     
     # Import all models here to ensure they're registered
-    from app.users.models import User  # noqa: F401
+    from app.users.models import User, OAuthAccount  # noqa: F401
     # Import other models as they're created
     
     SQLModel.metadata.create_all(engine)

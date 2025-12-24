@@ -6,7 +6,12 @@ Role-based access control for routes.
 
 from typing import List
 from fastapi import Depends, HTTPException, status
-from app.core.deps import get_current_active_user
+
+
+def get_current_active_user_dep():
+    """Get current active user dependency"""
+    from app.users.auth import current_active_user
+    return current_active_user
 
 
 def require_role(*allowed_roles: str):
@@ -28,7 +33,7 @@ def require_role(*allowed_roles: str):
     Returns:
         Dependency function that checks user role
     """
-    async def role_checker(current_user = Depends(get_current_active_user)):
+    async def role_checker(current_user = Depends(get_current_active_user_dep)):
         # Admin always has access
         if hasattr(current_user, 'role') and current_user.role == "admin":
             return current_user
