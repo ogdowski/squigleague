@@ -134,10 +134,10 @@ def test_full_exchange_workflow(test_client, test_db):
 
 **Purpose**: Test complete user journeys through UI
 
-**Scope**: Browser automation (Playwright/Selenium)  
+**Scope**: Browser automation (Selenium only, per Commandment 26)  
 **Dependencies**: Full application stack  
 **Speed**: Slow (5-30s per test)  
-**Location**: `tests/e2e/{feature}/test_{flow}.py`
+**Location**: `tests/e2e/selenium/test_{flow}.py`
 
 **When to implement**: After frontend becomes complex (Phase 3+)
 

@@ -246,17 +246,17 @@ if (!$SkipDocker) {
 # PHASE 5: E2E Smoke Tests (Optional)
 # ============================================================================
 if (!$SkipE2E) {
-    Write-Section "PHASE 5: E2E Smoke Tests (Playwright)"
+    Write-Section "PHASE 5: E2E Smoke Tests (Selenium)"
     
-    $e2eDir = "squigleague\e2e"
-    if (Test-Path "$e2eDir\package.json") {
-        Write-Host "E2E tests found. These require services to be running." -ForegroundColor Yellow
-        Write-Host "To run manually:" -ForegroundColor Yellow
-        Write-Host "  cd $e2eDir" -ForegroundColor Cyan
-        Write-Host "  npm test" -ForegroundColor Cyan
-        Write-Result "E2E Tests Available" $true "Playwright configured"
+    $seleniumDir = "squigleague\tests\e2e\selenium"
+    if (Test-Path $seleniumDir) {
+        Write-Host "Selenium E2E tests detected (pytest). Services must be running." -ForegroundColor Yellow
+        Write-Host "To run manually (requires Chrome):" -ForegroundColor Yellow
+        Write-Host "  cd squigleague" -ForegroundColor Cyan
+        Write-Host "  $env:TEST_BASE_URL=\"http://localhost:8000\"; pytest tests/e2e/selenium --run-e2e --headed" -ForegroundColor Cyan
+        Write-Result "E2E Tests Available" $true "Selenium configured"
     } else {
-        Write-Result "E2E Tests" $true "No E2E tests configured (optional)"
+        Write-Result "E2E Tests" $false "Selenium suite missing"
     }
 }
 

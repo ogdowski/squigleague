@@ -1,71 +1,33 @@
-# E2E Testing Suite Setup for SquigLeague
-# Uses Playwright for browser automation testing
+# E2E Testing Setup (Selenium)
+# Purpose: Ensure dependencies are installed and point to the pytest-based Selenium suite.
 
-Write-Host "=== Setting up E2E Testing Suite ===" -ForegroundColor Cyan
+Write-Host "=== Selenium E2E Setup ===" -ForegroundColor Cyan
 
-# Check if Node.js is installed
-Write-Host "`n[1/5] Checking Node.js installation..." -ForegroundColor Yellow
-try {
-    $nodeVersion = node --version
-    Write-Host "  ✓ Node.js found: $nodeVersion" -ForegroundColor Green
-} catch {
-    Write-Host "  ✗ Node.js not found. Please install Node.js first." -ForegroundColor Red
+# Verify Python venv activation
+if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+    Write-Host "Python not detected in PATH. Activate your venv first: .\.venv\Scripts\Activate.ps1" -ForegroundColor Red
     exit 1
 }
 
-# Check if npm is installed
-Write-Host "`n[2/5] Checking npm installation..." -ForegroundColor Yellow
+Write-Host "`n[1/3] Installing test dependencies (includes selenium, webdriver-manager)..." -ForegroundColor Yellow
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
+
+Write-Host "`n[2/3] Verifying selenium import..." -ForegroundColor Yellow
 try {
-    $npmVersion = npm --version
-    Write-Host "  ✓ npm found: $npmVersion" -ForegroundColor Green
+    python - <<'PY'
+import selenium  # noqa: F401
+import webdriver_manager  # noqa: F401
+print("selenium + webdriver-manager available")
+PY
 } catch {
-    Write-Host "  ✗ npm not found." -ForegroundColor Red
+    Write-Host "Selenium not available. See errors above." -ForegroundColor Red
     exit 1
 }
 
-# Create e2e directory if it doesn't exist
-Write-Host "`n[3/5] Creating E2E test directory..." -ForegroundColor Yellow
-$e2eDir = "c:\repos\SquigLeague\squigleague\e2e"
-if (!(Test-Path $e2eDir)) {
-    New-Item -ItemType Directory -Path $e2eDir | Out-Null
-    Write-Host "  ✓ Created $e2eDir" -ForegroundColor Green
-} else {
-    Write-Host "  ✓ Directory already exists" -ForegroundColor Green
-}
+Write-Host "`n[3/3] How to run E2E:" -ForegroundColor Yellow
+Write-Host "  1) Start backend + frontend (just dev or docker-compose)" -ForegroundColor White
+Write-Host "  2) Set TEST_BASE_URL (e.g., http://localhost:8000)" -ForegroundColor White
+Write-Host "  3) Run: pytest tests/e2e/selenium --run-e2e --headed" -ForegroundColor White
 
-# Initialize package.json if it doesn't exist
-Write-Host "`n[4/5] Initializing package.json..." -ForegroundColor Yellow
-Set-Location $e2eDir
-if (!(Test-Path "package.json")) {
-    $packageJson = @{
-        name = "squigleague-e2e-tests"
-        version = "1.0.0"
-        description = "End-to-end browser tests for SquigLeague"
-        scripts = @{
-            test = "playwright test"
-            "test:headed" = "playwright test --headed"
-            "test:ui" = "playwright test --ui"
-            "test:debug" = "playwright test --debug"
-        }
-        devDependencies = @{}
-    } | ConvertTo-Json -Depth 10
-    
-    $packageJson | Out-File -FilePath "package.json" -Encoding utf8
-    Write-Host "  ✓ Created package.json" -ForegroundColor Green
-} else {
-    Write-Host "  ✓ package.json already exists" -ForegroundColor Green
-}
-
-# Install Playwright
-Write-Host "`n[5/5] Installing Playwright..." -ForegroundColor Yellow
-Write-Host "  This may take a few minutes..." -ForegroundColor Cyan
-npm install -D @playwright/test
-npx playwright install
-
-Write-Host "`n=== Setup Complete! ===" -ForegroundColor Green
-Write-Host "`nNext steps:" -ForegroundColor Cyan
-Write-Host "1. cd e2e" -ForegroundColor White
-Write-Host "2. npx playwright test              # Run all tests headless" -ForegroundColor White
-Write-Host "3. npx playwright test --headed     # Run with browser visible" -ForegroundColor White
-Write-Host "4. npx playwright test --ui         # Run with interactive UI" -ForegroundColor White
-Write-Host "5. npx playwright test --debug      # Run in debug mode" -ForegroundColor White
+Write-Host "`n=== Selenium setup complete ===" -ForegroundColor Green

@@ -33,10 +33,9 @@ integration/
 - Template created in `backend/leagues/test_leagues_integration.py`
 - Requires service orchestration setup
 - Run with: `pwsh scripts/integration-test-runner.ps1`
-**E2E Tests: ⚠️ NON-COMPLIANT**
-- Playwright currently configured (violates Commandment 26)
-- MUST migrate to Selenium WebDriver
-- See `PLAYWRIGHT_TECHNICAL_DEBT.md` for details
+**E2E Tests: ✅ COMPLIANT (Selenium)**
+- Selenium pytest suite lives in `tests/e2e/selenium`
+- Requires frontend + backend running and Chrome available
 ## Running Integration Tests
 
 ### Prerequisites

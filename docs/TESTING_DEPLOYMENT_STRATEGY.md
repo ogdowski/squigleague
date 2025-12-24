@@ -13,7 +13,7 @@ The **Leagues Module** has achieved **100% test coverage** with comprehensive un
 ### Quick Stats
 - **Unit Tests:** 89 tests, 100% coverage (304 statements, 50 branches)
 - **Integration Tests:** Template created, awaiting service orchestration
-- **E2E Tests:** Playwright configured in `e2e/` directory
+- **E2E Tests:** Selenium (pytest) in `tests/e2e/selenium`
 - **Docker Builds:** Validated for backend, herald, frontend
 - **UAT Scripts:** Ready for user acceptance testing
 
@@ -23,7 +23,7 @@ The **Leagues Module** has achieved **100% test coverage** with comprehensive un
 
 ```
         /\
-       /E2\      E2E Tests (Playwright)
+      /E2\      E2E Tests (Selenium)
       /____\     - User flows, browser testing
      /      \    
     / INTEG  \   Integration Tests (Planned)
@@ -89,21 +89,18 @@ pwsh scripts/integration-test-runner.ps1 -KeepRunning
 
 **Test Template Created:** [test_leagues_integration.py](tests/integration/backend/leagues/test_leagues_integration.py)
 
-### Layer 3: E2E Tests ⚠️ **NON-COMPLIANT**
+### Layer 3: E2E Tests ✅ **COMPLIANT**
 
-**Required Framework:** Selenium WebDriver (per Commandment 26)  
-**Current Framework:** Playwright (VIOLATION - see PLAYWRIGHT_TECHNICAL_DEBT.md)  
-**Location:** `e2e/tests/`
+**Framework:** Selenium WebDriver (per Commandment 26)  
+**Location:** `tests/e2e/selenium/`
 
 **Status:**
-- Playwright tests exist but violate Commandment 26
-- Migration to Selenium WebDriver required
-- See `PLAYWRIGHT_TECHNICAL_DEBT.md` for remediation plan
+- Selenium pytest suite available (login + navigation flows)
+- Requires running frontend + backend and Chrome availability
 
-**Temporary Run Command (non-compliant):**
+**Run Command:**
 ```bash
-cd e2e
-npm test  # Uses Playwright - pending migration to Selenium
+TEST_BASE_URL="http://localhost:8000" pytest tests/e2e/selenium --run-e2e --headed
 ```
 
 ---

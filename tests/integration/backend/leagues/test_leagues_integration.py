@@ -130,9 +130,9 @@ def test_integration_coverage_note():
     Current test coverage:
     - Unit tests: 100% (89 tests, all modules)
     - Integration tests: Planned (requires service orchestration)
-    - E2E tests: Playwright present (VIOLATION - must use Selenium per Commandment 26)
+    - E2E tests: Selenium suite available at tests/e2e/selenium
     
-    See PLAYWRIGHT_TECHNICAL_DEBT.md for E2E migration plan.
+    See docs/TESTING_DEPLOYMENT_STRATEGY.md for details.
     
     To run when ready:
         pytest tests/integration/backend/leagues -v

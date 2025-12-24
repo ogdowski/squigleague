@@ -80,6 +80,18 @@ pytest -m unit
 pytest -m integration
 ```
 
+### End-to-End Tests (Selenium) (`tests/e2e/selenium/`)
+
+**Browser flows powered by Selenium (Playwright removed per Commandment 26).**
+
+- **Run:**
+    - Windows: `$env:TEST_BASE_URL="http://localhost:8000"; pytest tests/e2e/selenium --run-e2e`
+    - Unix: `TEST_BASE_URL="http://localhost:8000" pytest tests/e2e/selenium --run-e2e`
+- **Defaults:** Chrome in headless mode, base URL `http://localhost:8000`.
+- **Options:** `--headed` to watch the run, `--base-url` to point at another host, `--browser` (chrome only).
+- **Prereqs:** Frontend + backend running and seeded with `alakkhaine` / `FinFan11` test user.
+- **Notes:** E2E tests are skipped unless `--run-e2e` is provided; coverage is disabled automatically for this suite.
+
 ---
 
 ## Current Status

@@ -23,6 +23,10 @@ pytest-xdist==3.5.0  # Parallel test execution
 pytest-timeout==2.2.0  # Test timeout enforcement
 pytest-watch==4.2.0  # Watch mode for continuous testing
 
+# End-to-end browser testing
+selenium==4.27.1
+webdriver-manager==4.0.2
+
 # Database testing
 sqlalchemy==2.0.25
 psycopg2-binary==2.9.9

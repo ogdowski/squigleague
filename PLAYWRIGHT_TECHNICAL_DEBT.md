@@ -1,139 +1,50 @@
-# Playwright Technical Debt - Commandment 26 Violation
+# Playwright Technical Debt - Resolved
 
-**Status:** VIOLATION - Requires Remediation  
+**Status:** RESOLVED - Playwright removed, Selenium in place  
 **Commandment:** 26 (Sacred Testing Tools)  
-**Severity:** HIGH  
-**Created:** December 24, 2025
+**Severity:** Cleared  
+**Updated:** December 24, 2025
 
 ---
 
-## Violation Summary
+## Summary
 
-The workspace contains **Playwright** E2E testing framework, which violates **Commandment 26**:
-
-> "Backend testing MUST use pytest exclusively. Frontend/E2E testing MUST use Selenium WebDriver exclusively. Jest, Vite testing, Playwright, Cypress, Puppeteer are STRICTLY FORBIDDEN."
+Playwright artifacts have been removed. Selenium pytest suite now owns E2E coverage in `tests/e2e/selenium` (Commandment 26 compliant).
 
 ## Current State
 
-**Playwright Files Detected:**
-- `e2e/playwright.config.js` - Playwright configuration
-- `e2e/package.json` - Contains Playwright dependencies
-- `e2e/tests/*.spec.js` - Playwright test files
+- Playwright config/manifests/tests: **removed**
+- Artifacts (`playwright-report`, `test-results`, `node_modules`): **removed**
+- Docs/scripts updated to point to Selenium suite
 
-**Documentation References:**
-- `docs/TESTING_DEPLOYMENT_STRATEGY.md` - References Playwright
-- `scripts/pre-deployment-check.ps1` - Checks for Playwright tests
-- `tests/integration/backend/README.md` - Mentions Playwright
+## Remediation Log
 
-## Required Remediation
-
-### Phase 1: Immediate (Pre-Deployment)
-- [x] Document violation in this file
-- [x] Update `.github/copilot-instructions.md` with strengthened Selenium requirement
-- [ ] Add note to deployment checklist about E2E non-compliance
-- [ ] Freeze new Playwright test development
-
-### Phase 2: Migration (2 Weeks)
-- [ ] Install Selenium WebDriver: `pip install selenium`
-- [ ] Create Python-based E2E test structure
-- [ ] Rewrite `login-flow.spec.js` → `test_login_flow.py` (Selenium)
-- [ ] Rewrite `user-profile.spec.js` → `test_user_profile.py` (Selenium)
-- [ ] Configure WebDriver (ChromeDriver, geckodriver)
-- [ ] Update CI/CD to run Selenium tests
-
-### Phase 3: Cleanup (After Migration)
-- [ ] Remove `e2e/playwright.config.js`
-- [ ] Remove Playwright from `e2e/package.json`
-- [ ] Remove all `.spec.js` test files
-- [ ] Update all documentation references
-- [ ] Add Selenium validation to `pre-deployment-check.ps1`
-
-## Proposed Selenium Structure
-
-```
-e2e/
-├── requirements.txt          # selenium, pytest-selenium
-├── conftest.py              # Selenium fixtures
-├── tests/
-│   ├── test_login_flow.py   # Replaces login-flow.spec.js
-│   └── test_user_profile.py # Replaces user-profile.spec.js
-└── pages/                   # Page Object Models
-    ├── login_page.py
-    └── profile_page.py
-```
-
-## Example Selenium Test
-
-```python
-# e2e/tests/test_login_flow.py
-import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-def test_user_can_login(driver, base_url):
-    """Test successful user login flow."""
-    driver.get(f"{base_url}/login")
-    
-    # Enter credentials
-    username_input = driver.find_element(By.NAME, "username")
-    password_input = driver.find_element(By.NAME, "password")
-    
-    username_input.send_keys("test_user")
-    password_input.send_keys("test_password")
-    
-    # Submit form
-    login_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-    login_button.click()
-    
-    # Verify redirect to dashboard
-    WebDriverWait(driver, 10).until(
-        EC.url_contains("/matchup")
-    )
-    
-    assert "/matchup" in driver.current_url
-```
-
-## Migration Timeline
-
-| Week | Tasks | Deliverable |
-|------|-------|-------------|
-| 1 | Install Selenium, create structure, rewrite login test | `test_login_flow.py` passing |
-| 2 | Rewrite profile test, update CI/CD, remove Playwright | Selenium fully integrated |
-
-## Deployment Decision
-
-**Option 1: Deploy with Exception**
-- Document this violation as known technical debt
-- Deploy with unit tests (100% coverage)
-- Complete Selenium migration post-deployment
-
-**Option 2: Hold Deployment**
-- Block deployment until Selenium migration complete
-- Requires 2-week timeline
-- Risk: Delays features and fixes
-
-**Recommended:** Option 1 with 2-week migration commitment
+- [x] Document violation and enforcement
+- [x] Strengthen `.github/copilot-instructions.md` (Selenium only)
+- [x] Install Selenium + webdriver-manager (requirements-dev)
+- [x] Add Selenium pytest suite (`tests/e2e/selenium`)
+- [x] Rewrite login/profile flows to Selenium
+- [x] Remove Playwright configs, packages, reports, and specs
+- [x] Update docs (`docs/TESTING_DEPLOYMENT_STRATEGY.md`, `tests/integration/backend/README.md`)
+- [x] Update scripts (`pre-deployment-check.ps1`, `setup-e2e-tests.ps1`) to Selenium
 
 ## Compliance Checklist
 
 - [x] Violation documented
 - [x] Copilot instructions updated
-- [ ] Migration plan approved
-- [ ] Selenium installation complete
-- [ ] All tests migrated
-- [ ] Playwright removed
-- [ ] Documentation updated
-- [ ] CI/CD updated
-- [ ] Compliance verified
+- [x] Selenium installation complete
+- [x] All tests migrated
+- [x] Playwright removed
+- [x] Documentation updated
+- [x] CI/CD/scripts updated
+- [x] Compliance verified
 
 ## Notes
 
 - **Backend testing:** ✅ COMPLIANT (pytest exclusive)
-- **Frontend E2E testing:** ❌ NON-COMPLIANT (Playwright instead of Selenium)
-- **Impact:** E2E tests are optional; unit tests provide production readiness
-- **Urgency:** HIGH (governance violation) but not blocking (tests optional)
+- **Frontend E2E testing:** ✅ COMPLIANT (Selenium pytest suite)
+- **Impact:** E2E optional but now governance-compliant
 
 ---
 
-**Next Action:** Approve migration plan or request deployment exception.
+**Current Action:** Maintain Selenium-only policy and keep Playwright out of the workspace.
