@@ -21,14 +21,17 @@ Write-Host "Found staged changes:"
 $stagedChanges | ForEach-Object { Write-Host "  - $_" }
 Write-Host ""
 
-# Read commit message from file
+# Read commit message from file or generate one
 $commitMessageFile = Join-Path $PSScriptRoot "commit-message.txt"
-if (-not (Test-Path $commitMessageFile)) {
-    Write-Host "ERROR: Commit message file not found: $commitMessageFile"
-    exit 1
+if (Test-Path $commitMessageFile) {
+    $commitMessage = Get-Content $commitMessageFile -Raw
+    Write-Host "Using commit message from file"
+} else {
+    # Generate commit message from staged files
+    $commitMessage = "chore: Update $(($stagedChanges | Measure-Object).Count) files`n`nStaged changes:`n"
+    $stagedChanges | ForEach-Object { $commitMessage += "- $_`n" }
+    Write-Host "Generated commit message (no commit-message.txt found)"
 }
-
-$commitMessage = Get-Content $commitMessageFile -Raw
 
 Write-Host "Commit message:"
 Write-Host "---"
