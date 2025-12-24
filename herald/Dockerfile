@@ -25,6 +25,10 @@ COPY herald/ .
 # Copy Squire module
 COPY squire/ ./squire/
 
+# Copy Alembic configuration and migrations
+COPY alembic.ini .
+COPY alembic/ ./alembic/
+
 EXPOSE 8000
 
 # Health check

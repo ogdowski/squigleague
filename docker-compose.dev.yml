@@ -4,6 +4,10 @@ services:
   squig:
     ports:
       - "8000:8000"
+    volumes:
+      - ./herald:/app/herald:ro
+      - ./squire:/app/squire:ro
+      - ./tests:/app/tests:ro
 
   # Use development nginx config without SSL
   nginx:

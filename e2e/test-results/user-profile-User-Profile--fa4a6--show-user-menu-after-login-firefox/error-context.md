@@ -1,0 +1,54 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Squig League Logo SQUIG LEAGUE" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Squig League Logo" [ref=e7]
+        - generic [ref=e8]: SQUIG LEAGUE
+      - navigation [ref=e9]:
+        - link "Herald" [ref=e10] [cursor=pointer]:
+          - /url: /
+        - link "Battle Plans" [ref=e11] [cursor=pointer]:
+          - /url: /squire/battle-plan
+        - link "Reference" [ref=e12] [cursor=pointer]:
+          - /url: /squire/battle-plan-reference
+        - link "Matchup" [ref=e13] [cursor=pointer]:
+          - /url: /squire/matchup
+        - generic [ref=e14]:
+          - link "Login" [ref=e15] [cursor=pointer]:
+            - /url: /squire/login
+          - link "Register" [ref=e16] [cursor=pointer]:
+            - /url: /squire/register
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - heading "Login" [level=1] [ref=e20]
+        - paragraph [ref=e21]: Welcome back to SquigLeague
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]: Username or Email
+            - textbox "Enter your username or email" [ref=e26]
+          - generic [ref=e27]:
+            - generic [ref=e28]: Password
+            - textbox "Enter your password" [ref=e29]
+          - button "Login" [disabled] [ref=e30]
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - text: Don't have an account?
+            - link "Register here" [ref=e33] [cursor=pointer]:
+              - /url: /squire/register
+          - link "Resend verification email" [ref=e35] [cursor=pointer]:
+            - /url: /squire/resend-verification
+  - contentinfo [ref=e36]:
+    - generic [ref=e37]:
+      - paragraph [ref=e38]: © 2025 Ariel Ogdowski. All Rights Reserved.
+      - paragraph [ref=e39]:
+        - text: Part of
+        - link "SquigLeague.com" [ref=e40] [cursor=pointer]:
+          - /url: "#"
+        - text: • v0.2.1 • 2 exchanges completed
+```

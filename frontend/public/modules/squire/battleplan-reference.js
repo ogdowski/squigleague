@@ -215,33 +215,15 @@ function battlePlanReference() {
             this.error = null;
 
             try {
-                // Load all battle plans by making multiple requests
-                // Since we don't have a "list all" endpoint, we'll generate them
-                const plans = [];
-                const maxAttempts = 50; // Try to get up to 50 unique plans
-                const seenPlans = new Set();
-
-                for (let i = 0; i < maxAttempts; i++) {
-                    const response = await fetch(`/api/squire/battle-plan/random?system=${this.selectedSystem}`);
-                    
-                    if (!response.ok) {
-                        throw new Error(`Failed to load battle plans: ${response.statusText}`);
-                    }
-
-                    const plan = await response.json();
-                    const planKey = plan.name;
-                    
-                    if (!seenPlans.has(planKey)) {
-                        seenPlans.add(planKey);
-                        plans.push(plan);
-                    }
-
-                    // If we've seen the same plan 10 times in a row, we probably have them all
-                    if (i > 10 && seenPlans.size < i / 2) {
-                        break;
-                    }
+                // Use dedicated list endpoint to get all battle plans
+                const response = await fetch(`/api/squire/battle-plan/list?game_system=${this.selectedSystem}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load battle plans: ${response.statusText}`);
                 }
 
+                const plans = await response.json();
+                
                 // Sort by name
                 this.battlePlans = plans.sort((a, b) => a.name.localeCompare(b.name));
                 

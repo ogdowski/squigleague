@@ -405,6 +405,17 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Custom HTTP exception handler to ensure detail is always returned"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail if exc.detail else "An error occurred",
+        },
+    )
+
+
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
     """Custom 404 handler"""

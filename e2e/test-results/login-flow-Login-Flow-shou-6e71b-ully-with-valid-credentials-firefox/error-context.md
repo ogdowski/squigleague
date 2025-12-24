@@ -1,0 +1,71 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Squig League Logo SQUIG LEAGUE" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Squig League Logo" [ref=e7]
+        - generic [ref=e8]: SQUIG LEAGUE
+      - navigation [ref=e9]:
+        - link "Herald" [ref=e10] [cursor=pointer]:
+          - /url: /
+        - link "Battle Plans" [ref=e11] [cursor=pointer]:
+          - /url: /squire/battle-plan
+        - link "Reference" [ref=e12] [cursor=pointer]:
+          - /url: /squire/battle-plan-reference
+        - link "Matchup" [ref=e13] [cursor=pointer]:
+          - /url: /squire/matchup
+        - generic [ref=e14]:
+          - link "Login" [ref=e15] [cursor=pointer]:
+            - /url: /squire/login
+          - link "Register" [ref=e16] [cursor=pointer]:
+            - /url: /squire/register
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - heading "Herald" [level=1] [ref=e20]
+        - paragraph [ref=e21]: Fair and Secure Army List Exchange
+      - generic [ref=e22]:
+        - heading "Why Herald?" [level=2] [ref=e23]
+        - generic [ref=e24]:
+          - paragraph [ref=e25]:
+            - strong [ref=e26]: "The Problem:"
+            - text: In competitive Warhammer games, if one player sees their opponent's army list first, they can tailor their strategy and unit composition accordingly.
+          - paragraph [ref=e27]:
+            - strong [ref=e28]: "The Solution:"
+            - text: Herald ensures both players commit simultaneously using cryptographic hashes. Neither can see the other's list until both are locked in, removing suspicion and proving fair play.
+      - generic [ref=e29]:
+        - heading "How It Works" [level=2] [ref=e30]
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - generic [ref=e34]: "1"
+            - heading "Create Exchange" [level=3] [ref=e35]
+            - paragraph [ref=e36]: Paste your army list and get a unique link. Your list is locked with a cryptographic hash.
+          - generic [ref=e37]:
+            - generic [ref=e39]: "2"
+            - heading "Opponent Responds" [level=3] [ref=e40]
+            - paragraph [ref=e41]: Your opponent opens the link, sees proof your list exists (the hash), and submits theirs.
+          - generic [ref=e42]:
+            - generic [ref=e44]: "3"
+            - heading "Lists Revealed" [level=3] [ref=e45]
+            - paragraph [ref=e46]: Both lists appear instantly. Hash verification proves neither was changed.
+      - generic [ref=e47]:
+        - heading "Create an Exchange" [level=2] [ref=e48]
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: Paste Your Army List
+            - textbox "Paste Your Army List" [ref=e52]:
+              - /placeholder: "Example:\n\nOoops All Rats! 2000/2000 pts\n\nSkaven\nClaw-horde\nGeneral's Handbook 2025-26\nDrops: 2\nWounds: 220\n\nBattle Tactic Cards: Scouting Force, Restless Energy\n\nGeneral's Regiment\nVizzik Skour, Prophet of the Horned Rat (380)\n• General\nClanrats (300)\n• Reinforced\n...\n\nCreated with Sigdex: sigdex.io"
+            - paragraph [ref=e54]: Maximum 50,000 characters. Lists stored for 30 days only.
+          - button "Create Secure Exchange" [disabled] [ref=e55]
+  - contentinfo [ref=e56]:
+    - generic [ref=e57]:
+      - paragraph [ref=e58]: © 2025 Ariel Ogdowski. All Rights Reserved.
+      - paragraph [ref=e59]:
+        - text: Part of
+        - link "SquigLeague.com" [ref=e60] [cursor=pointer]:
+          - /url: "#"
+        - text: • v0.0.0 • 0 exchanges completed
+```

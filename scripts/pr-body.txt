@@ -1,0 +1,22 @@
+## Summary
+Implements the matchup system with battle plan randomizer for UAT testing.
+
+## Changes
+- **Matchup System**: Create matchups, submit army lists, generate battle plans
+- **Share Links**: Unique URLs for second player to join matchups
+- **Battle Plan Reference**: Browse and verify all battle plans by game system
+- **UI Cleanup**: Removed all emoji from Herald and Squire modules
+- **Configuration**: Fixed nginx for development environment
+- **Testing**: 15 API tests + end-to-end flow tests (all passing)
+- **Automation**: Complete script suite for build, test, export, and release
+
+## Test Results
+- ✅ 15/15 API tests passing
+- ✅ End-to-end matchup flow test passing
+- ✅ 19 battle plans verified (12 AoS, 4 40k, 3 Old World)
+
+## Artifacts
+All test results and battle plan reference exported to `artifacts/release_2025-11-25_15-56-31/`
+
+## Ready for UAT
+System is fully functional and tested. All automation scripts are working as designed.

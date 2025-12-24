@@ -6,6 +6,36 @@
 window.renderSquireMatchup = function() {
     return `
         <div class="max-w-6xl mx-auto px-4 py-12" x-data="matchupManager()">
+            <!-- Login Status Bar -->
+            <div x-show="!isLoggedIn" class="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <div>
+                            <p class="text-yellow-400 font-semibold">Not Logged In</p>
+                            <p class="text-yellow-300 text-sm">You must login to create matchups</p>
+                        </div>
+                    </div>
+                    <a href="/squire/login" class="px-4 py-2 bg-primary hover:bg-primary-dark text-bg-darkest font-bold rounded-lg transition">
+                        Login
+                    </a>
+                </div>
+            </div>
+
+            <div x-show="isLoggedIn" class="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <p class="text-green-400 font-semibold">Logged in as <span x-text="username"></span></p>
+                        <button @click="logout()" class="text-green-300 text-sm hover:underline">Logout</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Header -->
             <div class="text-center mb-12">
                 <h1 class="text-4xl font-montserrat font-bold text-text-primary mb-4">
@@ -256,6 +286,8 @@ window.renderSquireMatchup = function() {
 // Alpine.js component for matchup management
 function matchupManager() {
     return {
+        isLoggedIn: false,
+        username: '',
         selectedSystem: null,
         matchupId: null,
         playerName: '',
@@ -269,6 +301,9 @@ function matchupManager() {
         pollInterval: null,
 
         init() {
+            // Check login status
+            this.checkLoginStatus();
+            
             // Check if we're viewing an existing matchup from URL
             const path = window.location.pathname;
             const match = path.match(/\/squire\/matchup\/([^\/]+)/);
@@ -280,9 +315,55 @@ function matchupManager() {
             }
         },
 
+        async checkLoginStatus() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                this.isLoggedIn = false;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/squire/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    this.isLoggedIn = true;
+                    this.username = user.username;
+                } else {
+                    // Token invalid, remove it
+                    localStorage.removeItem('auth_token');
+                    this.isLoggedIn = false;
+                }
+            } catch (err) {
+                console.error('Error checking login status:', err);
+                this.isLoggedIn = false;
+            }
+        },
+
+        logout() {
+            localStorage.removeItem('auth_token');
+            this.isLoggedIn = false;
+            this.username = '';
+            window.location.href = '/squire/login';
+        },
+
         async createMatchup() {
             if (!this.selectedSystem) {
                 this.error = 'Please select a game system first';
+                return;
+            }
+
+            // Check if user is logged in
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                this.error = 'You must be logged in to create a matchup';
+                setTimeout(() => {
+                    window.location.href = '/squire/login';
+                }, 2000);
                 return;
             }
 
@@ -294,14 +375,20 @@ function matchupManager() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
                         game_system: this.selectedSystem
                     })
                 });
 
+                if (response.status === 401) {
+                    throw new Error('Authentication required. Please login first.');
+                }
+
                 if (!response.ok) {
-                    throw new Error(`Failed to create matchup: ${response.statusText}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `Failed to create matchup: ${response.statusText}`);
                 }
 
                 const data = await response.json();

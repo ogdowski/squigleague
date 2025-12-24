@@ -43,9 +43,23 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://squig:${DB_PASSWORD}@postgres:5432/squigleague
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=squigleague
+      - DB_USER=squig
+      - DB_PASSWORD=${DB_PASSWORD}
       - ADMIN_KEY=${HERALD_ADMIN_KEY}
       - MODULE_NAME=herald
       - SQUIG_VERSION=${SQUIG_VERSION:-0.1.0}
+      - JWT_SECRET=${JWT_SECRET}
+      - SMTP_HOST=${SMTP_HOST:-localhost}
+      - SMTP_PORT=${SMTP_PORT:-1025}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-false}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@squigleague.local}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-SquigLeague}
+      - BASE_URL=${BASE_URL:-http://localhost:8080}
     ports:
       - "8000:8000"
     networks:

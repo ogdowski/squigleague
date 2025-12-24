@@ -288,125 +288,172 @@ def generate_aos_battle_plan() -> BattlePlan:
 # ═══════════════════════════════════════════════
 # WARHAMMER 40,000 10TH EDITION
 # ═══════════════════════════════════════════════
+# WARHAMMER 40,000 10TH EDITION - LEVIATHAN MISSION DECK
+# Fixed 9 missions from matched play
+# ═══════════════════════════════════════════════
 
-W40K_DEPLOYMENTS = {
-    DeploymentType.DAWN_OF_WAR: {
-        "name": "Dawn of War",
-        "description": "Standard battle lines on opposite short table edges.",
-        "zones": 'Deploy wholly within 6" of your short table edge',
+LEVIATHAN_MISSIONS = [
+    {
+        "name": "Only War",
+        "deployment": DeploymentType.DAWN_OF_WAR,
+        "primary": "Take and Hold - Control objectives for VP each command phase",
+        "rule": "5 objective markers. Score 5 VP per marker controlled at end of command phase.",
     },
-    DeploymentType.SEARCH_AND_DESTROY: {
-        "name": "Search and Destroy",
-        "description": "Diagonal corner deployment zones.",
-        "zones": 'Deploy in opposite diagonal corners within 6" of corner',
+    {
+        "name": "Priority Targets",
+        "deployment": DeploymentType.SEARCH_AND_DESTROY,
+        "primary": "Destroy Priority Targets - Eliminate marked enemy units",
+        "rule": "Mark 1 enemy unit as priority target each turn. Score VP for destroying marked units.",
     },
-    DeploymentType.SWEEPING_ENGAGEMENT: {
-        "name": "Sweeping Engagement",
-        "description": "Offset deployment on long table edges.",
-        "zones": 'Deploy on long edges, offset 12" from corners',
+    {
+        "name": "Purge the Foe",
+        "deployment": DeploymentType.SWEEPING_ENGAGEMENT,
+        "primary": "Destruction - Score VP for each enemy unit destroyed",
+        "rule": "1 VP per enemy unit destroyed. Additional VP for destroying units in enemy deployment zone.",
     },
-    DeploymentType.CRUCIBLE_OF_BATTLE: {
-        "name": "Crucible of Battle",
-        "description": 'Center circle deployment with 24" gap.',
-        "zones": 'Deploy in 9" circles, 24" apart, along center line',
+    {
+        "name": "Scorched Earth",
+        "deployment": DeploymentType.CRUCIBLE_OF_BATTLE,
+        "primary": "Raze Objectives - Destroy objective markers",
+        "rule": "Perform action to raze objectives. Score VP for each objective destroyed.",
     },
-}
-
-W40K_PRIMARY_MISSIONS = [
-    "Take and Hold - Control objective markers for VP each command phase",
-    "The Ritual - Perform actions on objective markers",
-    "Purge the Foe - Destroy enemy units for VP",
-    "Vital Ground - Control objectives in no man's land",
-    "Scorched Earth - Destroy terrain objectives",
-]
-
-W40K_SECONDARY_OBJECTIVES = [
-    "Assassinate - Destroy enemy characters",
-    "Bring It Down - Destroy enemy vehicles/monsters",
-    "Behind Enemy Lines - Have units in enemy deployment zone",
-    "First Strike - Destroy units in first battle round",
-    "Overwhelming Force - Destroy units with specific weapon types",
+    {
+        "name": "Supply Drop",
+        "deployment": DeploymentType.DAWN_OF_WAR,
+        "primary": "Secure Supply Caches - Control objectives in no man's land",
+        "rule": "3 objectives in no man's land. Control for 5 VP each at end of turn.",
+    },
+    {
+        "name": "Vital Ground",
+        "deployment": DeploymentType.SEARCH_AND_DESTROY,
+        "primary": "Hold the Center - Control central objectives",
+        "rule": "Control objectives within 12\" of center. Progressive scoring each turn.",
+    },
+    {
+        "name": "Deploy Servo-Skulls",
+        "deployment": DeploymentType.SWEEPING_ENGAGEMENT,
+        "primary": "Area Denial - Place servo-skulls on objectives",
+        "rule": "Perform actions to place servo-skulls. Score VP and deny enemy objectives.",
+    },
+    {
+        "name": "Sites of Power",
+        "deployment": DeploymentType.CRUCIBLE_OF_BATTLE,
+        "primary": "Mystical Sites - Control power sites for cumulative VP",
+        "rule": "4 sites of power. Cumulative scoring - more controlled = higher VP.",
+    },
+    {
+        "name": "The Ritual",
+        "deployment": DeploymentType.DAWN_OF_WAR,
+        "primary": "Complete the Ritual - Perform actions on objectives",
+        "rule": "Perform ritual actions on 3+ objectives. Score VP for completed rituals.",
+    },
 ]
 
 
 def generate_40k_battle_plan() -> BattlePlan:
-    """Generate randomized Warhammer 40,000 battle plan"""
+    """Generate Warhammer 40,000 battle plan from Leviathan Mission Deck"""
 
-    deployment_type = random.choice(list(W40K_DEPLOYMENTS.keys()))
-    deployment_info = W40K_DEPLOYMENTS[deployment_type]
+    # Randomly select one of the 9 Leviathan missions
+    mission = random.choice(LEVIATHAN_MISSIONS)
 
-    primary = random.choice(W40K_PRIMARY_MISSIONS)
-    secondaries = random.sample(W40K_SECONDARY_OBJECTIVES, 3)
+    deployment_descriptions = {
+        DeploymentType.DAWN_OF_WAR: 'Standard battle lines on opposite short table edges. Deploy wholly within 6" of your short table edge.',
+        DeploymentType.SEARCH_AND_DESTROY: 'Diagonal corner deployment zones. Deploy in opposite diagonal corners within 6" of corner.',
+        DeploymentType.SWEEPING_ENGAGEMENT: 'Offset deployment on long table edges. Deploy on long edges, offset 12" from corners.',
+        DeploymentType.CRUCIBLE_OF_BATTLE: 'Center circle deployment with 24" gap. Deploy in 9" circles, 24" apart, along center line.',
+    }
 
     return BattlePlan(
-        name=f"40k 10th Edition - {deployment_info['name']}",
+        name=f"{mission['name']}",
         game_system=GameSystem.WARHAMMER_40K,
-        deployment=deployment_type,
-        deployment_description=f"{deployment_info['description']}\n{deployment_info['zones']}",
-        primary_objective=primary,
-        secondary_objectives=secondaries,
-        victory_conditions="Score VP from primary mission and secondary objectives. Most VP at end of Round 5 wins.",
+        deployment=mission["deployment"],
+        deployment_description=deployment_descriptions[mission["deployment"]],
+        primary_objective=mission["primary"],
+        secondary_objectives=[
+            "Select 3 secondary objectives from your faction's list",
+            "Score VP based on secondary objective conditions",
+        ],
+        victory_conditions=f"{mission['rule']}\nSecondaries add bonus VP. Most VP at end of Round 5 wins.",
         turn_limit=5,
         special_rules=[
             "Matched Play: 2000 points",
-            "Roll for first turn after deployment",
-            "Score primary objective each command phase",
+            "Leviathan Mission Deck",
+            "Choose 3 secondary objectives before deployment",
         ],
     )
 
 
 # ═══════════════════════════════════════════════
-# THE OLD WORLD
+# THE OLD WORLD - CORE SCENARIOS
+# 6 official scenarios from the rulebook
 # ═══════════════════════════════════════════════
 
-OLD_WORLD_DEPLOYMENTS = {
-    DeploymentType.FRONTAL_ASSAULT: {
-        "name": "Pitched Battle",
-        "description": "Classic battle lines facing each other across the field.",
-        "zones": 'Deploy within 12" of your table edge',
-    },
-    DeploymentType.ENCIRCLE: {
-        "name": "Corner Deployment",
-        "description": "Armies deploy in opposite corners.",
-        "zones": 'Deploy in 18" square in your corner',
-    },
-    DeploymentType.HAMMER_AND_ANVIL: {
-        "name": "Meeting Engagement",
-        "description": "Short edge deployment.",
-        "zones": 'Deploy within 12" of short table edge',
-    },
-}
-
 OLD_WORLD_SCENARIOS = [
-    "Pitched Battle - Destroy enemy army",
-    "Capture the Flags - Control battlefield standards",
-    "Breakthrough - Get units to enemy table edge",
-    "Hold the Ground - Control central terrain",
-    "Blood and Glory - Break enemy army morale",
+    {
+        "name": "Pitched Battle",
+        "deployment": DeploymentType.FRONTAL_ASSAULT,
+        "objective": "Destroy the enemy army and claim victory through superior tactics",
+        "rule": "Score VP for enemy units destroyed and broken. Defeat enemy general for bonus VP.",
+        "deployment_desc": 'Classic battle lines. Deploy within 12" of your table edge.',
+    },
+    {
+        "name": "Blood and Glory",
+        "deployment": DeploymentType.FRONTAL_ASSAULT,
+        "objective": "Break enemy army morale by destroying their banners and generals",
+        "rule": "Track Fortitude points. Destroy enemy banners and characters to reduce enemy Fortitude. Army breaks when Fortitude reaches 0.",
+        "deployment_desc": 'Face each other across the field. Deploy within 12" of your table edge.',
+    },
+    {
+        "name": "Meeting Engagement",
+        "deployment": DeploymentType.HAMMER_AND_ANVIL,
+        "objective": "Seize the center and drive back the enemy",
+        "rule": "Control the center of the battlefield. Score VP for units within 12\" of center at end of turn.",
+        "deployment_desc": 'Short edge deployment. Deploy within 12" of short table edge. First turn determined by roll-off.',
+    },
+    {
+        "name": "Breakthrough",
+        "deployment": DeploymentType.FRONTAL_ASSAULT,
+        "objective": "Break through enemy lines and reach their deployment zone",
+        "rule": "Score VP for friendly units wholly within enemy deployment zone at end of game.",
+        "deployment_desc": 'Standard deployment. Deploy within 12" of your table edge.',
+    },
+    {
+        "name": "Battle for the Pass",
+        "deployment": DeploymentType.HAMMER_AND_ANVIL,
+        "objective": "Control the narrow pass through terrain",
+        "rule": "Place terrain to create narrow pass down center. Control the pass for VP each turn.",
+        "deployment_desc": 'Deploy on short edges. Terrain creates central corridor. Deploy within 12" of short edge.',
+    },
+    {
+        "name": "Dawn Assault",
+        "deployment": DeploymentType.ENCIRCLE,
+        "objective": "Catch the enemy off-guard and destroy them before they can organize",
+        "rule": "Attacker deploys first and takes first turn. Defender reserves half army. Score VP for destroying enemy units.",
+        "deployment_desc": 'Diagonal corners. Attacker in one corner, defender in opposite. Defender brings reserves from table edge.',
+    },
 ]
 
 
 def generate_old_world_battle_plan() -> BattlePlan:
-    """Generate randomized The Old World battle plan"""
+    """Generate The Old World battle plan from core scenarios"""
 
-    deployment_type = random.choice(list(OLD_WORLD_DEPLOYMENTS.keys()))
-    deployment_info = OLD_WORLD_DEPLOYMENTS[deployment_type]
-
+    # Randomly select one of the 6 core scenarios
     scenario = random.choice(OLD_WORLD_SCENARIOS)
 
     return BattlePlan(
-        name=f"The Old World - {deployment_info['name']}",
+        name=scenario["name"],
         game_system=GameSystem.OLD_WORLD,
-        deployment=deployment_type,
-        deployment_description=f"{deployment_info['description']}\n{deployment_info['zones']}",
-        primary_objective=scenario,
-        secondary_objectives=["Slay the General", "Break Their Lines"],
-        victory_conditions="Complete primary scenario objective. Additional VP from breaking units and killing characters.",
+        deployment=scenario["deployment"],
+        deployment_description=scenario["deployment_desc"],
+        primary_objective=scenario["objective"],
+        secondary_objectives=["Slay the General", "Break Their Lines", "Capture Standards"],
+        victory_conditions=scenario["rule"],
         turn_limit=6,
         special_rules=[
             "2000 points standard",
             "Random game length: Roll at end of turn 6",
             "Leadership tests for broken units",
+            "Pursue fleeing enemies off the table",
         ],
     )
 

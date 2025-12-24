@@ -29,6 +29,7 @@ class Matchup:
 
     matchup_id: str
     game_system: GameSystem
+    creator_user_id: Optional[str] = None  # User who created the matchup
     created_at: datetime = field(default_factory=datetime.utcnow)
     player1: Optional[MatchupPlayer] = None
     player2: Optional[MatchupPlayer] = None
@@ -70,12 +71,13 @@ class Matchup:
 _matchups: dict[str, Matchup] = {}
 
 
-def create_matchup(game_system: GameSystem) -> Matchup:
+def create_matchup(game_system: GameSystem, creator_user_id: Optional[str] = None) -> Matchup:
     """
     Create a new matchup for the given game system
 
     Args:
         game_system: Which game system this matchup is for
+        creator_user_id: Optional user ID of the matchup creator
 
     Returns:
         New Matchup instance with unique ID
@@ -83,7 +85,11 @@ def create_matchup(game_system: GameSystem) -> Matchup:
     # Generate unique matchup ID
     matchup_id = secrets.token_urlsafe(12)
 
-    matchup = Matchup(matchup_id=matchup_id, game_system=game_system)
+    matchup = Matchup(
+        matchup_id=matchup_id,
+        game_system=game_system,
+        creator_user_id=creator_user_id,
+    )
 
     _matchups[matchup_id] = matchup
 
@@ -125,3 +131,16 @@ def submit_list(matchup_id: str, player_name: str, army_list: str) -> Matchup:
     matchup.add_player(player_name, army_list)
 
     return matchup
+
+
+def get_matchups_for_user(user_id: str) -> list[Matchup]:
+    """
+    Get all matchups created by a specific user
+    
+    Args:
+        user_id: The user ID to filter by
+        
+    Returns:
+        List of Matchup instances for this user
+    """
+    return [m for m in _matchups.values() if m.creator_user_id == user_id]

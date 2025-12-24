@@ -5,8 +5,13 @@ function app() {
         currentRoute: '/',
         exchangeId: null,
         isCreator: false,
+        isLoggedIn: false,
+        username: '',
 
         init() {
+            // Check authentication status
+            this.checkAuth();
+            
             // Parse initial route
             this.parseRoute();
 
@@ -19,6 +24,45 @@ function app() {
             // Load initial page
             this.loadPage();
         },
+        
+        async checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                this.isLoggedIn = false;
+                this.username = '';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/squire/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.isLoggedIn = true;
+                    this.username = data.username;
+                } else {
+                    // Token invalid or expired
+                    this.isLoggedIn = false;
+                    this.username = '';
+                    localStorage.removeItem('auth_token');
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                this.isLoggedIn = false;
+                this.username = '';
+            }
+        },
+        
+        logout() {
+            localStorage.removeItem('auth_token');
+            this.isLoggedIn = false;
+            this.username = '';
+            this.navigate('/');
+        },
 
         parseRoute() {
             const path = window.location.pathname;
@@ -30,6 +74,20 @@ function app() {
                 this.currentRoute = '/squire/battle-plan';
             } else if (path === '/squire/battle-plan-reference') {
                 this.currentRoute = '/squire/battle-plan-reference';
+            } else if (path === '/squire/register') {
+                this.currentRoute = '/squire/register';
+            } else if (path === '/squire/login') {
+                this.currentRoute = '/squire/login';
+            } else if (path === '/squire/verify-email') {
+                this.currentRoute = '/squire/verify-email';
+            } else if (path === '/squire/resend-verification') {
+                this.currentRoute = '/squire/resend-verification';
+            } else if (path === '/squire/profile') {
+                this.currentRoute = '/squire/profile';
+            } else if (path === '/squire/history') {
+                this.currentRoute = '/squire/history';
+            } else if (path === '/squire/settings') {
+                this.currentRoute = '/squire/settings';
             } else if (path.startsWith('/squire/matchup')) {
                 this.currentRoute = '/squire/matchup';
             } else if (path.startsWith('/exchange/')) {
@@ -60,6 +118,20 @@ function app() {
                 content.innerHTML = window.renderSquireBattlePlan();
             } else if (this.currentRoute === '/squire/battle-plan-reference') {
                 content.innerHTML = window.renderSquireBattlePlanReference();
+            } else if (this.currentRoute === '/squire/register') {
+                content.innerHTML = window.renderSquireRegister();
+            } else if (this.currentRoute === '/squire/login') {
+                content.innerHTML = window.renderSquireLogin();
+            } else if (this.currentRoute === '/squire/verify-email') {
+                content.innerHTML = window.renderSquireVerifyEmail();
+            } else if (this.currentRoute === '/squire/resend-verification') {
+                content.innerHTML = window.renderSquireResendVerification();
+            } else if (this.currentRoute === '/squire/profile') {
+                content.innerHTML = window.renderSquireProfile();
+            } else if (this.currentRoute === '/squire/history') {
+                content.innerHTML = window.renderSquireHistory();
+            } else if (this.currentRoute === '/squire/settings') {
+                content.innerHTML = window.renderSquireSettings();
             } else if (this.currentRoute === '/squire/matchup') {
                 content.innerHTML = window.renderSquireMatchup();
             } else if (this.currentRoute === '/exchange') {
