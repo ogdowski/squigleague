@@ -32,6 +32,16 @@ help:
     @echo "  just logs             - View logs"
     @echo "  just down             - Stop services"
     @echo ""
+    @echo "Testing:"
+    @echo "  just test-all         - Run all pre-deployment checks"
+    @echo "  just test-unit        - Run unit tests with 100% coverage"
+    @echo "  just test-integration - Run integration tests"
+    @echo "  just test-uat         - Run UAT acceptance tests"
+    @echo "  just build-test       - Build Docker images (test)"
+    @echo "  just build-validate   - Validate docker-compose configs"
+    @echo "  just test-db-up       - Start test database"
+    @echo "  just test-db-down     - Stop test database"
+    @echo ""
     @echo "Development:"
     @echo "  just dev              - Start development environment (no SSL)"
     @echo "  just up               - Start dev services in background"
@@ -655,6 +665,65 @@ prune:
 # ═══════════════════════════════════════════════
 # TESTING
 # ═══════════════════════════════════════════════
+
+# Run all pre-deployment checks
+test-all:
+    @echo "🧪 Running comprehensive pre-deployment checks..."
+    pwsh scripts/pre-deployment-check.ps1
+
+# Run unit tests with coverage
+test-unit:
+    @echo "🧪 Running unit tests with coverage..."
+    pwsh -Command ".\.venv\Scripts\python.exe squigleague\run_coverage.py"
+
+# Run integration tests (requires services running)
+test-integration:
+    @echo "🧪 Running integration tests..."
+    pwsh scripts/integration-test-runner.ps1
+
+# Run integration tests and keep services running
+test-integration-debug:
+    @echo "🧪 Running integration tests (debug mode)..."
+    pwsh scripts/integration-test-runner.ps1 -KeepRunning
+
+# Run UAT tests against running instance
+test-uat:
+    @echo "🧪 Running UAT tests..."
+    pwsh run-uat-tests.ps1
+
+# Start test database
+test-db-up:
+    @echo "🗄️  Starting test database..."
+    docker-compose -f docker-compose.test.yml up -d postgres-test
+    @echo "✅ Test database ready on port 5433"
+
+# Stop test database
+test-db-down:
+    @echo "🗄️  Stopping test database..."
+    docker-compose -f docker-compose.test.yml down
+    @echo "✅ Test database stopped"
+
+# Build all Docker images (for testing builds)
+build-test:
+    @echo "🏗️  Building Docker images..."
+    @echo "Building backend..."
+    docker build -t squigleague-backend:test -f backend/Dockerfile backend/
+    @echo "Building herald..."
+    docker build -t squigleague-herald:test -f herald/Dockerfile herald/
+    @echo "Building frontend..."
+    docker build -t squigleague-frontend:test -f frontend/Dockerfile frontend/
+    @echo "✅ All images built successfully"
+
+# Validate docker-compose configurations
+build-validate:
+    @echo "🔍 Validating docker-compose configurations..."
+    @echo "Testing dev config..."
+    docker-compose -f docker-compose.yml -f docker-compose.dev.yml config > /dev/null
+    @echo "Testing prod config..."
+    docker-compose -f docker-compose.yml -f docker-compose.prod.yml config > /dev/null
+    @echo "Testing test config..."
+    docker-compose -f docker-compose.test.yml config > /dev/null
+    @echo "✅ All configurations valid"
 
 # Create test exchange
 test-exchange:

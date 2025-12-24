@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
 from app.db import get_session
+from app.config import settings
 from app.users.auth import (
     auth_backend,
     fastapi_users,

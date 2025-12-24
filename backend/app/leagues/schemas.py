@@ -111,6 +111,7 @@ class StandingRead(BaseModel):
     draws: int
     losses: int
     position: int
+    goal_difference: int | None = None
     
     class Config:
         from_attributes = True

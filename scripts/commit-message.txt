@@ -1,11 +1,27 @@
-Add matchup system with battle plan randomizer
+fix: Commandment 26 compliance - strengthen Selenium requirement
 
-- Implement matchup creation and player submission endpoints
-- Add share link functionality for second player
-- Create battle plan reference page for all game systems
-- Remove all emoji from UI components (Herald and Squire modules)
-- Fix nginx configuration for development environment
-- Add comprehensive test suite (15 API tests + flow tests)
-- Create automation scripts for build, test, and release
-- Export battle plan reference (19 total: 12 AoS, 4 40k, 3 Old World)
-- All tests passing, ready for UAT
+Compliance Audit & Remediation:
+- Strengthen Selenium WebDriver requirement in copilot-instructions.md
+- Add explicit Playwright prohibition to 4 enforcement points
+- Fix emoji violation in Login.vue (Commandment 15)
+- Document Playwright technical debt with migration plan
+- Update test documentation to reflect compliance status
+- Update activity script hashes in allowed-scripts.json
+
+Files Changed:
+- .github/copilot-instructions.md - Selenium enforcement
+- frontend/src/views/Login.vue - Replace emoji with SVG icons
+- PLAYWRIGHT_TECHNICAL_DEBT.md - Migration plan
+- docs/TESTING_DEPLOYMENT_STRATEGY.md - Mark E2E non-compliant
+- tests/integration/backend/README.md - Note Selenium requirement
+- tests/integration/backend/leagues/test_leagues_integration.py - Update metadata
+- scripts/allowed-scripts.json - Update hashes
+- scripts/push-changes.ps1 - Support auto-generated commit messages
+- scripts/push-pr.ps1 - Fix branch switching logic
+
+Compliance Status:
+- Commandment 11 (Preservation): COMPLIANT ✓
+- Commandment 15 (No Emoji): COMPLIANT ✓ (fixed)
+- Commandment 26 (Selenium Only): DOCUMENTED (2-week migration planned)
+
+Ref: Inquisition audit session 2025-12-24
