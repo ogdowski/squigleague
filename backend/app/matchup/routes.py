@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
+from datetime import datetime
 
 from app.db import get_session
 from app.core.deps import get_current_user_optional, get_current_user
@@ -47,16 +48,16 @@ async def get_my_matchups(
 ):
     """Get all matchups for the current user."""
     from sqlalchemy import or_
-    
+
     statement = select(Matchup).where(
         or_(
             Matchup.player1_id == current_user.id,
             Matchup.player2_id == current_user.id
         )
     ).order_by(Matchup.created_at.desc())
-    
+
     matchups = session.exec(statement).all()
-    
+
     return [
         MatchupStatus(
             name=m.name,
@@ -174,3 +175,26 @@ async def reveal_matchup(
         revealed_at=matchup.revealed_at,
     )
 
+
+@router.get("/stats")
+async def get_stats(session: Session = Depends(get_session)):
+    """Get platform statistics."""
+    # Count completed matchups (both lists submitted)
+    completed_statement = select(func.count(Matchup.id)).where(
+        Matchup.player1_submitted == True,
+        Matchup.player2_submitted == True,
+    )
+    completed_count = session.execute(completed_statement).scalar_one()
+
+    # Count expired matchups
+    now = datetime.utcnow()
+    expired_statement = select(func.count(Matchup.id)).where(
+        Matchup.expires_at < now
+    )
+    expired_count = session.execute(expired_statement).scalar_one()
+
+    return {
+        "exchanges_completed": completed_count,
+        "exchanges_expired": expired_count,
+        "version": "0.3.0"
+    }

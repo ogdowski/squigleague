@@ -53,11 +53,9 @@ help:
     @echo "  just env-create-local - Create .env.local from template"
     @echo "  just env-create-prod  - Create .env.prod from template"
     @echo "  just version          - Show current version"
-    @echo "  just bump VERSION     - Bump version (e.g., just bump 0.2)"
     @echo ""
     @echo "Releases:"
-    @echo "  just tag VERSION      - Create git tag for version"
-    @echo "  just release VERSION  - Create and push git tag"
+    @echo "  just release VERSION    - Full release: version bump, commit, tag, build, push"
     @echo "  just gh-release VERSION - Create GitHub release (requires gh CLI)"
     @echo ""
     @echo "Database:"
@@ -225,46 +223,52 @@ version:
     @echo "Backend: {{SL_IMAGE}}:{{BACKEND_TAG}}"
     @echo "Frontend: {{SL_IMAGE}}:{{FRONTEND_TAG}}"
 
-# Bump version in all env files
-bump VERSION:
-    @echo "📦 Bumping version to {{VERSION}}..."
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example
-    @echo "✅ Version bumped to {{VERSION}} in all env files"
-    @echo ""
-    @echo "Next steps:"
-    @echo "  1. Update CHANGELOG.md with release notes"
-    @echo "  2. git add -A && git commit -m 'Bump version to {{VERSION}}'"
-    @echo "  3. just release {{VERSION}}  - Create git tag and GitHub release"
-    @echo "  4. just push                 - Build and push new version"
-    @echo "  5. just vps-update           - Deploy to VPS"
-
-# Create git tag for version
-tag VERSION:
-    @echo "🏷️  Creating git tag v{{VERSION}}..."
-    git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
-    @echo "✅ Tag v{{VERSION}} created"
-    @echo "Push tag with: git push origin v{{VERSION}}"
-
-# Create and push git tag
+# Full release workflow - updates versions, commits, tags, builds, and pushes
 release VERSION:
-    @echo "🚀 Creating release v{{VERSION}}..."
+    @echo "🚀 Starting full release workflow for v{{VERSION}}..."
+    @echo ""
+    @echo "📋 Step 1/7: Checking for uncommitted changes..."
     @if ! git diff-index --quiet HEAD --; then \
-        echo "❌ You have uncommitted changes. Commit them first."; \
+        echo "❌ You have uncommitted changes. Commit or stash them first."; \
         exit 1; \
     fi
-    @echo "📝 Creating git tag..."
+    @echo "✅ Working directory clean"
+    @echo ""
+    @echo "📋 Step 2/7: Updating package.json version..."
+    @sed -i '' 's/"version": "[^"]*"/"version": "{{VERSION}}"/' frontend/package.json
+    @echo "✅ Updated frontend/package.json to v{{VERSION}}"
+    @echo ""
+    @echo "📋 Step 3/7: Updating backend version..."
+    @sed -i '' 's/"version": "[^"]*"/"version": "{{VERSION}}"/' backend/app/matchup/routes.py
+    @echo "✅ Updated backend/app/matchup/routes.py to v{{VERSION}}"
+    @echo ""
+    @echo "📋 Step 4/7: Updating environment files..."
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local || true
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example || true
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod || true
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example || true
+    @echo "✅ Updated env files to v{{VERSION}}"
+    @echo ""
+    @echo "📋 Step 5/7: Committing changes..."
+    git add frontend/package.json backend/app/matchup/routes.py .env.local .env.local.example .env.prod .env.prod.example
+    git commit -m "Release v{{VERSION}}"
+    @echo "✅ Changes committed"
+    @echo ""
+    @echo "📋 Step 6/7: Creating and pushing git tag..."
     git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
-    @echo "📤 Pushing tag to GitHub..."
+    git push origin main
     git push origin v{{VERSION}}
-    @echo "✅ Release v{{VERSION}} created and pushed!"
+    @echo "✅ Tag v{{VERSION}} created and pushed"
     @echo ""
-    @echo "🌐 Create GitHub release at:"
-    @echo "   https://github.com/ogdowski/squigleague/releases/new?tag=v{{VERSION}}"
+    @echo "📋 Step 7/7: Building and pushing Docker images..."
+    @echo "🏗️  This will build multi-arch images and push to registry..."
+    just push
     @echo ""
-    @echo "Or use GitHub CLI: gh release create v{{VERSION}} --generate-notes"
+    @echo "✅ Release v{{VERSION}} complete!"
+    @echo ""
+    @echo "📦 Next steps:"
+    @echo "  • Deploy to VPS: just vps-update"
+    @echo "  • Create GitHub release: gh release create v{{VERSION}} --generate-notes"
 
 # Create GitHub release with notes (requires gh CLI)
 gh-release VERSION:
