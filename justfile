@@ -251,8 +251,8 @@ release VERSION:
     @echo ""
     @echo "📋 Step 5/7: Committing changes..."
     git add frontend/package.json backend/app/matchup/routes.py .env.local.example .env.prod.example
-    git commit -m "Release v{{VERSION}}"
-    @echo "✅ Changes committed"
+    git diff --cached --quiet || git commit -m "Release v{{VERSION}}"
+    @echo "✅ Changes committed (or already up to date)"
     @echo ""
     @echo "📋 Step 6/7: Creating and pushing git tag..."
     git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
