@@ -28,6 +28,11 @@ const routes = [
     component: () => import('../views/UserSettings.vue'),
   },
   {
+    path: '/oauth/callback',
+    name: 'OAuthCallback',
+    component: () => import('../views/OAuthCallback.vue'),
+  },
+  {
     path: '/matchup/create',
     name: 'MatchupCreate',
     component: () => import('../views/MatchupCreate.vue'),

@@ -113,7 +113,7 @@ dev:
         echo "✅ .env.local created with development defaults"; \
     fi
     @echo "📝 Using .env.local for configuration"
-    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up --build
+    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up
 
 # Start services in background
 up:
@@ -124,7 +124,7 @@ up:
         echo "✅ .env.local created with development defaults"; \
     fi
     @echo "📝 Using .env.local for configuration"
-    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d
     @echo "✅ Services started!"
     @echo "📊 Run 'just logs' to view logs"
 
@@ -282,9 +282,10 @@ gh-release VERSION:
 # BUILDING
 # ═══════════════════════════════════════════════
 
-# Build all Docker images
+# Build all Docker images (uses default driver for fast local builds)
 build:
     @echo "🔨 Building all images..."
+    docker buildx use default
     docker-compose build
     @echo "✅ Build complete"
 
