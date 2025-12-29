@@ -255,9 +255,9 @@ release VERSION:
     @echo "✅ Changes committed (or already up to date)"
     @echo ""
     @echo "📋 Step 6/7: Creating and pushing git tag..."
-    git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
-    git push origin main
-    git push origin v{{VERSION}}
+    git tag -a v{{VERSION}} -m "Release v{{VERSION}}" 2>/dev/null || echo "  ℹ️  Tag already exists, continuing..."
+    git push origin HEAD
+    git push origin v{{VERSION}} 2>/dev/null || echo "  ℹ️  Tag already pushed, continuing..."
     @echo "✅ Tag v{{VERSION}} created and pushed"
     @echo ""
     @echo "📋 Step 7/7: Building and pushing Docker images..."
