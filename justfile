@@ -59,10 +59,12 @@ help:
     @echo "  just gh-release VERSION - Create GitHub release (requires gh CLI)"
     @echo ""
     @echo "Database:"
-    @echo "  just db-connect       - Connect to PostgreSQL shell"
-    @echo "  just db-backup        - Backup database"
-    @echo "  just db-restore FILE  - Restore database from backup"
-    @echo "  just db-reset         - Reset database (DANGER!)"
+    @echo "  just db-migrate-herald    - Migrate herald exchanges to matchups (run once)"
+    @echo "  just vps-migrate-herald   - Migrate herald on VPS (run once after deploy)"
+    @echo "  just db-connect           - Connect to PostgreSQL shell"
+    @echo "  just db-backup            - Backup database"
+    @echo "  just db-restore FILE      - Restore database from backup"
+    @echo "  just db-reset             - Reset database (DANGER!)"
     @echo ""
     @echo "VPS Management:"
     @echo "  just ssh-prod         - SSH into production VPS"
@@ -545,6 +547,29 @@ vps-sync-all:
 # ═══════════════════════════════════════════════
 # DATABASE
 # ═══════════════════════════════════════════════
+
+# Migrate herald_exchanges to matchups table (run once after deploying v0.3.0+)
+db-migrate-herald:
+    @echo "🔄 Migrating herald exchanges to matchups..."
+    @docker exec -i squig-postgres psql -U squig squigleague < database/migrate_herald_to_matchups.sql
+    @echo "✅ Migration complete!"
+
+# Migrate herald exchanges on VPS (run once after deploying v0.3.0+)
+vps-migrate-herald:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$VPS_IP" ]; then
+        echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
+        exit 1
+    fi
+    echo "🔄 Migrating herald exchanges on VPS..."
+    scp database/migrate_herald_to_matchups.sql ${VPS_USER}@${VPS_IP}:~/squig_league/
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker exec -i squig-postgres psql -U squig squigleague < migrate_herald_to_matchups.sql"
+    echo "✅ Migration complete!"
 
 # Connect to PostgreSQL shell
 db-connect:

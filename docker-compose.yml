@@ -9,14 +9,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: squigleague
-      POSTGRES_USER: squigleague
+      POSTGRES_USER: squig
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - squig-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U squigleague -d squigleague"]
+      test: ["CMD-SHELL", "pg_isready -U squig -d squigleague"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +39,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://squigleague:${DB_PASSWORD:-changeme}@postgres:5432/squigleague
+      - DATABASE_URL=postgresql://squig:${DB_PASSWORD:-changeme}@postgres:5432/squigleague
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
