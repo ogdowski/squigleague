@@ -245,14 +245,12 @@ release VERSION:
     @echo "✅ Updated backend/app/matchup/routes.py to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 4/7: Updating environment files..."
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local || true
     @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example || true
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod || true
     @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example || true
     @echo "✅ Updated env files to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 5/7: Committing changes..."
-    git add frontend/package.json backend/app/matchup/routes.py .env.local .env.local.example .env.prod .env.prod.example
+    git add frontend/package.json backend/app/matchup/routes.py .env.local.example .env.prod.example
     git commit -m "Release v{{VERSION}}"
     @echo "✅ Changes committed"
     @echo ""
