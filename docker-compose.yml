@@ -1,7 +1,7 @@
 # docker-compose.yml
 services:
   # ═══════════════════════════════════════════════
-  # PostgreSQL Database (Shared by all future modules)
+  # PostgreSQL Database (Shared by all modules)
   # ═══════════════════════════════════════════════
   postgres:
     image: postgres:16-alpine
@@ -9,15 +9,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: squigleague
-      POSTGRES_USER: squig
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: squigleague
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - squig-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U squig -d squigleague"]
+      test: ["CMD-SHELL", "pg_isready -U squigleague -d squigleague"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,24 +29,28 @@ services:
           memory: 128M
 
   # ═══════════════════════════════════════════════
-  # Squig League Application (Herald + Future Modules)
+  # Backend API (FastAPI + SQLModel)
   # ═══════════════════════════════════════════════
-  squig:
-    build: ./herald
-    container_name: squig
+  backend:
+    build: ./backend
+    container_name: squig-backend
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://squig:${DB_PASSWORD}@postgres:5432/squigleague
-      - ADMIN_KEY=${HERALD_ADMIN_KEY}
-      - MODULE_NAME=herald
-      - SQUIG_VERSION=${SQUIG_VERSION:-0.1.0}
+      - DATABASE_URL=postgresql://squigleague:${DB_PASSWORD:-changeme}@postgres:5432/squigleague
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID:-}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET:-}
+      - SQUIG_VERSION=${SQUIG_VERSION:-2.0.0}
     networks:
       - squig-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/herald/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -87,7 +90,7 @@ services:
       - certbot-webroot:/var/www/certbot:ro
       - certbot-certs:/etc/letsencrypt:ro
     depends_on:
-      - squig
+      - backend
       - frontend
     networks:
       - squig-network

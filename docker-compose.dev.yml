@@ -1,21 +1,37 @@
-# docker-compose.dev.yml - Development override
+# Development Docker Compose Override
+# Builds images locally instead of pulling from registry
+#
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
 services:
-  # Expose Squig port directly for development/debugging
-  squig:
-    ports:
-      - "8000:8000"
+  backend:
+    # Build locally for development
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
 
-  # Use development nginx config without SSL
-  nginx:
-    volumes:
-      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
-      # Override to remove SSL certificate volumes for development
-      - /dev/null:/etc/letsencrypt:ro
-    ports:
-      - "80:80"
-    # Don't expose 443 in development
+    # Development-specific settings
+    restart: unless-stopped
 
-  # Disable certbot in development (not needed)
-  certbot:
-    profiles:
-      - production-only
+    # Verbose logging for development
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  frontend:
+    # Build locally for development
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    # Development-specific settings
+    restart: unless-stopped
+
+    # Verbose logging for development
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

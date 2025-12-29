@@ -4,10 +4,10 @@
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 services:
-  squig:
+  backend:
     # Use pre-built image from Docker Hub
     # Version is controlled by SQUIG_VERSION in .env.prod
-    image: ${IMAGE_PREFIX:-ogdowski}/${IMAGE_NAME:-private}:squigleague-${SQUIG_VERSION:-0.1}
+    image: ${IMAGE_PREFIX:-ogdowski}/${IMAGE_NAME:-private}:squigleague-backend-${SQUIG_VERSION:-2.0}
 
     # Production-specific settings
     restart: always
@@ -21,7 +21,7 @@ services:
 
   frontend:
     # Use pre-built image from Docker Hub
-    image: ${IMAGE_PREFIX:-ogdowski}/${IMAGE_NAME:-private}:squigleague-frontend-${SQUIG_VERSION:-0.1}
+    image: ${IMAGE_PREFIX:-ogdowski}/${IMAGE_NAME:-private}:squigleague-frontend-${SQUIG_VERSION:-2.0}
 
     # Production-specific settings
     restart: always

@@ -160,13 +160,14 @@ logs:
     @echo "📋 Showing logs (Ctrl+C to exit)..."
     docker-compose logs -f
 
-# Show Squig logs only
-logs-squig:
-    @echo "📋 Showing Squig logs..."
-    docker-compose logs -f squig
+# Show backend logs only
+logs-backend:
+    @echo "📋 Showing backend logs..."
+    docker-compose logs -f backend
 
 # Legacy command (kept for compatibility)
-logs-herald: logs-squig
+logs-squig: logs-backend
+logs-herald: logs-backend
 
 # Show PostgreSQL logs only
 logs-db:
@@ -287,14 +288,15 @@ build:
     docker-compose build
     @echo "✅ Build complete"
 
-# Build Squig module only (legacy - use 'build' instead)
-build-squig:
-    @echo "🔨 Building Squig module..."
-    docker-compose build squig
-    @echo "✅ Squig module build complete"
+# Build backend only (legacy - use 'build' instead)
+build-backend:
+    @echo "🔨 Building backend..."
+    docker-compose build backend
+    @echo "✅ Backend build complete"
 
-# Legacy command (kept for compatibility)
-build-herald: build-squig
+# Legacy commands (kept for compatibility)
+build-squig: build-backend
+build-herald: build-backend
 
 # Force rebuild all images (no cache)
 rebuild:
@@ -371,13 +373,13 @@ pull-herald: pull
 
 # Shell into local Squig container
 shell:
-    @echo "🐚 Opening shell in Squig container..."
-    docker-compose exec squig /bin/sh
+    @echo "🐚 Opening shell in backend container..."
+    docker-compose exec backend /bin/sh
 
 # Check local environment variables
 env-local:
-    @echo "🔍 Local Squig environment variables:"
-    @docker-compose exec squig env | grep -E 'DATABASE_URL|ADMIN_KEY' || echo "❌ Container not running"
+    @echo "🔍 Local backend environment variables:"
+    @docker-compose exec backend env | grep -E 'DATABASE_URL|SECRET_KEY' || echo "❌ Container not running"
     @echo ""
     @echo "🔍 Local Postgres environment variables:"
     @docker-compose exec postgres env | grep -E 'POSTGRES_PASSWORD|POSTGRES_USER|POSTGRES_DB' || echo "❌ Container not running"
@@ -418,13 +420,13 @@ env-prod:
     echo "📄 .env.prod file:"
     ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && cat .env.prod 2>/dev/null || echo '❌ .env.prod not found'"
     echo ""
-    echo "🐳 Squig container environment:"
-    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec -T squig env | grep -E 'DATABASE_URL|ADMIN_KEY' || echo '❌ Container not running'"
+    echo "🐳 Backend container environment:"
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec -T backend env | grep -E 'DATABASE_URL|SECRET_KEY' || echo '❌ Container not running'"
     echo ""
     echo "🐳 Postgres container environment:"
     ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec -T postgres env | grep -E 'POSTGRES_PASSWORD|POSTGRES_USER|POSTGRES_DB' || echo '❌ Container not running'"
 
-# Shell into production Squig container
+# Shell into production backend container
 shell-prod:
     #!/usr/bin/env bash
     set -a
@@ -436,8 +438,8 @@ shell-prod:
         echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
         exit 1
     fi
-    echo "🐚 Opening shell in production Squig container..."
-    ssh -t ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec squig /bin/sh"
+    echo "🐚 Opening shell in production backend container..."
+    ssh -t ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec backend /bin/sh"
 
 # View logs on VPS
 vps-logs:
@@ -621,7 +623,7 @@ stats:
 # Check Squig health
 health:
     @echo "🏥 Checking Squig health..."
-    @curl -s http://localhost:8000/health | python3 -m json.tool || echo "❌ Squig is not responding"
+    @curl -s http://localhost/api/health | python3 -m json.tool || echo "❌ Squig is not responding"
 
 # Show running containers
 ps:
