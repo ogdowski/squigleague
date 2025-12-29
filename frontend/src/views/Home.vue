@@ -15,7 +15,7 @@
         <ol class="space-y-3 text-gray-300">
           <li class="flex items-start">
             <span class="text-squig-yellow font-bold mr-2">1.</span>
-            <span>First player uploads his list, he can't change it later and sends matchup link to second player</span>
+            <span>First player uploads his list, he can't change it later</span>
           </li>
            <li class="flex items-start">
             <span class="text-squig-yellow font-bold mr-2">2.</span>

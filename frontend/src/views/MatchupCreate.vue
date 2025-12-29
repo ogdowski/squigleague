@@ -18,7 +18,24 @@
               v-model="armyList"
               rows="15"
               class="input-field w-full font-mono text-sm"
-              placeholder="Paste your army list here..."
+              placeholder="Ooops All Rats! 2000/2000 pts
+
+Skaven
+Claw-horde
+General's Handbook 2025-26
+Drops: 2
+Wounds: 220
+
+Battle Tactic Cards: Scouting Force, Restless Energy
+
+General's Regiment
+Vizzik Skour, Prophet of the Horned Rat (380)
+• General
+Clanrats (300)
+• Reinforced
+...
+
+Created with Sigdex: sigdex.io"
               required
             ></textarea>
           </div>
@@ -98,24 +115,7 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
-const armyList = ref(`Ooops All Rats! 2000/2000 pts
-
-Skaven
-Claw-horde
-General's Handbook 2025-26
-Drops: 2
-Wounds: 220
-
-Battle Tactic Cards: Scouting Force, Restless Energy
-
-General's Regiment
-Vizzik Skour, Prophet of the Horned Rat (380)
-• General
-Clanrats (300)
-• Reinforced
-...
-
-Created with Sigdex: sigdex.io`)
+const armyList = ref('')
 const loading = ref(false)
 const error = ref('')
 const created = ref(false)

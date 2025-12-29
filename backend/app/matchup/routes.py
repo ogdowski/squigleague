@@ -71,6 +71,30 @@ async def get_my_matchups(
     ]
 
 
+@router.get("/stats")
+async def get_stats(session: Session = Depends(get_session)):
+    """Get platform statistics."""
+    # Count completed matchups (both lists submitted)
+    completed_statement = select(func.count(Matchup.id)).where(
+        Matchup.player1_submitted == True,
+        Matchup.player2_submitted == True,
+    )
+    completed_count = session.execute(completed_statement).scalar_one()
+
+    # Count expired matchups
+    now = datetime.utcnow()
+    expired_statement = select(func.count(Matchup.id)).where(
+        Matchup.expires_at < now
+    )
+    expired_count = session.execute(expired_statement).scalar_one()
+
+    return {
+        "exchanges_completed": completed_count,
+        "exchanges_expired": expired_count,
+        "version": "0.3.0"
+    }
+
+
 @router.get("/{matchup_name}", response_model=MatchupStatus)
 async def get_matchup_status(
     matchup_name: str,
@@ -174,27 +198,3 @@ async def reveal_matchup(
         map_name=matchup.map_name,
         revealed_at=matchup.revealed_at,
     )
-
-
-@router.get("/stats")
-async def get_stats(session: Session = Depends(get_session)):
-    """Get platform statistics."""
-    # Count completed matchups (both lists submitted)
-    completed_statement = select(func.count(Matchup.id)).where(
-        Matchup.player1_submitted == True,
-        Matchup.player2_submitted == True,
-    )
-    completed_count = session.execute(completed_statement).scalar_one()
-
-    # Count expired matchups
-    now = datetime.utcnow()
-    expired_statement = select(func.count(Matchup.id)).where(
-        Matchup.expires_at < now
-    )
-    expired_count = session.execute(expired_statement).scalar_one()
-
-    return {
-        "exchanges_completed": completed_count,
-        "exchanges_expired": expired_count,
-        "version": "0.3.0"
-    }

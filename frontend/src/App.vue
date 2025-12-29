@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen">
+  <div id="app" class="min-h-screen flex flex-col">
     <nav class="bg-gray-800 border-b border-gray-700">
       <div class="container mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
@@ -41,11 +41,11 @@
       </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-8">
+    <main class="container mx-auto px-4 py-8 flex-1">
       <router-view />
     </main>
 
-    <footer class="mt-auto border-t border-gray-700 bg-gray-800">
+    <footer class="mt-auto border-t border-gray-700 bg-gray-800 sticky bottom-0">
       <div class="container mx-auto px-4 py-6">
         <div class="flex flex-col md:flex-row justify-between items-center gap-2 text-sm text-gray-400">
           <div>© 2025 Ariel Ogdowski. All Rights Reserved.</div>

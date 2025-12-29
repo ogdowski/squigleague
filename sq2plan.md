@@ -2,6 +2,32 @@
 
 ## IMPLEMENTATION STATUS (Updated: 2025-12-29)
 
+### 🎯 SESSION UPDATE (2025-12-29 Evening)
+
+**Completed:**
+- ✅ OAuth Integration: Discord OAuth added to register panel, Google removed from login
+- ✅ Version 0.3.0: Updated across frontend/backend
+- ✅ Dynamic Footer: Shows version + exchange stats from backend API
+- ✅ Default Army List: Set placeholder example (Ooops All Rats!)
+- ✅ Sticky Footer: Footer now stays at bottom of page
+- ✅ Database Migration: Created herald_exchanges → matchups migration script
+- ✅ Release Automation: Comprehensive `just release` command (version bump, commit, tag, build, push)
+- ✅ Production Safety: Fixed postgres user compatibility, database volumes preserved
+- ✅ Documentation: Migration plan for 2 active herald exchanges
+
+**Deployment Ready:**
+1. `just release 0.3.0` - Complete release (versions, git, images)
+2. `just vps-update` - Deploy to production
+3. `just vps-migrate-herald` - Migrate 2 active exchanges
+
+**Known Issues (In Progress):**
+- ⚠️ Backend build running (installing pip dependencies)
+- ⚠️ `/stats` endpoint routing bug being fixed (moved before `/{matchup_name}`)
+
+---
+
+## IMPLEMENTATION STATUS (Updated: 2025-12-29)
+
 ### ✅ COMPLETED (Phase 1 & 2)
 
 #### Infrastructure
