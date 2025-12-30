@@ -50,6 +50,9 @@ docker-images/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
+coverage.json
+htmlcov/
 htmlcov/
 
 # Other
