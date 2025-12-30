@@ -32,38 +32,26 @@ cd ~/Projects/squig_league
 cp nginx/nginx.prod.conf nginx/nginx.conf.new
 ```
 
-### Step 3: Deploy new version
+### Step 3: Deploy new version (automatic!)
 
 ```bash
 # On your local machine
 
-# 1. Release new version (builds and pushes images)
+# 1. Release new version (builds and pushes ALL images including nginx)
 just release 0.3.0
 
-# 2. Sync .env.prod (update version to 0.3.0)
+# 2. Deploy to VPS (pulls new backend, frontend, AND nginx)
 just vps-update
 ```
 
 This will:
-- ✅ Pull new backend/frontend images (version 0.3.0)
-- ✅ Keep existing SSL certificates
-- ⚠️ Still use old nginx config (temporarily broken routing)
+- ✅ Pull new backend image (version 0.3.0)
+- ✅ Pull new frontend image (version 0.3.0)
+- ✅ Pull new nginx image (version 0.3.0 with updated config!)
+- ✅ Keep existing SSL certificates (in volumes)
+- ✅ Automatically restart all services
 
-### Step 4: Update nginx config on VPS
-
-```bash
-# SSH to VPS
-ssh root@91.98.147.232
-cd ~/squig_league
-
-# Upload new nginx config (run from local machine)
-scp nginx/nginx.prod.conf root@91.98.147.232:~/squig_league/nginx/nginx.conf
-
-# Restart nginx on VPS
-docker-compose restart nginx
-```
-
-### Step 5: Verify everything works
+### Step 4: Verify everything works
 
 ```bash
 # Test HTTPS
@@ -78,7 +66,7 @@ curl https://squigleague.com/api/health
 curl https://squigleague.com/api/matchup/stats
 ```
 
-### Step 6: Migrate Herald data (optional)
+### Step 5: Migrate Herald data (optional)
 
 If you want to preserve the 2 active herald exchanges:
 
@@ -128,17 +116,19 @@ docker-compose down
 docker-compose up -d
 ```
 
-## One-Command Upgrade (Advanced)
+## One-Command Upgrade
 
-If you're confident, you can do it all at once:
+It's really just two commands:
 
 ```bash
-# Local: Release and update
-just release 0.3.0 && \
-scp nginx/nginx.prod.conf root@91.98.147.232:~/squig_league/nginx/nginx.conf && \
-just vps-update && \
-ssh root@91.98.147.232 "cd ~/squig_league && docker-compose restart nginx"
+# 1. Build and push all images (backend, frontend, nginx)
+just release 0.3.0
+
+# 2. Deploy to VPS
+just vps-update
 ```
+
+That's it! The nginx config is now versioned with the image.
 
 ## Post-Upgrade Verification
 
