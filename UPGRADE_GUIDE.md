@@ -10,7 +10,7 @@
 ### Step 1: Backup current state (on VPS)
 
 ```bash
-ssh root@91.98.147.232
+ssh root@YOUR_VPS_IP
 cd ~/squig_league
 
 # Backup current working config
@@ -101,7 +101,7 @@ just vps-migrate-herald
 If something goes wrong:
 
 ```bash
-ssh root@91.98.147.232
+ssh root@YOUR_VPS_IP
 cd ~/squig_league
 
 # Restore old nginx config

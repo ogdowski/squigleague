@@ -11,10 +11,20 @@ venv/
 env/
 ENV/
 
-# Environment
+# Environment variables (NEVER commit these!)
 .env
 .env.local
 .env.prod
+.env.*.local
+backend/.env
+frontend/.env
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+secrets/
+*.secret
 
 # Database
 *.db
