@@ -19,9 +19,10 @@ os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
 os.environ["ENVIRONMENT"] = "testing"
 os.environ["DEBUG"] = "False"
 
-# Import all models to ensure they're registered with SQLModel metadata
-from app.users.models import User, OAuthAccount
 from app.matchup.models import Matchup
+
+# Import all models to ensure they're registered with SQLModel metadata
+from app.users.models import OAuthAccount, User
 
 
 @pytest.fixture(name="session")
@@ -40,8 +41,8 @@ def session_fixture():
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
     """Create a test client with database session override"""
-    from app.main import app
     from app.db import get_session
+    from app.main import app
 
     def get_session_override():
         return session

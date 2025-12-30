@@ -1,10 +1,10 @@
 """OAuth authentication configuration."""
 
 from typing import Optional
-from httpx_oauth.clients.google import GoogleOAuth2
-from httpx_oauth.clients.discord import DiscordOAuth2
 
 from app.config import settings
+from httpx_oauth.clients.discord import DiscordOAuth2
+from httpx_oauth.clients.google import GoogleOAuth2
 
 
 def get_google_oauth_client() -> Optional[GoogleOAuth2]:

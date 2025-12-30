@@ -1,11 +1,13 @@
-from typing import Optional
 from datetime import datetime, timedelta
-from sqlmodel import Field, SQLModel
+from typing import Optional
+
 from app.matchup.words import generate_matchup_id
+from sqlmodel import Field, SQLModel
 
 
 class Matchup(SQLModel, table=True):
     """Matchup model for blind army list exchange (Herald functionality)."""
+
     __tablename__ = "matchups"
 
     id: Optional[int] = Field(default=None, primary_key=True)

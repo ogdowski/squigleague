@@ -1,10 +1,12 @@
-from typing import Optional
 from datetime import datetime
-from sqlmodel import Field, SQLModel, Relationship
+from typing import Optional
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class OAuthAccount(SQLModel, table=True):
     """OAuth account linked to a user."""
+
     __tablename__ = "oauth_accounts"
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -20,6 +22,7 @@ class OAuthAccount(SQLModel, table=True):
 
 class User(SQLModel, table=True):
     """User model."""
+
     __tablename__ = "users"
 
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -1,10 +1,10 @@
 from typing import Optional
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlmodel import Session, select
 
-from app.db import get_session
 from app.core.security import decode_access_token
+from app.db import get_session
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlmodel import Session, select
 
 security = HTTPBearer(auto_error=False)
 
@@ -87,7 +87,8 @@ async def get_current_user(
 
 def require_role(*allowed_roles: str):
     """Dependency factory for role-based access control."""
-    async def role_checker(current_user = Depends(get_current_user)):
+
+    async def role_checker(current_user=Depends(get_current_user)):
         if current_user.role not in allowed_roles and current_user.role != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

@@ -1,9 +1,9 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.db import create_db_and_tables
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -53,9 +53,10 @@ async def root():
     }
 
 
+from app.matchup.routes import router as matchup_router
+
 # Import and include routers
 from app.users.routes import router as users_router
-from app.matchup.routes import router as matchup_router
 
 app.include_router(users_router, prefix="/auth", tags=["Authentication"])
 app.include_router(matchup_router, prefix="/matchup", tags=["Matchup"])

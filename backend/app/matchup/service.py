@@ -1,7 +1,8 @@
 import random
 from datetime import datetime
-from sqlmodel import Session
+
 from app.matchup.models import Matchup
+from sqlmodel import Session
 
 # Hardcoded maps from GHB 2025/2026 (will be replaced with BSData later)
 MAPS = [

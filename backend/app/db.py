@@ -1,5 +1,5 @@
-from sqlmodel import Session, create_engine
 from app.config import settings
+from sqlmodel import Session, create_engine
 
 # Create database engine with appropriate settings for the database type
 if settings.DATABASE_URL.startswith("sqlite"):
@@ -7,7 +7,9 @@ if settings.DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         settings.DATABASE_URL,
         echo=settings.DEBUG,
-        connect_args={"check_same_thread": False} if "memory" in settings.DATABASE_URL else {},
+        connect_args={"check_same_thread": False}
+        if "memory" in settings.DATABASE_URL
+        else {},
     )
 else:
     # PostgreSQL and other databases support connection pooling
@@ -28,10 +30,10 @@ def get_session():
 
 def create_db_and_tables():
     """Create database tables. Called on startup."""
-    from sqlmodel import SQLModel
+    from app.matchup.models import Matchup  # noqa: F401
 
     # Import all models here to ensure they're registered
-    from app.users.models import User, OAuthAccount  # noqa: F401
-    from app.matchup.models import Matchup  # noqa: F401
+    from app.users.models import OAuthAccount, User  # noqa: F401
+    from sqlmodel import SQLModel
 
     SQLModel.metadata.create_all(engine)

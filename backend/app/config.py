@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -6,10 +7,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     # Database
@@ -55,8 +53,10 @@ class Settings(BaseSettings):
     def oauth_enabled(self) -> bool:
         """Check if OAuth is configured."""
         return bool(
-            self.GOOGLE_CLIENT_ID and self.GOOGLE_CLIENT_SECRET
-            or self.DISCORD_CLIENT_ID and self.DISCORD_CLIENT_SECRET
+            self.GOOGLE_CLIENT_ID
+            and self.GOOGLE_CLIENT_SECRET
+            or self.DISCORD_CLIENT_ID
+            and self.DISCORD_CLIENT_SECRET
         )
 
 

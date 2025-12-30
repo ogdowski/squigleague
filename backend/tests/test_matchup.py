@@ -1,10 +1,9 @@
 """Tests for matchup module"""
 
 import pytest
+from app.matchup.models import Matchup
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
-
-from app.matchup.models import Matchup
 
 
 class TestMatchupCreation:
@@ -14,7 +13,9 @@ class TestMatchupCreation:
         """Test creating a matchup without authentication"""
         response = client.post(
             "/matchup",
-            json={"army_list": "My awesome Gloomspite Gitz army\n- 20 Stabbas\n- 3 Fanatics"},
+            json={
+                "army_list": "My awesome Gloomspite Gitz army\n- 20 Stabbas\n- 3 Fanatics"
+            },
         )
 
         assert response.status_code == 201
@@ -31,7 +32,10 @@ class TestMatchupCreation:
         assert matchup is not None
         assert matchup.player1_submitted is True
         assert matchup.player2_submitted is False
-        assert matchup.player1_list == "My awesome Gloomspite Gitz army\n- 20 Stabbas\n- 3 Fanatics"
+        assert (
+            matchup.player1_list
+            == "My awesome Gloomspite Gitz army\n- 20 Stabbas\n- 3 Fanatics"
+        )
         assert matchup.map_name is None
 
     def test_matchup_name_format(self, client: TestClient):
