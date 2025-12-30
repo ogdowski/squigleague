@@ -15,8 +15,9 @@ IMAGE_PREFIX := env_var_or_default('IMAGE_PREFIX', 'ogdowski')
 IMAGE_NAME := env_var_or_default('IMAGE_NAME', 'private')
 SQUIG_VERSION := env_var_or_default('SQUIG_VERSION', '0.1')
 SL_IMAGE := IMAGE_PREFIX + "/" + IMAGE_NAME
-BACKEND_TAG := "squigleague-" + SQUIG_VERSION
+BACKEND_TAG := "squigleague-backend-" + SQUIG_VERSION
 FRONTEND_TAG := "squigleague-frontend-" + SQUIG_VERSION
+NGINX_TAG := "squigleague-nginx-" + SQUIG_VERSION
 
 # Default recipe (shows help)
 default:
@@ -231,6 +232,7 @@ version:
     @echo "📦 Current Squig League version: {{SQUIG_VERSION}}"
     @echo "Backend: {{SL_IMAGE}}:{{BACKEND_TAG}}"
     @echo "Frontend: {{SL_IMAGE}}:{{FRONTEND_TAG}}"
+    @echo "Nginx: {{SL_IMAGE}}:{{NGINX_TAG}}"
 
 # Full release workflow - updates versions, commits, tags, builds, and pushes
 release VERSION:
@@ -333,13 +335,13 @@ push:
     @echo "Image: {{SL_IMAGE}}"
     @echo "Backend tag: {{BACKEND_TAG}}"
     @echo "Frontend tag: {{FRONTEND_TAG}}"
+    @echo "Nginx tag: {{NGINX_TAG}}"
     @echo "🔧 Setting up buildx..."
     docker buildx create --name squig-builder --use 2>/dev/null || docker buildx use squig-builder
     @echo "🏗️  Building backend for linux/amd64 and linux/arm64..."
     cd backend && docker buildx build \
         --platform linux/amd64,linux/arm64 \
         -t {{SL_IMAGE}}:{{BACKEND_TAG}} \
-        -t {{SL_IMAGE}}:latest \
         --push \
         .
     @echo "✅ Backend image pushed!"
@@ -350,9 +352,17 @@ push:
         --push \
         .
     @echo "✅ Frontend image pushed!"
+    @echo "🏗️  Building nginx for linux/amd64 and linux/arm64..."
+    cd nginx && docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        -t {{SL_IMAGE}}:{{NGINX_TAG}} \
+        --push \
+        .
+    @echo "✅ Nginx image pushed!"
     @echo "✅ All images pushed successfully!"
     @echo "Backend: {{SL_IMAGE}}:{{BACKEND_TAG}}"
     @echo "Frontend: {{SL_IMAGE}}:{{FRONTEND_TAG}}"
+    @echo "Nginx: {{SL_IMAGE}}:{{NGINX_TAG}}"
     @echo "Platforms: linux/amd64, linux/arm64"
 
 # Pull Squig League images from registry
