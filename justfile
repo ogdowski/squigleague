@@ -1,5 +1,5 @@
 # Squig League - justfile
-# Modern command runner for building, deploying, and managing Herald
+# Modern command runner for building, deploying, and managing SquigLeague
 
 # Load environment variables from .env files
 set dotenv-load := true
@@ -93,10 +93,6 @@ help:
     @echo "  just health           - Check Squig health"
     @echo "  just ps               - Show running containers"
     @echo ""
-    @echo "Admin:"
-    @echo "  just admin-resources  - Check server resources (requires admin key)"
-    @echo "  just admin-abuse      - Check for abusive IPs (requires admin key)"
-    @echo ""
     @echo "Testing:"
     @echo "  just test             - Run all unit tests"
     @echo "  just test-coverage    - Run tests with coverage report"
@@ -173,9 +169,8 @@ logs-backend:
     @echo "📋 Showing backend logs..."
     docker-compose logs -f backend
 
-# Legacy command (kept for compatibility)
+# Legacy alias (kept for compatibility)
 logs-squig: logs-backend
-logs-herald: logs-backend
 
 # Show PostgreSQL logs only
 logs-db:
@@ -309,9 +304,8 @@ build-backend:
     docker-compose build backend
     @echo "✅ Backend build complete"
 
-# Legacy commands (kept for compatibility)
+# Legacy alias (kept for compatibility)
 build-squig: build-backend
-build-herald: build-backend
 
 # Force rebuild all images (no cache)
 rebuild:
@@ -386,9 +380,7 @@ inspect-image:
     @echo "🔍 Inspecting frontend manifest..."
     docker buildx imagetools inspect {{SL_IMAGE}}:{{FRONTEND_TAG}}
 
-# Legacy commands (kept for compatibility)
-push-herald: push
-pull-herald: pull
+# No legacy push/pull aliases needed
 
 # ═══════════════════════════════════════════════
 # SHELL ACCESS
@@ -770,33 +762,4 @@ test-exchange:
 # ═══════════════════════════════════════════════
 # ADMIN ENDPOINTS
 # ═══════════════════════════════════════════════
-
-# Get server resources (requires admin key from .env.prod)
-admin-resources:
-    #!/usr/bin/env bash
-    set -a
-    if [ -f .env.prod ]; then
-        source .env.prod
-    fi
-    set +a
-    if [ -z "$HERALD_ADMIN_KEY" ]; then
-        echo "❌ HERALD_ADMIN_KEY not set in .env.prod"
-        exit 1
-    fi
-    ENCODED_KEY=$(printf %s "$HERALD_ADMIN_KEY" | jq -sRr @uri)
-    curl -s "https://herald.squigleague.com/admin/resources?admin_key=$ENCODED_KEY" | python3 -m json.tool
-
-# Get abuse report (requires admin key from .env.prod)
-admin-abuse MIN_REQUESTS="100" HOURS="1":
-    #!/usr/bin/env bash
-    set -a
-    if [ -f .env.prod ]; then
-        source .env.prod
-    fi
-    set +a
-    if [ -z "$HERALD_ADMIN_KEY" ]; then
-        echo "❌ HERALD_ADMIN_KEY not set in .env.prod"
-        exit 1
-    fi
-    ENCODED_KEY=$(printf %s "$HERALD_ADMIN_KEY" | jq -sRr @uri)
-    curl -s "https://herald.squigleague.com/admin/abuse-report?admin_key=$ENCODED_KEY&min_requests={{MIN_REQUESTS}}&hours={{HOURS}}" | python3 -m json.tool
+# Note: Admin endpoints will be added in future versions
