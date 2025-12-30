@@ -95,6 +95,12 @@ help:
     @echo "  just admin-resources  - Check server resources (requires admin key)"
     @echo "  just admin-abuse      - Check for abusive IPs (requires admin key)"
     @echo ""
+    @echo "Testing:"
+    @echo "  just test             - Run all unit tests"
+    @echo "  just test-coverage    - Run tests with coverage report"
+    @echo "  just test-file FILE   - Run specific test file"
+    @echo "  just test-watch       - Run tests in watch mode (auto-reload)"
+    @echo ""
     @echo "Cleanup:"
     @echo "  just clean            - Stop and remove containers"
     @echo "  just clean-all        - Remove containers, volumes, and images"
@@ -687,7 +693,30 @@ prune:
 # TESTING
 # ═══════════════════════════════════════════════
 
-# Create test exchange
+# Run all unit tests
+test:
+    @echo "🧪 Running unit tests..."
+    python3 -m pytest backend/tests/ -v --tb=short
+    @echo "✅ Tests complete"
+
+# Run tests with coverage report
+test-coverage:
+    @echo "🧪 Running tests with coverage..."
+    python3 -m pytest backend/tests/ -v --cov=backend/app --cov-report=term-missing --cov-report=html
+    @echo "✅ Coverage report generated in htmlcov/"
+
+# Run tests in watch mode (requires pytest-watch)
+test-watch:
+    @echo "🧪 Running tests in watch mode..."
+    @echo "⚠️  Install pytest-watch: pip install pytest-watch"
+    ptw backend/tests/ -- -v --tb=short
+
+# Run specific test file or test
+test-file FILE:
+    @echo "🧪 Running tests in {{FILE}}..."
+    python3 -m pytest backend/tests/{{FILE}} -v --tb=short
+
+# Create test exchange (API integration test)
 test-exchange:
     @echo "🧪 Creating test exchange..."
     @curl -X POST http://localhost:8000/exchange/create \
