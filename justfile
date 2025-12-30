@@ -76,6 +76,7 @@ help:
     @echo "  just vps-sync-all     - Sync all configs to VPS"
     @echo ""
     @echo "SSL/Certificates:"
+    @echo "  just ssl-setup EMAIL      - Complete SSL setup for first deployment"
     @echo "  just ssl-cert DOMAIN EMAIL - Obtain SSL certificate"
     @echo "  just ssl-cert-all EMAIL    - Obtain SSL for all domains"
     @echo "  just ssl-renew            - Renew SSL certificates"
@@ -613,6 +614,39 @@ db-reset:
 # SSL CERTIFICATES
 # ═══════════════════════════════════════════════
 
+# Setup SSL for first-time production deployment
+ssl-setup EMAIL:
+    @echo "🔒 Setting up SSL certificates for production..."
+    @echo ""
+    @echo "📋 Step 1/4: Checking if nginx is using HTTP-only config..."
+    @if ! grep -q "listen 443" nginx/nginx.conf; then \
+        echo "✅ Good! Currently using HTTP-only config"; \
+    else \
+        echo "⚠️  WARNING: nginx.conf already has SSL config"; \
+        echo "   This might fail if certificates don't exist yet"; \
+        read -p "   Continue anyway? (y/N): " confirm; \
+        if [ "$$confirm" != "y" ]; then exit 1; fi; \
+    fi
+    @echo ""
+    @echo "📋 Step 2/4: Starting services with HTTP-only (for cert validation)..."
+    docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+    @echo ""
+    @echo "📋 Step 3/4: Obtaining SSL certificates..."
+    @sleep 5
+    docker-compose run --rm certbot certonly \
+        --webroot --webroot-path=/var/www/certbot \
+        --email {{EMAIL}} --agree-tos --no-eff-email \
+        -d squigleague.com \
+        -d www.squigleague.com
+    @echo ""
+    @echo "📋 Step 4/4: Switching to HTTPS config and restarting..."
+    cp nginx/nginx.prod.conf nginx/nginx.conf
+    docker-compose restart nginx
+    @echo ""
+    @echo "✅ SSL setup complete!"
+    @echo "🔐 Your site is now accessible via HTTPS"
+    @echo "📝 Certificate will auto-renew every 12 hours"
+
 # Obtain SSL certificate for a domain
 ssl-cert DOMAIN EMAIL:
     @echo "🔒 Obtaining SSL certificate for {{DOMAIN}}..."
@@ -632,8 +666,7 @@ ssl-cert-all EMAIL:
         --webroot --webroot-path=/var/www/certbot \
         --email {{EMAIL}} --agree-tos --no-eff-email \
         -d squigleague.com \
-        -d www.squigleague.com \
-        -d herald.squigleague.com
+        -d www.squigleague.com
     @echo "✅ Certificates obtained for all domains"
     @echo "🔄 Restarting nginx..."
     docker-compose restart nginx
