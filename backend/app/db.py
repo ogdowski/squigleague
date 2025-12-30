@@ -7,9 +7,9 @@ if settings.DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         settings.DATABASE_URL,
         echo=settings.DEBUG,
-        connect_args={"check_same_thread": False}
-        if "memory" in settings.DATABASE_URL
-        else {},
+        connect_args=(
+            {"check_same_thread": False} if "memory" in settings.DATABASE_URL else {}
+        ),
     )
 else:
     # PostgreSQL and other databases support connection pooling

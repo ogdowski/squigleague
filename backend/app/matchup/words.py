@@ -1,4 +1,5 @@
 """Word lists for generating memorable matchup IDs."""
+
 import random
 import string
 
