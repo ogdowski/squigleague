@@ -1,14 +1,23 @@
 from sqlmodel import Session, create_engine
 from app.config import settings
 
-# Create database engine
-engine = create_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,  # Log SQL queries in debug mode
-    pool_pre_ping=True,    # Verify connections before using
-    pool_size=5,           # Connection pool size
-    max_overflow=10,       # Max overflow connections
-)
+# Create database engine with appropriate settings for the database type
+if settings.DATABASE_URL.startswith("sqlite"):
+    # SQLite doesn't support pool_size and max_overflow
+    engine = create_engine(
+        settings.DATABASE_URL,
+        echo=settings.DEBUG,
+        connect_args={"check_same_thread": False} if "memory" in settings.DATABASE_URL else {},
+    )
+else:
+    # PostgreSQL and other databases support connection pooling
+    engine = create_engine(
+        settings.DATABASE_URL,
+        echo=settings.DEBUG,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+    )
 
 
 def get_session():
