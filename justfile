@@ -290,7 +290,7 @@ gh-release VERSION:
 # Build all Docker images (uses default driver for fast local builds)
 build:
     @echo "🔨 Building all images..."
-    docker buildx use default
+    docker context use default 2>/dev/null || true
     docker-compose build
     @echo "✅ Build complete"
 
@@ -329,7 +329,7 @@ push:
     @echo "🔧 Setting up buildx..."
     docker buildx create --name squig-builder --use 2>/dev/null || docker buildx use squig-builder
     @echo "🏗️  Building backend for linux/amd64 and linux/arm64..."
-    cd herald && docker buildx build \
+    cd backend && docker buildx build \
         --platform linux/amd64,linux/arm64 \
         -t {{SL_IMAGE}}:{{BACKEND_TAG}} \
         -t {{SL_IMAGE}}:latest \
