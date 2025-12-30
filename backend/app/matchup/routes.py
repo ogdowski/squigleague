@@ -82,8 +82,8 @@ async def get_stats(session: Session = Depends(get_session)):
     """Get platform statistics."""
     # Count completed matchups (both lists submitted)
     completed_statement = select(func.count(Matchup.id)).where(
-        Matchup.player1_submitted == True,
-        Matchup.player2_submitted == True,
+        Matchup.player1_submitted.is_(True),
+        Matchup.player2_submitted.is_(True),
     )
     completed_count = session.execute(completed_statement).scalar_one()
 
