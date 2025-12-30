@@ -14,15 +14,39 @@ echo "🎨 Auto-formatting Python files..."
 PYTHON_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^backend/.*\.py$')
 
 if [ ! -z "$PYTHON_FILES" ]; then
-    echo "Running Black and isort on staged files..."
+    # Try to find black and isort (check common locations)
+    BLACK_CMD=""
+    ISORT_CMD=""
 
-    # Run Black and isort via Docker
-    docker-compose run --rm backend black $(echo $PYTHON_FILES | sed 's|backend/|/app/|g') 2>/dev/null
-    docker-compose run --rm backend isort $(echo $PYTHON_FILES | sed 's|backend/|/app/|g') 2>/dev/null
+    for cmd_path in "black" "$HOME/Library/Python/3.9/bin/black" "/usr/local/bin/black" "$HOME/.local/bin/black"; do
+        if command -v "$cmd_path" &> /dev/null; then
+            BLACK_CMD="$cmd_path"
+            break
+        fi
+    done
 
-    # Re-stage the formatted files
-    git add $PYTHON_FILES
-    echo -e "${GREEN}✅ Files formatted and re-staged${NC}"
+    for cmd_path in "isort" "$HOME/Library/Python/3.9/bin/isort" "/usr/local/bin/isort" "$HOME/.local/bin/isort"; do
+        if command -v "$cmd_path" &> /dev/null; then
+            ISORT_CMD="$cmd_path"
+            break
+        fi
+    done
+
+    if [ ! -z "$BLACK_CMD" ] && [ ! -z "$ISORT_CMD" ]; then
+        echo "Running Black and isort on: $PYTHON_FILES"
+        $BLACK_CMD $PYTHON_FILES
+        $ISORT_CMD $PYTHON_FILES
+
+        # Re-stage the formatted files
+        git add $PYTHON_FILES
+        echo -e "${GREEN}✅ Files formatted and re-staged${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Black/isort not found${NC}"
+        echo "Install with: pip3 install --user black isort"
+        echo "Or run manually after commit: just test"
+        echo ""
+        echo "Skipping auto-format..."
+    fi
 else
     echo "No Python files to format."
 fi
