@@ -241,8 +241,9 @@ release VERSION:
     @echo "✅ Updated frontend/package.json to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 3/7: Updating backend version..."
+    @sed -i '' 's/SQUIG_VERSION: str = "[^"]*"/SQUIG_VERSION: str = "{{VERSION}}"/' backend/app/config.py
     @sed -i '' 's/"version": "[^"]*"/"version": "{{VERSION}}"/' backend/app/matchup/routes.py
-    @echo "✅ Updated backend/app/matchup/routes.py to v{{VERSION}}"
+    @echo "✅ Updated backend/app/config.py and routes.py to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 4/7: Updating environment files..."
     @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example || true
@@ -250,7 +251,7 @@ release VERSION:
     @echo "✅ Updated env files to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 5/7: Committing changes..."
-    git add frontend/package.json backend/app/matchup/routes.py .env.local.example .env.prod.example
+    git add frontend/package.json backend/app/config.py backend/app/matchup/routes.py .env.local.example .env.prod.example
     git diff --cached --quiet || git commit -m "Release v{{VERSION}}"
     @echo "✅ Changes committed (or already up to date)"
     @echo ""
