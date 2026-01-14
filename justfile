@@ -252,6 +252,8 @@ release VERSION:
     @echo "📋 Step 4/7: Updating environment files..."
     @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example || true
     @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example || true
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local || true
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod || true
     @echo "✅ Updated env files to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 5/7: Committing changes..."
