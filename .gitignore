@@ -11,10 +11,20 @@ venv/
 env/
 ENV/
 
-# Environment
+# Environment variables (NEVER commit these!)
 .env
 .env.local
 .env.prod
+.env.*.local
+backend/.env
+frontend/.env
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+secrets/
+*.secret
 
 # Database
 *.db
@@ -40,7 +50,11 @@ docker-images/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
+coverage.json
+htmlcov/
 htmlcov/
 
 # Other
 TODO.md
+/frontend/node_modules/

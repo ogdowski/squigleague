@@ -1,1 +1,0 @@
-"""Herald module unit tests"""

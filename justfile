@@ -1,5 +1,5 @@
 # Squig League - justfile
-# Modern command runner for building, deploying, and managing Herald
+# Modern command runner for building, deploying, and managing SquigLeague
 
 # Load environment variables from .env files
 set dotenv-load := true
@@ -15,8 +15,9 @@ IMAGE_PREFIX := env_var_or_default('IMAGE_PREFIX', 'ogdowski')
 IMAGE_NAME := env_var_or_default('IMAGE_NAME', 'private')
 SQUIG_VERSION := env_var_or_default('SQUIG_VERSION', '0.1')
 SL_IMAGE := IMAGE_PREFIX + "/" + IMAGE_NAME
-BACKEND_TAG := "squigleague-" + SQUIG_VERSION
+BACKEND_TAG := "squigleague-backend-" + SQUIG_VERSION
 FRONTEND_TAG := "squigleague-frontend-" + SQUIG_VERSION
+NGINX_TAG := "squigleague-nginx-" + SQUIG_VERSION
 
 # Default recipe (shows help)
 default:
@@ -53,18 +54,18 @@ help:
     @echo "  just env-create-local - Create .env.local from template"
     @echo "  just env-create-prod  - Create .env.prod from template"
     @echo "  just version          - Show current version"
-    @echo "  just bump VERSION     - Bump version (e.g., just bump 0.2)"
     @echo ""
     @echo "Releases:"
-    @echo "  just tag VERSION      - Create git tag for version"
-    @echo "  just release VERSION  - Create and push git tag"
+    @echo "  just release VERSION    - Full release: version bump, commit, tag, build, push"
     @echo "  just gh-release VERSION - Create GitHub release (requires gh CLI)"
     @echo ""
     @echo "Database:"
-    @echo "  just db-connect       - Connect to PostgreSQL shell"
-    @echo "  just db-backup        - Backup database"
-    @echo "  just db-restore FILE  - Restore database from backup"
-    @echo "  just db-reset         - Reset database (DANGER!)"
+    @echo "  just db-migrate-herald    - Migrate herald exchanges to matchups (run once)"
+    @echo "  just vps-migrate-herald   - Migrate herald on VPS (run once after deploy)"
+    @echo "  just db-connect           - Connect to PostgreSQL shell"
+    @echo "  just db-backup            - Backup database"
+    @echo "  just db-restore FILE      - Restore database from backup"
+    @echo "  just db-reset             - Reset database (DANGER!)"
     @echo ""
     @echo "VPS Management:"
     @echo "  just ssh-prod         - SSH into production VPS"
@@ -76,6 +77,7 @@ help:
     @echo "  just vps-sync-all     - Sync all configs to VPS"
     @echo ""
     @echo "SSL/Certificates:"
+    @echo "  just ssl-setup EMAIL      - Complete SSL setup for first deployment"
     @echo "  just ssl-cert DOMAIN EMAIL - Obtain SSL certificate"
     @echo "  just ssl-cert-all EMAIL    - Obtain SSL for all domains"
     @echo "  just ssl-renew            - Renew SSL certificates"
@@ -91,9 +93,11 @@ help:
     @echo "  just health           - Check Squig health"
     @echo "  just ps               - Show running containers"
     @echo ""
-    @echo "Admin:"
-    @echo "  just admin-resources  - Check server resources (requires admin key)"
-    @echo "  just admin-abuse      - Check for abusive IPs (requires admin key)"
+    @echo "Testing:"
+    @echo "  just test             - Run all unit tests"
+    @echo "  just test-coverage    - Run tests with coverage report"
+    @echo "  just test-file FILE   - Run specific test file"
+    @echo "  just test-watch       - Run tests in watch mode (auto-reload)"
     @echo ""
     @echo "Cleanup:"
     @echo "  just clean            - Stop and remove containers"
@@ -113,7 +117,7 @@ dev:
         echo "✅ .env.local created with development defaults"; \
     fi
     @echo "📝 Using .env.local for configuration"
-    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up --build
+    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up
 
 # Start services in background
 up:
@@ -124,7 +128,7 @@ up:
         echo "✅ .env.local created with development defaults"; \
     fi
     @echo "📝 Using .env.local for configuration"
-    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+    docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d
     @echo "✅ Services started!"
     @echo "📊 Run 'just logs' to view logs"
 
@@ -160,13 +164,13 @@ logs:
     @echo "📋 Showing logs (Ctrl+C to exit)..."
     docker-compose logs -f
 
-# Show Squig logs only
-logs-squig:
-    @echo "📋 Showing Squig logs..."
-    docker-compose logs -f squig
+# Show backend logs only
+logs-backend:
+    @echo "📋 Showing backend logs..."
+    docker-compose logs -f backend
 
-# Legacy command (kept for compatibility)
-logs-herald: logs-squig
+# Legacy alias (kept for compatibility)
+logs-squig: logs-backend
 
 # Show PostgreSQL logs only
 logs-db:
@@ -223,47 +227,53 @@ version:
     @echo "📦 Current Squig League version: {{SQUIG_VERSION}}"
     @echo "Backend: {{SL_IMAGE}}:{{BACKEND_TAG}}"
     @echo "Frontend: {{SL_IMAGE}}:{{FRONTEND_TAG}}"
+    @echo "Nginx: {{SL_IMAGE}}:{{NGINX_TAG}}"
 
-# Bump version in all env files
-bump VERSION:
-    @echo "📦 Bumping version to {{VERSION}}..."
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example
-    @echo "✅ Version bumped to {{VERSION}} in all env files"
-    @echo ""
-    @echo "Next steps:"
-    @echo "  1. Update CHANGELOG.md with release notes"
-    @echo "  2. git add -A && git commit -m 'Bump version to {{VERSION}}'"
-    @echo "  3. just release {{VERSION}}  - Create git tag and GitHub release"
-    @echo "  4. just push                 - Build and push new version"
-    @echo "  5. just vps-update           - Deploy to VPS"
-
-# Create git tag for version
-tag VERSION:
-    @echo "🏷️  Creating git tag v{{VERSION}}..."
-    git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
-    @echo "✅ Tag v{{VERSION}} created"
-    @echo "Push tag with: git push origin v{{VERSION}}"
-
-# Create and push git tag
+# Full release workflow - updates versions, commits, tags, builds, and pushes
 release VERSION:
-    @echo "🚀 Creating release v{{VERSION}}..."
+    @echo "🚀 Starting full release workflow for v{{VERSION}}..."
+    @echo ""
+    @echo "📋 Step 1/7: Checking for uncommitted changes..."
     @if ! git diff-index --quiet HEAD --; then \
-        echo "❌ You have uncommitted changes. Commit them first."; \
+        echo "❌ You have uncommitted changes. Commit or stash them first."; \
         exit 1; \
     fi
-    @echo "📝 Creating git tag..."
-    git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
-    @echo "📤 Pushing tag to GitHub..."
-    git push origin v{{VERSION}}
-    @echo "✅ Release v{{VERSION}} created and pushed!"
+    @echo "✅ Working directory clean"
     @echo ""
-    @echo "🌐 Create GitHub release at:"
-    @echo "   https://github.com/ogdowski/squigleague/releases/new?tag=v{{VERSION}}"
+    @echo "📋 Step 2/7: Updating package.json version..."
+    @sed -i '' 's/"version": "[^"]*"/"version": "{{VERSION}}"/' frontend/package.json
+    @echo "✅ Updated frontend/package.json to v{{VERSION}}"
     @echo ""
-    @echo "Or use GitHub CLI: gh release create v{{VERSION}} --generate-notes"
+    @echo "📋 Step 3/7: Updating backend version..."
+    @sed -i '' 's/SQUIG_VERSION: str = "[^"]*"/SQUIG_VERSION: str = "{{VERSION}}"/' backend/app/config.py
+    @sed -i '' 's/"version": "[^"]*"/"version": "{{VERSION}}"/' backend/app/matchup/routes.py
+    @echo "✅ Updated backend/app/config.py and routes.py to v{{VERSION}}"
+    @echo ""
+    @echo "📋 Step 4/7: Updating environment files..."
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example || true
+    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example || true
+    @echo "✅ Updated env files to v{{VERSION}}"
+    @echo ""
+    @echo "📋 Step 5/7: Committing changes..."
+    git add frontend/package.json backend/app/config.py backend/app/matchup/routes.py .env.local.example .env.prod.example
+    git diff --cached --quiet || git commit -m "Release v{{VERSION}}"
+    @echo "✅ Changes committed (or already up to date)"
+    @echo ""
+    @echo "📋 Step 6/7: Creating and pushing git tag..."
+    git tag -a v{{VERSION}} -m "Release v{{VERSION}}" 2>/dev/null || echo "  ℹ️  Tag already exists, continuing..."
+    git push origin HEAD
+    git push origin v{{VERSION}} 2>/dev/null || echo "  ℹ️  Tag already pushed, continuing..."
+    @echo "✅ Tag v{{VERSION}} created and pushed"
+    @echo ""
+    @echo "📋 Step 7/7: Building and pushing Docker images..."
+    @echo "🏗️  This will build multi-arch images and push to registry..."
+    just push
+    @echo ""
+    @echo "✅ Release v{{VERSION}} complete!"
+    @echo ""
+    @echo "📦 Next steps:"
+    @echo "  • Deploy to VPS: just vps-update"
+    @echo "  • Create GitHub release: gh release create v{{VERSION}} --generate-notes"
 
 # Create GitHub release with notes (requires gh CLI)
 gh-release VERSION:
@@ -281,20 +291,21 @@ gh-release VERSION:
 # BUILDING
 # ═══════════════════════════════════════════════
 
-# Build all Docker images
+# Build all Docker images (uses default driver for fast local builds)
 build:
     @echo "🔨 Building all images..."
+    docker context use default 2>/dev/null || true
     docker-compose build
     @echo "✅ Build complete"
 
-# Build Squig module only (legacy - use 'build' instead)
-build-squig:
-    @echo "🔨 Building Squig module..."
-    docker-compose build squig
-    @echo "✅ Squig module build complete"
+# Build backend only (legacy - use 'build' instead)
+build-backend:
+    @echo "🔨 Building backend..."
+    docker-compose build backend
+    @echo "✅ Backend build complete"
 
-# Legacy command (kept for compatibility)
-build-herald: build-squig
+# Legacy alias (kept for compatibility)
+build-squig: build-backend
 
 # Force rebuild all images (no cache)
 rebuild:
@@ -318,13 +329,13 @@ push:
     @echo "Image: {{SL_IMAGE}}"
     @echo "Backend tag: {{BACKEND_TAG}}"
     @echo "Frontend tag: {{FRONTEND_TAG}}"
+    @echo "Nginx tag: {{NGINX_TAG}}"
     @echo "🔧 Setting up buildx..."
     docker buildx create --name squig-builder --use 2>/dev/null || docker buildx use squig-builder
     @echo "🏗️  Building backend for linux/amd64 and linux/arm64..."
-    cd herald && docker buildx build \
+    cd backend && docker buildx build \
         --platform linux/amd64,linux/arm64 \
         -t {{SL_IMAGE}}:{{BACKEND_TAG}} \
-        -t {{SL_IMAGE}}:latest \
         --push \
         .
     @echo "✅ Backend image pushed!"
@@ -335,9 +346,17 @@ push:
         --push \
         .
     @echo "✅ Frontend image pushed!"
+    @echo "🏗️  Building nginx for linux/amd64 and linux/arm64..."
+    cd nginx && docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        -t {{SL_IMAGE}}:{{NGINX_TAG}} \
+        --push \
+        .
+    @echo "✅ Nginx image pushed!"
     @echo "✅ All images pushed successfully!"
     @echo "Backend: {{SL_IMAGE}}:{{BACKEND_TAG}}"
     @echo "Frontend: {{SL_IMAGE}}:{{FRONTEND_TAG}}"
+    @echo "Nginx: {{SL_IMAGE}}:{{NGINX_TAG}}"
     @echo "Platforms: linux/amd64, linux/arm64"
 
 # Pull Squig League images from registry
@@ -361,9 +380,7 @@ inspect-image:
     @echo "🔍 Inspecting frontend manifest..."
     docker buildx imagetools inspect {{SL_IMAGE}}:{{FRONTEND_TAG}}
 
-# Legacy commands (kept for compatibility)
-push-herald: push
-pull-herald: pull
+# No legacy push/pull aliases needed
 
 # ═══════════════════════════════════════════════
 # SHELL ACCESS
@@ -371,13 +388,13 @@ pull-herald: pull
 
 # Shell into local Squig container
 shell:
-    @echo "🐚 Opening shell in Squig container..."
-    docker-compose exec squig /bin/sh
+    @echo "🐚 Opening shell in backend container..."
+    docker-compose exec backend /bin/sh
 
 # Check local environment variables
 env-local:
-    @echo "🔍 Local Squig environment variables:"
-    @docker-compose exec squig env | grep -E 'DATABASE_URL|ADMIN_KEY' || echo "❌ Container not running"
+    @echo "🔍 Local backend environment variables:"
+    @docker-compose exec backend env | grep -E 'DATABASE_URL|SECRET_KEY' || echo "❌ Container not running"
     @echo ""
     @echo "🔍 Local Postgres environment variables:"
     @docker-compose exec postgres env | grep -E 'POSTGRES_PASSWORD|POSTGRES_USER|POSTGRES_DB' || echo "❌ Container not running"
@@ -418,13 +435,13 @@ env-prod:
     echo "📄 .env.prod file:"
     ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && cat .env.prod 2>/dev/null || echo '❌ .env.prod not found'"
     echo ""
-    echo "🐳 Squig container environment:"
-    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec -T squig env | grep -E 'DATABASE_URL|ADMIN_KEY' || echo '❌ Container not running'"
+    echo "🐳 Backend container environment:"
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec -T backend env | grep -E 'DATABASE_URL|SECRET_KEY' || echo '❌ Container not running'"
     echo ""
     echo "🐳 Postgres container environment:"
     ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec -T postgres env | grep -E 'POSTGRES_PASSWORD|POSTGRES_USER|POSTGRES_DB' || echo '❌ Container not running'"
 
-# Shell into production Squig container
+# Shell into production backend container
 shell-prod:
     #!/usr/bin/env bash
     set -a
@@ -436,8 +453,8 @@ shell-prod:
         echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
         exit 1
     fi
-    echo "🐚 Opening shell in production Squig container..."
-    ssh -t ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec squig /bin/sh"
+    echo "🐚 Opening shell in production backend container..."
+    ssh -t ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose exec backend /bin/sh"
 
 # View logs on VPS
 vps-logs:
@@ -539,6 +556,29 @@ vps-sync-all:
 # DATABASE
 # ═══════════════════════════════════════════════
 
+# Migrate herald_exchanges to matchups table (run once after deploying v0.3.0+)
+db-migrate-herald:
+    @echo "🔄 Migrating herald exchanges to matchups..."
+    @docker exec -i squig-postgres psql -U squig squigleague < database/migrate_herald_to_matchups.sql
+    @echo "✅ Migration complete!"
+
+# Migrate herald exchanges on VPS (run once after deploying v0.3.0+)
+vps-migrate-herald:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$VPS_IP" ]; then
+        echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
+        exit 1
+    fi
+    echo "🔄 Migrating herald exchanges on VPS..."
+    scp database/migrate_herald_to_matchups.sql ${VPS_USER}@${VPS_IP}:~/squig_league/
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker exec -i squig-postgres psql -U squig squigleague < migrate_herald_to_matchups.sql"
+    echo "✅ Migration complete!"
+
 # Connect to PostgreSQL shell
 db-connect:
     @echo "🗄️  Connecting to PostgreSQL..."
@@ -576,6 +616,39 @@ db-reset:
 # SSL CERTIFICATES
 # ═══════════════════════════════════════════════
 
+# Setup SSL for first-time production deployment
+ssl-setup EMAIL:
+    @echo "🔒 Setting up SSL certificates for production..."
+    @echo ""
+    @echo "📋 Step 1/4: Checking if nginx is using HTTP-only config..."
+    @if ! grep -q "listen 443" nginx/nginx.conf; then \
+        echo "✅ Good! Currently using HTTP-only config"; \
+    else \
+        echo "⚠️  WARNING: nginx.conf already has SSL config"; \
+        echo "   This might fail if certificates don't exist yet"; \
+        read -p "   Continue anyway? (y/N): " confirm; \
+        if [ "$$confirm" != "y" ]; then exit 1; fi; \
+    fi
+    @echo ""
+    @echo "📋 Step 2/4: Starting services with HTTP-only (for cert validation)..."
+    docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+    @echo ""
+    @echo "📋 Step 3/4: Obtaining SSL certificates..."
+    @sleep 5
+    docker-compose run --rm certbot certonly \
+        --webroot --webroot-path=/var/www/certbot \
+        --email {{EMAIL}} --agree-tos --no-eff-email \
+        -d squigleague.com \
+        -d www.squigleague.com
+    @echo ""
+    @echo "📋 Step 4/4: Switching to HTTPS config and restarting..."
+    cp nginx/nginx.prod.conf nginx/nginx.conf
+    docker-compose restart nginx
+    @echo ""
+    @echo "✅ SSL setup complete!"
+    @echo "🔐 Your site is now accessible via HTTPS"
+    @echo "📝 Certificate will auto-renew every 12 hours"
+
 # Obtain SSL certificate for a domain
 ssl-cert DOMAIN EMAIL:
     @echo "🔒 Obtaining SSL certificate for {{DOMAIN}}..."
@@ -595,8 +668,7 @@ ssl-cert-all EMAIL:
         --webroot --webroot-path=/var/www/certbot \
         --email {{EMAIL}} --agree-tos --no-eff-email \
         -d squigleague.com \
-        -d www.squigleague.com \
-        -d herald.squigleague.com
+        -d www.squigleague.com
     @echo "✅ Certificates obtained for all domains"
     @echo "🔄 Restarting nginx..."
     docker-compose restart nginx
@@ -621,7 +693,7 @@ stats:
 # Check Squig health
 health:
     @echo "🏥 Checking Squig health..."
-    @curl -s http://localhost:8000/health | python3 -m json.tool || echo "❌ Squig is not responding"
+    @curl -s http://localhost/api/health | python3 -m json.tool || echo "❌ Squig is not responding"
 
 # Show running containers
 ps:
@@ -656,7 +728,30 @@ prune:
 # TESTING
 # ═══════════════════════════════════════════════
 
-# Create test exchange
+# Run all unit tests
+test:
+    @echo "🧪 Running unit tests..."
+    python3 -m pytest backend/tests/ -v --tb=short
+    @echo "✅ Tests complete"
+
+# Run tests with coverage report
+test-coverage:
+    @echo "🧪 Running tests with coverage..."
+    python3 -m pytest backend/tests/ -v --cov=backend/app --cov-report=term-missing --cov-report=html
+    @echo "✅ Coverage report generated in htmlcov/"
+
+# Run tests in watch mode (requires pytest-watch)
+test-watch:
+    @echo "🧪 Running tests in watch mode..."
+    @echo "⚠️  Install pytest-watch: pip install pytest-watch"
+    ptw backend/tests/ -- -v --tb=short
+
+# Run specific test file or test
+test-file FILE:
+    @echo "🧪 Running tests in {{FILE}}..."
+    python3 -m pytest backend/tests/{{FILE}} -v --tb=short
+
+# Create test exchange (API integration test)
 test-exchange:
     @echo "🧪 Creating test exchange..."
     @curl -X POST http://localhost:8000/exchange/create \
@@ -667,33 +762,4 @@ test-exchange:
 # ═══════════════════════════════════════════════
 # ADMIN ENDPOINTS
 # ═══════════════════════════════════════════════
-
-# Get server resources (requires admin key from .env.prod)
-admin-resources:
-    #!/usr/bin/env bash
-    set -a
-    if [ -f .env.prod ]; then
-        source .env.prod
-    fi
-    set +a
-    if [ -z "$HERALD_ADMIN_KEY" ]; then
-        echo "❌ HERALD_ADMIN_KEY not set in .env.prod"
-        exit 1
-    fi
-    ENCODED_KEY=$(printf %s "$HERALD_ADMIN_KEY" | jq -sRr @uri)
-    curl -s "https://herald.squigleague.com/admin/resources?admin_key=$ENCODED_KEY" | python3 -m json.tool
-
-# Get abuse report (requires admin key from .env.prod)
-admin-abuse MIN_REQUESTS="100" HOURS="1":
-    #!/usr/bin/env bash
-    set -a
-    if [ -f .env.prod ]; then
-        source .env.prod
-    fi
-    set +a
-    if [ -z "$HERALD_ADMIN_KEY" ]; then
-        echo "❌ HERALD_ADMIN_KEY not set in .env.prod"
-        exit 1
-    fi
-    ENCODED_KEY=$(printf %s "$HERALD_ADMIN_KEY" | jq -sRr @uri)
-    curl -s "https://herald.squigleague.com/admin/abuse-report?admin_key=$ENCODED_KEY&min_requests={{MIN_REQUESTS}}&hours={{HOURS}}" | python3 -m json.tool
+# Note: Admin endpoints will be added in future versions

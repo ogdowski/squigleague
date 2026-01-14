@@ -1,1 +1,0 @@
-"""Herald module integration tests"""

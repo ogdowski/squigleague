@@ -2,64 +2,119 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0.html)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 
-Open-source Warhammer management platform with integrated modules for fair play, tournament organization, and collection management.
+Open-source blind army list exchange platform for Age of Sigmar competitive play.
 
 **Live:** [squigleague.com](https://squigleague.com)
 
+## Features
+
+- **Herald (Matchup System)**: Blind army list exchange with automatic map randomization
+- **Friendly Matchup IDs**: Age of Sigmar themed IDs (e.g., "mighty-dragon-3x7a")
+- **Anonymous Play**: Create matchups without registration
+- **7-Day Expiration**: Matchups automatically expire after 7 days
+- **OAuth Ready**: Google and Discord authentication (coming soon)
+
 ## Architecture
 
-Squig League uses a modern frontend/backend separation architecture:
+Modern full-stack web application:
 
-- **Backend** (herald/): FastAPI JSON API serving `/api/herald/*` endpoints
-- **Frontend** (frontend/): Alpine.js SPA serving static UI
-- **Nginx**: Routes `/api/*` to backend, everything else to frontend
-- **Database**: PostgreSQL (shared by all modules)
+- **Backend**: FastAPI + SQLModel + PostgreSQL
+- **Frontend**: Vue 3 + Vite + Tailwind CSS
+- **Reverse Proxy**: Nginx routes `/api/*` → backend, `/` → frontend
+- **Deployment**: Docker Compose with multi-stage builds
 
-This architecture enables independent scaling, easier testing, and clean separation of concerns.
+## Quick Start
 
-## Modules
+### Local Development
 
-### Active
+```bash
+# Start all services
+docker-compose up -d
 
-- **Herald** - Blind army list exchange for fair battles
+# Access the application
+open http://localhost
+```
 
-### Roadmap
+### Production Deployment
 
-- **Squire**: Battle plan randomizer (AoS, 40k, Old World) + score tracker and battle assistant
-- **Archivist**: BSData integration
-- **Herald**: Mission randomizer using BSData
-- **Marshal**: Army builder
-- **Keeper**: Personal army tracker
-- **Patron**: Tournament management system
+```bash
+# Build and deploy
+just release v2.0.0
 
-**Supported Game Systems**:
-- Warhammer Age of Sigmar (4th Edition)
-- Warhammer 40,000 (10th Edition)
-- Warhammer: The Old World
-- *More systems coming...*
+# Or manually
+docker-compose -f docker-compose.prod.yml up -d
+```
 
-## Getting Started
+## Development
 
-See [SETUP.md](SETUP.md) for installation and setup instructions.
+### Backend (FastAPI)
 
-## Contributing
+```bash
+cd backend
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+# Install dependencies
+pip install -r requirements.txt
 
-**Code of Conduct:** Be respectful and professional. We follow the [Contributor Covenant](https://www.contributor-covenant.org).
+# Run dev server
+uvicorn app.main:app --reload
+```
 
-**Security:** Found a vulnerability? Email **squigleague@proton.me** - don't create public issues.
+### Frontend (Vue 3)
 
-**Questions?** Open an [issue](https://github.com/arielogdowski/squig_league/issues) or email squigleague@proton.me
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+```
+
+## Project Structure
+
+```
+squig_league/
+├── backend/           # FastAPI backend
+│   ├── app/
+│   │   ├── users/     # User authentication
+│   │   ├── matchup/   # Herald matchup logic
+│   │   └── core/      # Shared utilities
+│   └── Dockerfile
+├── frontend/          # Vue 3 frontend
+│   ├── src/
+│   │   ├── views/     # Page components
+│   │   ├── stores/    # Pinia state management
+│   │   └── router/    # Vue Router config
+│   └── Dockerfile
+├── nginx/             # Reverse proxy config
+│   ├── nginx.conf         # Local (HTTP)
+│   └── nginx.prod.conf    # Production (HTTPS)
+└── docker-compose.yml
+```
+
+## Environment Variables
+
+### Backend (.env)
+
+```env
+DATABASE_URL=postgresql://user:pass@postgres:5432/db
+SECRET_KEY=your-secret-key
+GOOGLE_CLIENT_ID=your-google-oauth-id
+DISCORD_CLIENT_ID=your-discord-oauth-id
+```
+
+### Frontend (.env)
+
+```env
+VITE_API_URL=http://localhost:8000
+```
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+AGPL-3.0 - See [LICENSE](LICENSE) for details.
 
-Copyright © 2025 Ariel Ogdowski
+## Contributing
 
-## Disclaimer
-
-Squig League is an independent project and is not affiliated with, endorsed by, or associated with Games Workshop Limited. All Warhammer-related trademarks and copyrights are property of Games Workshop Limited.
+Contributions welcome! Please feel free to submit a Pull Request.

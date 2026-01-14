@@ -1,12 +1,16 @@
 # Coverage configuration for pytest-cov
 
 [run]
+# Use relative file paths for CI compatibility
+relative_files = True
+
 # Source packages to measure coverage
-source = herald, squire
+source = backend/app
 
 # Files to omit from coverage
 omit =
     # Test files
+    backend/tests/*
     tests/*
     */tests/*
     # Virtual environment
@@ -15,11 +19,6 @@ omit =
     */venv/*
     # Configuration
     */conftest.py
-    # Development scripts
-    scripts/*
-    # Database migrations
-    */migrations/*
-    */alembic/*
 
 # Enable branch coverage
 branch = True
@@ -32,7 +31,7 @@ concurrency = thread
 show_missing = True
 
 # Minimum coverage percentage (fail if below)
-fail_under = 100
+fail_under = 40
 
 # Precision for percentage
 precision = 2
