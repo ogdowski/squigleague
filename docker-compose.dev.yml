@@ -35,3 +35,13 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+
+  nginx:
+    # Build locally for development
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+
+    # Override prod config with http-only for local development
+    volumes:
+      - ./nginx/nginx.http-only.conf:/etc/nginx/nginx.conf:ro
