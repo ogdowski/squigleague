@@ -155,7 +155,7 @@ async def oauth_google():
             detail="Google OAuth not configured",
         )
 
-    redirect_uri = f"{settings.CORS_ORIGINS[0]}/api/auth/oauth/google/callback"
+    redirect_uri = f"{settings.BASE_URL}/api/auth/oauth/google/callback"
     authorization_url = await client.get_authorization_url(
         redirect_uri,
         scope=["openid", "email", "profile"],
@@ -176,7 +176,7 @@ async def oauth_google_callback(
             detail="Google OAuth not configured",
         )
 
-    redirect_uri = f"{settings.CORS_ORIGINS[0]}/api/auth/oauth/google/callback"
+    redirect_uri = f"{settings.BASE_URL}/api/auth/oauth/google/callback"
 
     try:
         token = await client.get_access_token(code, redirect_uri)
@@ -240,7 +240,7 @@ async def oauth_google_callback(
 
         # Redirect to frontend with token
         frontend_url = (
-            settings.CORS_ORIGINS[0] if settings.CORS_ORIGINS else "http://localhost"
+            settings.BASE_URL if settings.CORS_ORIGINS else "http://localhost"
         )
         return RedirectResponse(
             url=f"{frontend_url}/oauth/callback?token={access_token}&provider=google"
@@ -263,7 +263,7 @@ async def oauth_discord():
             detail="Discord OAuth not configured",
         )
 
-    redirect_uri = f"{settings.CORS_ORIGINS[0]}/api/auth/oauth/discord/callback"
+    redirect_uri = f"{settings.BASE_URL}/api/auth/oauth/discord/callback"
     authorization_url = await client.get_authorization_url(
         redirect_uri,
         scope=["identify", "email"],
@@ -284,7 +284,7 @@ async def oauth_discord_callback(
             detail="Discord OAuth not configured",
         )
 
-    redirect_uri = f"{settings.CORS_ORIGINS[0]}/api/auth/oauth/discord/callback"
+    redirect_uri = f"{settings.BASE_URL}/api/auth/oauth/discord/callback"
 
     try:
         token = await client.get_access_token(code, redirect_uri)
@@ -350,7 +350,7 @@ async def oauth_discord_callback(
 
         # Redirect to frontend with token
         frontend_url = (
-            settings.CORS_ORIGINS[0] if settings.CORS_ORIGINS else "http://localhost"
+            settings.BASE_URL if settings.CORS_ORIGINS else "http://localhost"
         )
         return RedirectResponse(
             url=f"{frontend_url}/oauth/callback?token={access_token}&provider=discord"

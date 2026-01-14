@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # Admin
     ADMIN_IP: Optional[str] = None
 
+    # Base URL for OAuth callbacks (set to production domain in prod)
+    BASE_URL: str = "https://"
+
     # CORS
     CORS_ORIGINS: list[str] = [
         "http://localhost",
