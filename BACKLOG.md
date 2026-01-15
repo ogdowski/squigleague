@@ -561,9 +561,54 @@ def test_full_battle_workflow(test_db, test_client):
 
 ---
 
-## Herald Enhancements Backlog
+## Matchup/Herald Enhancements Backlog
 
 ### High Priority
+
+- [ ] 🟠 **MATCHUP-001**: Faction extraction and tracking
+  - Parse army lists to extract faction information
+  - Store faction in matchups table (player1_faction, player2_faction)
+  - Display factions on matchup view
+  - Display all factions used by user on their profile
+  - Support multiple game systems (AoS, 40k, TOW)
+  - **Dependencies**: Faction parsing logic, database migration
+  - **Estimated**: 3 days
+
+- [ ] 🟠 **MATCHUP-002**: Battle tactics extraction and storage
+  - Parse army lists to extract battle tactics (2 per list)
+  - Create battle_tactics table (matchup_id, player, tactic_name)
+  - Display tactics on matchup view
+  - Show tactics alongside army lists when revealed
+  - **Dependencies**: Tactics parsing logic, database migration
+  - **Estimated**: 2 days
+
+- [ ] 🟠 **MATCHUP-003**: Monthly statistics page
+  - Stats page showing matchups per month
+  - Breakdown by faction
+  - Total matchups counter
+  - Faction popularity chart
+  - Filter by date range
+  - **Dependencies**: MATCHUP-001, MATCHUP-002
+  - **Estimated**: 3 days
+
+- [ ] 🟠 **MATCHUP-004**: Battle status tracking system
+  - Add status field to matchups: Planned → Battle Completed → Results Reported
+  - "Planned" status when matchup is created and revealed
+  - "Battle Completed" when result is entered by either player
+  - "Results Reported" when both players confirm result
+  - Optional battle date field (defaults to result entry time)
+  - Result submission UI with VP scores
+  - Dispute resolution for mismatched results
+  - **Dependencies**: Database migration, new routes, UI updates
+  - **Estimated**: 4 days
+
+- [ ] 🟠 **MATCHUP-005**: Tactics statistics integration
+  - Add tactics column to stats page
+  - Show most popular tactics by month
+  - Tactics usage frequency chart
+  - Filter stats by faction and tactics
+  - **Dependencies**: MATCHUP-002, MATCHUP-003
+  - **Estimated**: 2 days
 
 - [ ] 🟠 **HERALD-001**: Mission randomizer integration
   - Add "Roll Mission" button to Herald exchange
@@ -750,4 +795,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
 
 ---
 
-**Last Review**: November 20, 2025
+**Last Review**: January 15, 2026  
+**Recent Additions**: MATCHUP-001 through MATCHUP-005 (Faction tracking, battle status, tactics, statistics)
