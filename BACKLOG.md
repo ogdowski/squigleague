@@ -677,6 +677,19 @@ def test_full_battle_workflow(test_db, test_client):
   - **Dependencies**: User authentication, admin role system
   - **Estimated**: 5 days
 
+- [ ] 🟠 **MATCHUP-006**: Soft delete matchup functionality
+  - Add "deleted" status to matchups (soft delete, not hard delete)
+  - Admin can delete any matchup immediately
+  - Players can mark matchup for deletion
+  - Matchup deleted when both players mark for deletion
+  - Deleted matchups remain visible to original players and admins
+  - Deleted matchups excluded from statistics
+  - Admin can restore deleted matchup to any status
+  - Add deleted_at timestamp and deleted_by user tracking
+  - Deletion reason field (optional)
+  - **Dependencies**: Database migration, status field expansion
+  - **Estimated**: 2 days
+
 - [ ] 🟠 **INFRA-001**: CI/CD pipeline
   - GitHub Actions workflow
   - Automated testing on PR
