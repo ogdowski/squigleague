@@ -25,6 +25,8 @@ class MatchupStatus(BaseModel):
     is_revealed: bool
     created_at: datetime
     expires_at: datetime
+    player1_username: Optional[str] = None
+    player2_username: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -38,6 +40,8 @@ class MatchupReveal(BaseModel):
     player2_list: str
     map_name: str
     revealed_at: datetime
+    player1_username: Optional[str] = None
+    player2_username: Optional[str] = None
 
     class Config:
         from_attributes = True
