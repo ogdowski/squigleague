@@ -664,6 +664,19 @@ def test_full_battle_workflow(test_db, test_client):
 
 ### High Priority
 
+- [ ] 🟠 **ADMIN-001**: Admin panel for matchup management
+  - Admin dashboard with matchup list view
+  - Filter matchups by: status, date range, player ID, usernames, anonymous/registered
+  - Search by: matchup name, player username, army list content
+  - Sort by: created date, expiration, revealed status
+  - View full matchup details (both lists, players, timestamps)
+  - Edit matchup player assignment (player1_id, player2_id)
+  - Use case: Assign anonymous matchups to user accounts retroactively
+  - Admin role-based access control
+  - Audit log for admin actions
+  - **Dependencies**: User authentication, admin role system
+  - **Estimated**: 5 days
+
 - [ ] 🟠 **INFRA-001**: CI/CD pipeline
   - GitHub Actions workflow
   - Automated testing on PR
