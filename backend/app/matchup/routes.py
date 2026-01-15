@@ -191,7 +191,13 @@ async def submit_army_list(
         is_player1 = True
 
     try:
-        matchup = submit_list(matchup, submission.army_list, is_player1, session)
+        matchup = submit_list(
+            matchup, 
+            submission.army_list, 
+            is_player1, 
+            session,
+            user_id=current_user.id if current_user else None
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
