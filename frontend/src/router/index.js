@@ -42,6 +42,33 @@ const routes = [
     name: 'Matchup',
     component: () => import('../views/Matchup.vue'),
   },
+  // League routes
+  {
+    path: '/leagues',
+    name: 'LeagueList',
+    component: () => import('../views/LeagueList.vue'),
+  },
+  {
+    path: '/league/create',
+    name: 'LeagueCreate',
+    component: () => import('../views/LeagueCreate.vue'),
+  },
+  {
+    path: '/league/:id',
+    name: 'LeagueDetail',
+    component: () => import('../views/LeagueDetail.vue'),
+  },
+  // Admin routes
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('../views/AdminUsers.vue'),
+  },
+  {
+    path: '/admin/settings',
+    name: 'AdminSettings',
+    component: () => import('../views/AdminSettings.vue'),
+  },
 ]
 
 const router = createRouter({

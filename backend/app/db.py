@@ -30,9 +30,16 @@ def get_session():
 
 def create_db_and_tables():
     """Create database tables. Called on startup."""
-    from app.matchup.models import Matchup  # noqa: F401
-
     # Import all models here to ensure they're registered
+    from app.league.models import (  # noqa: F401
+        AppSettings,
+        Group,
+        League,
+        LeaguePlayer,
+        Match,
+        PlayerElo,
+    )
+    from app.matchup.models import Matchup  # noqa: F401
     from app.users.models import OAuthAccount, User  # noqa: F401
     from sqlmodel import SQLModel
 
