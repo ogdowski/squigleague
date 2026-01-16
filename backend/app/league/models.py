@@ -22,28 +22,50 @@ class League(SQLModel, table=True):
     knockout_phase_end: Optional[datetime] = None
 
     # Status: registration, group_phase, knockout_phase, finished
-    status: str = Field(default="registration", max_length=20)
+    status: str = Field(
+        default="registration",
+        max_length=20,
+        sa_column_kwargs={"server_default": "registration"},
+    )
+
+    # Flag to indicate group phase has ended (ready for knockout)
+    group_phase_ended: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
 
     # Scoring configuration (fixed, not configurable)
-    points_per_win: int = Field(default=1000)
-    points_per_draw: int = Field(default=600)
-    points_per_loss: int = Field(default=200)
+    points_per_win: int = Field(
+        default=1000, sa_column_kwargs={"server_default": "1000"}
+    )
+    points_per_draw: int = Field(
+        default=600, sa_column_kwargs={"server_default": "600"}
+    )
+    points_per_loss: int = Field(
+        default=200, sa_column_kwargs={"server_default": "200"}
+    )
 
     # Player limits
-    min_players: int = Field(default=8)  # Hard minimum is 4
+    min_players: int = Field(default=8, sa_column_kwargs={"server_default": "8"})
     max_players: Optional[int] = Field(default=None)  # None = no limit
 
     # Group configuration
-    min_group_size: int = Field(default=4)
-    max_group_size: int = Field(default=6)
+    min_group_size: int = Field(default=4, sa_column_kwargs={"server_default": "4"})
+    max_group_size: int = Field(default=6, sa_column_kwargs={"server_default": "6"})
+
+    # Scheduling
+    days_per_match: int = Field(default=14, sa_column_kwargs={"server_default": "14"})
 
     # Knockout phase configuration
-    has_knockout_phase: bool = Field(default=True)
+    has_knockout_phase: bool = Field(
+        default=True, sa_column_kwargs={"server_default": "true"}
+    )
     # knockout_size: 2, 4, 8, 16, 32 or None for auto
     knockout_size: Optional[int] = Field(default=None)
 
     # Knockout phase - are army lists visible?
-    knockout_lists_visible: bool = Field(default=False)
+    knockout_lists_visible: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -91,14 +113,16 @@ class LeaguePlayer(SQLModel, table=True):
     knockout_list_submitted_at: Optional[datetime] = None
 
     # League statistics
-    games_played: int = Field(default=0)
-    games_won: int = Field(default=0)
-    games_drawn: int = Field(default=0)
-    games_lost: int = Field(default=0)
-    total_points: int = Field(default=0)
+    games_played: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    games_won: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    games_drawn: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    games_lost: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    total_points: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
 
     # Account claiming
-    is_claimed: bool = Field(default=False)
+    is_claimed: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
     discord_username: Optional[str] = Field(default=None, max_length=100)
 
     joined_at: datetime = Field(default_factory=datetime.utcnow)
@@ -140,7 +164,11 @@ class Match(SQLModel, table=True):
     player2_league_points: Optional[int] = None
 
     # Status: scheduled, pending_confirmation, confirmed, disputed
-    status: str = Field(default="scheduled", max_length=20)
+    status: str = Field(
+        default="scheduled",
+        max_length=20,
+        sa_column_kwargs={"server_default": "scheduled"},
+    )
 
     # Who submitted the result
     submitted_by_id: Optional[int] = Field(default=None, foreign_key="users.id")
@@ -182,11 +210,11 @@ class PlayerElo(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", unique=True, index=True)
 
-    elo: int = Field(default=1000)
-    games_played: int = Field(default=0)
+    elo: int = Field(default=1000, sa_column_kwargs={"server_default": "1000"})
+    games_played: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
 
     # Number of games with K=50 (new players have K=50 for first 5 matches)
-    k_factor_games: int = Field(default=0)
+    k_factor_games: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
 
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

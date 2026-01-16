@@ -11,20 +11,11 @@
             <router-link to="/leagues" class="btn-secondary">
               Leagues
             </router-link>
-            <router-link
-              to="/matchup/create"
-              class="btn-secondary"
-            >
-              Create Matchup
+            <router-link to="/my-matchups" class="btn-secondary">
+              Matchups
             </router-link>
 
             <div v-if="authStore.isAuthenticated" class="flex items-center gap-4">
-              <router-link to="/my-matchups" class="btn-secondary">
-                My Matchups
-              </router-link>
-              <router-link to="/settings" class="btn-secondary">
-                Settings
-              </router-link>
               <router-link
                 v-if="authStore.user?.role === 'admin'"
                 to="/admin/users"
@@ -32,7 +23,9 @@
               >
                 Admin
               </router-link>
-              <span class="text-gray-300">{{ authStore.user?.username }}</span>
+              <router-link to="/settings" class="btn-secondary">
+                {{ authStore.user?.username }}
+              </router-link>
               <button @click="authStore.logout()" class="btn-secondary">
                 Logout
               </button>

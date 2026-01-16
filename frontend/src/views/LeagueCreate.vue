@@ -82,6 +82,19 @@
         </div>
       </div>
 
+      <!-- Scheduling -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Days per Match</label>
+        <input
+          v-model.number="form.days_per_match"
+          type="number"
+          min="1"
+          max="60"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
+        />
+        <p class="text-xs text-gray-500 mt-1">Time allowed for each match round (group and knockout)</p>
+      </div>
+
       <!-- Knockout Phase -->
       <div class="flex items-center gap-3">
         <input
@@ -156,6 +169,7 @@ const form = ref({
   max_players: null,
   min_group_size: 4,
   max_group_size: 6,
+  days_per_match: 14,
   has_knockout_phase: true,
   knockout_size: null,
 })
@@ -176,6 +190,7 @@ const createLeague = async () => {
       max_players: form.value.max_players || null,
       min_group_size: form.value.min_group_size,
       max_group_size: form.value.max_group_size,
+      days_per_match: form.value.days_per_match,
       has_knockout_phase: form.value.has_knockout_phase,
       knockout_size: form.value.has_knockout_phase ? form.value.knockout_size : null,
     }

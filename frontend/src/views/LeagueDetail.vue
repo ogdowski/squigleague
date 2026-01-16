@@ -26,14 +26,25 @@
       </div>
 
       <!-- Info Cards -->
-      <div class="grid md:grid-cols-2 gap-4 mb-8">
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="card">
           <h3 class="text-sm text-gray-400 mb-1">Players</h3>
           <p class="text-2xl font-bold">{{ league.player_count }}</p>
+          <p v-if="league.qualifying_spots_per_group" class="text-xs text-gray-500 mt-1">
+            Top {{ league.qualifying_spots_per_group }} per group advance
+          </p>
         </div>
         <div class="card">
           <h3 class="text-sm text-gray-400 mb-1">Scoring</h3>
           <p class="text-sm">W: {{ league.points_per_win }} / D: {{ league.points_per_draw }} / L: {{ league.points_per_loss }}</p>
+        </div>
+        <div v-if="league.group_phase_end" class="card">
+          <h3 class="text-sm text-gray-400 mb-1">Group Phase Ends</h3>
+          <p class="text-lg font-bold">{{ formatDateTime(league.group_phase_end) }}</p>
+        </div>
+        <div v-if="league.knockout_phase_end && league.has_knockout_phase" class="card">
+          <h3 class="text-sm text-gray-400 mb-1">Knockout Ends</h3>
+          <p class="text-lg font-bold">{{ formatDateTime(league.knockout_phase_end) }}</p>
         </div>
       </div>
 
@@ -54,6 +65,12 @@
         </button>
 
         <template v-if="isOrganizer">
+          <router-link
+            :to="`/league/${league.id}/settings`"
+            class="btn-secondary"
+          >
+            Settings
+          </router-link>
           <button
             v-if="league.status === 'registration'"
             @click="showDrawGroupsModal = true"
@@ -63,12 +80,28 @@
             Draw Groups
           </button>
           <button
-            v-if="league.status === 'group_phase'"
+            v-if="league.status === 'group_phase' && !groupPhaseEnded"
+            @click="showEndGroupPhaseModal = true"
+            class="btn-secondary"
+            :disabled="actionLoading"
+          >
+            End Group Phase
+          </button>
+          <button
+            v-if="league.status === 'group_phase' && groupPhaseEnded && league.has_knockout_phase"
             @click="showStartKnockoutModal = true"
             class="btn-secondary"
             :disabled="actionLoading"
           >
             Start Knockout
+          </button>
+          <button
+            v-if="league.status === 'group_phase' && groupPhaseEnded && !league.has_knockout_phase"
+            @click="showFinishLeagueModal = true"
+            class="btn-secondary"
+            :disabled="actionLoading"
+          >
+            Finish League
           </button>
           <button
             v-if="league.status === 'knockout_phase' && !league.knockout_lists_visible"
@@ -97,7 +130,12 @@
       <!-- Tab Content -->
       <div v-if="activeTab === 'standings'" class="space-y-6">
         <div v-for="group in standings" :key="group.group_id" class="card">
-          <h3 class="text-xl font-bold mb-4">{{ group.group_name }}</h3>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">{{ group.group_name }}</h3>
+            <span v-if="group.qualifying_spots" class="text-sm text-gray-400">
+              Top {{ group.qualifying_spots }} advance
+            </span>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
@@ -116,9 +154,17 @@
                 <tr
                   v-for="entry in group.standings"
                   :key="entry.player_id"
-                  class="border-b border-gray-800"
+                  :class="[
+                    'border-b',
+                    entry.qualifies
+                      ? 'border-green-800 bg-green-900/20'
+                      : 'border-gray-800'
+                  ]"
                 >
-                  <td class="py-2 px-2 font-bold">{{ entry.position }}</td>
+                  <td class="py-2 px-2 font-bold">
+                    <span v-if="entry.qualifies" class="text-green-400">{{ entry.position }}</span>
+                    <span v-else>{{ entry.position }}</span>
+                  </td>
                   <td class="py-2 px-2">{{ entry.username || entry.discord_username }}</td>
                   <td class="py-2 px-2 text-center">{{ entry.games_played }}</td>
                   <td class="py-2 px-2 text-center text-green-400">{{ entry.games_won }}</td>
@@ -227,6 +273,26 @@
       @confirm="revealLists"
       @cancel="showRevealListsModal = false"
     />
+
+    <ConfirmModal
+      :show="showEndGroupPhaseModal"
+      title="End Group Phase"
+      message="Are you sure you want to end the group phase? Players will no longer be able to submit group match results."
+      confirmText="End Group Phase"
+      :danger="true"
+      @confirm="endGroupPhase"
+      @cancel="showEndGroupPhaseModal = false"
+    />
+
+    <ConfirmModal
+      :show="showFinishLeagueModal"
+      title="Finish League"
+      message="Are you sure you want to finish this league? This will mark it as completed."
+      confirmText="Finish League"
+      :danger="true"
+      @confirm="finishLeague"
+      @cancel="showFinishLeagueModal = false"
+    />
   </div>
 </template>
 
@@ -256,6 +322,8 @@ const actionLoading = ref(false)
 const showDrawGroupsModal = ref(false)
 const showStartKnockoutModal = ref(false)
 const showRevealListsModal = ref(false)
+const showEndGroupPhaseModal = ref(false)
+const showFinishLeagueModal = ref(false)
 
 const showActionError = (message) => {
   actionError.value = message
@@ -278,6 +346,11 @@ const isOrganizer = computed(() => {
 const isJoined = computed(() => {
   if (!authStore.user) return false
   return players.value.some(p => p.user_id === authStore.user.id)
+})
+
+const groupPhaseEnded = computed(() => {
+  if (!league.value) return false
+  return league.value.group_phase_ended === true
 })
 
 const fetchLeague = async () => {
@@ -356,8 +429,41 @@ const revealLists = async () => {
   }
 }
 
+const endGroupPhase = async () => {
+  showEndGroupPhaseModal.value = false
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/end-group-phase`)
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to end group phase')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const finishLeague = async () => {
+  showFinishLeagueModal.value = false
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    await axios.patch(`${API_URL}/league/${league.value.id}`, { status: 'finished' })
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to finish league')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString()
+}
+
+const formatDateTime = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 const statusClass = (status) => {

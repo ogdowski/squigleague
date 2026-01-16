@@ -1,5 +1,6 @@
 """Business logic for the league module."""
 
+import math
 import random
 from datetime import datetime, timedelta
 from typing import Optional
@@ -16,6 +17,105 @@ def get_league_player_count(session: Session, league_id: int) -> int:
     """Gets the number of players in a league."""
     statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league_id)
     return len(session.scalars(statement).all())
+
+
+def round_up_to_hour(dt: datetime) -> datetime:
+    """Round datetime up to the next complete hour."""
+    if dt.minute == 0 and dt.second == 0 and dt.microsecond == 0:
+        return dt
+    return dt.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+
+
+def get_qualifying_info(session: Session, league: League) -> tuple[int, int]:
+    """
+    Calculate qualifying spots for knockout phase.
+
+    Returns:
+        (spots_per_group, total_spots)
+    """
+    if not league.has_knockout_phase:
+        return (0, 0)
+
+    # Get groups
+    groups = session.scalars(select(Group).where(Group.league_id == league.id)).all()
+
+    if not groups:
+        return (0, 0)
+
+    num_groups = len(groups)
+    player_count = get_league_player_count(session, league.id)
+
+    # Calculate knockout size
+    knockout_size = league.knockout_size
+    if knockout_size is None:
+        knockout_size = calculate_knockout_size(player_count)
+
+    # Ensure knockout_size doesn't exceed player count
+    knockout_size = min(knockout_size, player_count)
+
+    # Calculate spots per group (evenly distributed)
+    spots_per_group = knockout_size // num_groups
+
+    return (spots_per_group, knockout_size)
+
+
+def calculate_group_phase_rounds(session: Session, league: League) -> int:
+    """
+    Calculate the number of rounds needed for group phase (round-robin).
+    This equals (max_group_size - 1) rounds.
+    """
+    groups = session.scalars(select(Group).where(Group.league_id == league.id)).all()
+
+    if not groups:
+        return 0
+
+    # Find largest group
+    max_size = 0
+    for group in groups:
+        players_in_group = session.scalars(
+            select(LeaguePlayer).where(LeaguePlayer.group_id == group.id)
+        ).all()
+        max_size = max(max_size, len(players_in_group))
+
+    # Round-robin needs (n-1) rounds for n players
+    return max_size - 1 if max_size > 1 else 0
+
+
+def calculate_knockout_rounds(knockout_size: int) -> int:
+    """Calculate number of knockout rounds (log2 of size)."""
+    if knockout_size <= 1:
+        return 0
+    return int(math.log2(knockout_size))
+
+
+def calculate_phase_dates(
+    session: Session, league: League, start_date: datetime
+) -> tuple[datetime, datetime, datetime, datetime]:
+    """
+    Calculate phase start and end dates.
+
+    Returns:
+        (group_start, group_end, knockout_start, knockout_end)
+    """
+    group_rounds = calculate_group_phase_rounds(session, league)
+    group_days = group_rounds * league.days_per_match
+
+    group_start = round_up_to_hour(start_date)
+    group_end = round_up_to_hour(group_start + timedelta(days=group_days))
+
+    # Knockout phase
+    if not league.has_knockout_phase:
+        return (group_start, group_end, None, None)
+
+    player_count = get_league_player_count(session, league.id)
+    knockout_size = league.knockout_size or calculate_knockout_size(player_count)
+    knockout_rounds = calculate_knockout_rounds(knockout_size)
+    knockout_days = knockout_rounds * league.days_per_match
+
+    knockout_start = group_end
+    knockout_end = round_up_to_hour(knockout_start + timedelta(days=knockout_days))
+
+    return (group_start, group_end, knockout_start, knockout_end)
 
 
 def calculate_num_groups(

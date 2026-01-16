@@ -22,6 +22,7 @@ from app.league.schemas import (
     StandingsEntry,
 )
 from app.league.service import (
+    calculate_phase_dates,
     confirm_match_result,
     draw_groups,
     generate_group_matches,
@@ -31,6 +32,7 @@ from app.league.service import (
     get_knockout_constraints,
     get_league_player_count,
     get_qualified_players,
+    get_qualifying_info,
     submit_match_result,
 )
 from app.users.models import User
@@ -88,6 +90,7 @@ async def create_league(
         max_players=data.max_players,
         min_group_size=data.min_group_size,
         max_group_size=data.max_group_size,
+        days_per_match=data.days_per_match,
         has_knockout_phase=data.has_knockout_phase,
         knockout_size=data.knockout_size,
     )
@@ -99,6 +102,8 @@ async def create_league(
         **league.__dict__,
         player_count=0,
         is_registration_open=league.is_registration_open,
+        qualifying_spots_per_group=None,
+        total_qualifying_spots=None,
     )
 
 
@@ -147,11 +152,14 @@ async def get_league(
         )
 
     player_count = get_league_player_count(session, league_id)
+    spots_per_group, total_spots = get_qualifying_info(session, league)
 
     return LeagueResponse(
         **league.__dict__,
         player_count=player_count,
         is_registration_open=league.is_registration_open,
+        qualifying_spots_per_group=spots_per_group if spots_per_group > 0 else None,
+        total_qualifying_spots=total_spots if total_spots > 0 else None,
     )
 
 
@@ -239,11 +247,14 @@ async def update_league(
     session.refresh(league)
 
     player_count = get_league_player_count(session, league_id)
+    spots_per_group, total_spots = get_qualifying_info(session, league)
 
     return LeagueResponse(
         **league.__dict__,
         player_count=player_count,
         is_registration_open=league.is_registration_open,
+        qualifying_spots_per_group=spots_per_group if spots_per_group > 0 else None,
+        total_qualifying_spots=total_spots if total_spots > 0 else None,
     )
 
 
@@ -506,24 +517,126 @@ async def draw_groups_endpoint(
         )
 
     player_count = get_league_player_count(session, league_id)
-    if player_count < 8:
+    if player_count < league.min_players:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Need at least 8 players to draw groups",
+            detail=f"Need at least {league.min_players} players to draw groups (currently {player_count})",
         )
 
     groups = draw_groups(session, league)
     matches = generate_group_matches(session, league)
 
+    # Calculate phase dates
+    start_date = datetime.utcnow()
+    group_start, group_end, knockout_start, knockout_end = calculate_phase_dates(
+        session, league, start_date
+    )
+
     league.status = "group_phase"
-    league.group_phase_start = datetime.utcnow()
+    league.group_phase_start = group_start
+    league.group_phase_end = group_end
+    league.knockout_phase_start = knockout_start
+    league.knockout_phase_end = knockout_end
     session.add(league)
     session.commit()
 
     return {
         "message": f"Created {len(groups)} groups with {len(matches)} matches",
         "groups": [{"id": g.id, "name": g.name} for g in groups],
+        "group_phase_end": group_end.isoformat() if group_end else None,
+        "knockout_phase_end": knockout_end.isoformat() if knockout_end else None,
     }
+
+
+@router.post("/{league_id}/recalculate-dates")
+async def recalculate_dates_endpoint(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Recalculates phase dates based on current settings (organizer)."""
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if league.status == "registration":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot recalculate dates before groups are drawn",
+        )
+
+    # Use group_phase_start as the base, or now if not set
+    start_date = league.group_phase_start or datetime.utcnow()
+    group_start, group_end, knockout_start, knockout_end = calculate_phase_dates(
+        session, league, start_date
+    )
+
+    league.group_phase_start = group_start
+    league.group_phase_end = group_end
+    league.knockout_phase_start = knockout_start
+    league.knockout_phase_end = knockout_end
+    session.add(league)
+    session.commit()
+
+    return {
+        "message": "Dates recalculated",
+        "group_phase_start": group_start.isoformat() if group_start else None,
+        "group_phase_end": group_end.isoformat() if group_end else None,
+        "knockout_phase_start": knockout_start.isoformat() if knockout_start else None,
+        "knockout_phase_end": knockout_end.isoformat() if knockout_end else None,
+    }
+
+
+@router.post("/{league_id}/end-group-phase")
+async def end_group_phase_endpoint(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Ends the group phase (organizer). Knockout can only start after this."""
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if league.status != "group_phase":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="League is not in group phase",
+        )
+
+    if league.group_phase_ended:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Group phase already ended",
+        )
+
+    league.group_phase_ended = True
+    session.add(league)
+    session.commit()
+
+    return {"message": "Group phase ended"}
 
 
 @router.get("/{league_id}/standings", response_model=list[GroupStandings])
@@ -532,6 +645,10 @@ async def get_standings(
     session: Session = Depends(get_session),
 ):
     """Gets standings for all groups."""
+    # Get league for qualifying info
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+    spots_per_group, _ = get_qualifying_info(session, league) if league else (0, 0)
+
     statement = select(Group).where(Group.league_id == league_id)
     groups = session.scalars(statement).all()
 
@@ -559,6 +676,7 @@ async def get_standings(
                     games_lost=player.games_lost,
                     total_points=player.total_points,
                     average_points=player.average_points,
+                    qualifies=position <= spots_per_group,
                 )
             )
 
@@ -567,6 +685,7 @@ async def get_standings(
                 group_id=group.id,
                 group_name=group.name,
                 standings=standings,
+                qualifying_spots=spots_per_group,
             )
         )
 
@@ -780,6 +899,12 @@ async def start_knockout(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="League must be in group phase to start knockout",
+        )
+
+    if not league.group_phase_ended:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Group phase must be ended first before starting knockout",
         )
 
     matches = generate_knockout_matches(session, league)

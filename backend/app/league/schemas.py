@@ -14,6 +14,7 @@ class LeagueCreate(BaseModel):
     max_players: Optional[int] = Field(default=None, ge=4)  # None = no limit
     min_group_size: int = Field(default=4, ge=2, le=10)
     max_group_size: int = Field(default=6, ge=2, le=10)
+    days_per_match: int = Field(default=14, ge=1, le=60)  # Days per match
     has_knockout_phase: bool = Field(default=True)
     knockout_size: Optional[int] = Field(
         default=None
@@ -28,6 +29,7 @@ class LeagueUpdate(BaseModel):
     max_players: Optional[int] = Field(default=None, ge=4)
     min_group_size: Optional[int] = Field(default=None, ge=2, le=10)
     max_group_size: Optional[int] = Field(default=None, ge=2, le=10)
+    days_per_match: Optional[int] = Field(default=None, ge=1, le=60)
     group_phase_start: Optional[datetime] = None
     group_phase_end: Optional[datetime] = None
     knockout_phase_start: Optional[datetime] = None
@@ -50,17 +52,22 @@ class LeagueResponse(BaseModel):
     knockout_phase_start: Optional[datetime]
     knockout_phase_end: Optional[datetime]
     status: str
+    group_phase_ended: bool
     points_per_win: int
     points_per_draw: int
     points_per_loss: int
     min_group_size: int
     max_group_size: int
+    days_per_match: int
     has_knockout_phase: bool
     knockout_size: Optional[int]
     knockout_lists_visible: bool
     created_at: datetime
     player_count: Optional[int] = None
     is_registration_open: bool = False
+    # Computed fields for display
+    qualifying_spots_per_group: Optional[int] = None
+    total_qualifying_spots: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -131,12 +138,14 @@ class StandingsEntry(BaseModel):
     games_lost: int
     total_points: int
     average_points: float
+    qualifies: bool = False  # True if this position advances to knockout
 
 
 class GroupStandings(BaseModel):
     group_id: int
     group_name: str
     standings: list[StandingsEntry]
+    qualifying_spots: int = 0  # How many from this group advance
 
 
 # ============ Match Schemas ============
