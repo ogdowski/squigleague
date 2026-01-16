@@ -5,7 +5,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 class League(SQLModel, table=True):
-    """Liga/Sezon turniejowy."""
+    """League/Tournament season."""
 
     __tablename__ = "leagues"
 
@@ -14,8 +14,7 @@ class League(SQLModel, table=True):
     description: Optional[str] = Field(default=None, max_length=2000)
     organizer_id: int = Field(foreign_key="users.id")
 
-    # Daty
-    registration_start: datetime
+    # Dates
     registration_end: datetime
     group_phase_start: Optional[datetime] = None
     group_phase_end: Optional[datetime] = None
@@ -25,12 +24,25 @@ class League(SQLModel, table=True):
     # Status: registration, group_phase, knockout_phase, finished
     status: str = Field(default="registration", max_length=20)
 
-    # Konfiguracja punktacji
+    # Scoring configuration (fixed, not configurable)
     points_per_win: int = Field(default=1000)
     points_per_draw: int = Field(default=600)
     points_per_loss: int = Field(default=200)
 
-    # Faza pucharowa - listy widoczne?
+    # Player limits
+    min_players: int = Field(default=8)  # Hard minimum is 4
+    max_players: Optional[int] = Field(default=None)  # None = no limit
+
+    # Group configuration
+    min_group_size: int = Field(default=4)
+    max_group_size: int = Field(default=6)
+
+    # Knockout phase configuration
+    has_knockout_phase: bool = Field(default=True)
+    # knockout_size: 2, 4, 8, 16, 32 or None for auto
+    knockout_size: Optional[int] = Field(default=None)
+
+    # Knockout phase - are army lists visible?
     knockout_lists_visible: bool = Field(default=False)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -43,20 +55,17 @@ class League(SQLModel, table=True):
     @property
     def is_registration_open(self) -> bool:
         now = datetime.utcnow()
-        return (
-            self.status == "registration"
-            and self.registration_start <= now <= self.registration_end
-        )
+        return self.status == "registration" and now <= self.registration_end
 
 
 class Group(SQLModel, table=True):
-    """Grupa w fazie grupowej."""
+    """Group in the group phase."""
 
     __tablename__ = "groups"
 
     id: Optional[int] = Field(default=None, primary_key=True)
     league_id: int = Field(foreign_key="leagues.id", index=True)
-    name: str = Field(max_length=50)  # "Grupa A", "Grupa B"
+    name: str = Field(max_length=50)  # "Group A", "Group B"
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -66,7 +75,7 @@ class Group(SQLModel, table=True):
 
 
 class LeaguePlayer(SQLModel, table=True):
-    """Uczestnik ligi."""
+    """League participant."""
 
     __tablename__ = "league_players"
 
@@ -74,21 +83,21 @@ class LeaguePlayer(SQLModel, table=True):
     league_id: int = Field(foreign_key="leagues.id", index=True)
     user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
 
-    # Przypisanie do grupy (null przed losowaniem)
+    # Group assignment (null before draw)
     group_id: Optional[int] = Field(default=None, foreign_key="groups.id", index=True)
 
-    # Lista armii na faze pucharowa
+    # Army list for knockout phase
     knockout_army_list: Optional[str] = None
     knockout_list_submitted_at: Optional[datetime] = None
 
-    # Statystyki w lidze
+    # League statistics
     games_played: int = Field(default=0)
     games_won: int = Field(default=0)
     games_drawn: int = Field(default=0)
     games_lost: int = Field(default=0)
     total_points: int = Field(default=0)
 
-    # Przejmowanie kont
+    # Account claiming
     is_claimed: bool = Field(default=False)
     discord_username: Optional[str] = Field(default=None, max_length=100)
 
@@ -106,43 +115,43 @@ class LeaguePlayer(SQLModel, table=True):
 
 
 class Match(SQLModel, table=True):
-    """Mecz w lidze."""
+    """Match in the league."""
 
     __tablename__ = "matches"
 
     id: Optional[int] = Field(default=None, primary_key=True)
     league_id: int = Field(foreign_key="leagues.id", index=True)
 
-    # Gracze
+    # Players
     player1_id: int = Field(foreign_key="league_players.id", index=True)
     player2_id: int = Field(foreign_key="league_players.id", index=True)
 
-    # Typ meczu: group, knockout
+    # Match type: group, knockout
     phase: str = Field(max_length=20)
-    # Runda pucharowa: round_of_16, quarter, semi, final
+    # Knockout round: round_of_16, quarter, semi, final
     knockout_round: Optional[str] = Field(default=None, max_length=20)
 
-    # Wyniki (punkty w grze, np. 72-68)
+    # Scores (game points, e.g. 72-68)
     player1_score: Optional[int] = None
     player2_score: Optional[int] = None
 
-    # Punkty ligowe (obliczone po wpisaniu wyniku)
+    # League points (calculated after result submission)
     player1_league_points: Optional[int] = None
     player2_league_points: Optional[int] = None
 
     # Status: scheduled, pending_confirmation, confirmed, disputed
     status: str = Field(default="scheduled", max_length=20)
 
-    # Kto zglosil wynik
+    # Who submitted the result
     submitted_by_id: Optional[int] = Field(default=None, foreign_key="users.id")
     confirmed_by_id: Optional[int] = Field(default=None, foreign_key="users.id")
     submitted_at: Optional[datetime] = None
     confirmed_at: Optional[datetime] = None
 
-    # Termin rozegrania
+    # Match deadline
     deadline: Optional[datetime] = None
 
-    # Mapa
+    # Map
     map_name: Optional[str] = Field(default=None, max_length=100)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -166,7 +175,7 @@ class Match(SQLModel, table=True):
 
 
 class PlayerElo(SQLModel, table=True):
-    """Globalne ELO gracza."""
+    """Global player ELO rating."""
 
     __tablename__ = "player_elo"
 
@@ -176,7 +185,7 @@ class PlayerElo(SQLModel, table=True):
     elo: int = Field(default=1000)
     games_played: int = Field(default=0)
 
-    # Ile gier z K=50 (nowy gracz ma K=50 przez pierwsze 5 meczy)
+    # Number of games with K=50 (new players have K=50 for first 5 matches)
     k_factor_games: int = Field(default=0)
 
     updated_at: datetime = Field(default_factory=datetime.utcnow)

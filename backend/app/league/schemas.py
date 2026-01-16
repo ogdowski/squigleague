@@ -9,23 +9,32 @@ from pydantic import BaseModel, Field
 class LeagueCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     description: Optional[str] = Field(default=None, max_length=2000)
-    registration_start: datetime
     registration_end: datetime
-    points_per_win: int = Field(default=1000)
-    points_per_draw: int = Field(default=600)
-    points_per_loss: int = Field(default=200)
+    min_players: int = Field(default=8, ge=4)  # Hard minimum is 4
+    max_players: Optional[int] = Field(default=None, ge=4)  # None = no limit
+    min_group_size: int = Field(default=4, ge=2, le=10)
+    max_group_size: int = Field(default=6, ge=2, le=10)
+    has_knockout_phase: bool = Field(default=True)
+    knockout_size: Optional[int] = Field(
+        default=None
+    )  # 2, 4, 8, 16, 32 or None for auto
 
 
 class LeagueUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     description: Optional[str] = None
-    registration_start: Optional[datetime] = None
     registration_end: Optional[datetime] = None
+    min_players: Optional[int] = Field(default=None, ge=4)
+    max_players: Optional[int] = Field(default=None, ge=4)
+    min_group_size: Optional[int] = Field(default=None, ge=2, le=10)
+    max_group_size: Optional[int] = Field(default=None, ge=2, le=10)
     group_phase_start: Optional[datetime] = None
     group_phase_end: Optional[datetime] = None
     knockout_phase_start: Optional[datetime] = None
     knockout_phase_end: Optional[datetime] = None
     status: Optional[str] = None
+    has_knockout_phase: Optional[bool] = None
+    knockout_size: Optional[int] = None  # 2, 4, 8, 16, 32
 
 
 class LeagueResponse(BaseModel):
@@ -33,8 +42,9 @@ class LeagueResponse(BaseModel):
     name: str
     description: Optional[str]
     organizer_id: int
-    registration_start: datetime
     registration_end: datetime
+    min_players: int
+    max_players: Optional[int]
     group_phase_start: Optional[datetime]
     group_phase_end: Optional[datetime]
     knockout_phase_start: Optional[datetime]
@@ -43,6 +53,10 @@ class LeagueResponse(BaseModel):
     points_per_win: int
     points_per_draw: int
     points_per_loss: int
+    min_group_size: int
+    max_group_size: int
+    has_knockout_phase: bool
+    knockout_size: Optional[int]
     knockout_lists_visible: bool
     created_at: datetime
     player_count: Optional[int] = None

@@ -56,7 +56,7 @@
         <template v-if="isOrganizer">
           <button
             v-if="league.status === 'registration'"
-            @click="drawGroups"
+            @click="showDrawGroupsModal = true"
             class="btn-secondary"
             :disabled="actionLoading"
           >
@@ -64,7 +64,7 @@
           </button>
           <button
             v-if="league.status === 'group_phase'"
-            @click="startKnockout"
+            @click="showStartKnockoutModal = true"
             class="btn-secondary"
             :disabled="actionLoading"
           >
@@ -72,7 +72,7 @@
           </button>
           <button
             v-if="league.status === 'knockout_phase' && !league.knockout_lists_visible"
-            @click="revealLists"
+            @click="showRevealListsModal = true"
             class="btn-secondary"
             :disabled="actionLoading"
           >
@@ -197,6 +197,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Modals -->
+    <ConfirmModal
+      :show="showDrawGroupsModal"
+      title="Draw Groups"
+      message="Are you sure you want to draw groups? This action cannot be undone."
+      confirmText="Draw Groups"
+      :danger="true"
+      @confirm="drawGroups"
+      @cancel="showDrawGroupsModal = false"
+    />
+
+    <ConfirmModal
+      :show="showStartKnockoutModal"
+      title="Start Knockout Phase"
+      message="Are you sure you want to start the knockout phase? Make sure all group matches are completed."
+      confirmText="Start Knockout"
+      :danger="true"
+      @confirm="startKnockout"
+      @cancel="showStartKnockoutModal = false"
+    />
+
+    <ConfirmModal
+      :show="showRevealListsModal"
+      title="Reveal Army Lists"
+      message="Are you sure you want to reveal all army lists? Players will be able to see each other's lists."
+      confirmText="Reveal Lists"
+      @confirm="revealLists"
+      @cancel="showRevealListsModal = false"
+    />
   </div>
 </template>
 
@@ -205,6 +235,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
+import ConfirmModal from '../components/ConfirmModal.vue'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
@@ -220,6 +251,11 @@ const players = ref([])
 const activeTab = ref('standings')
 const joining = ref(false)
 const actionLoading = ref(false)
+
+// Modal states
+const showDrawGroupsModal = ref(false)
+const showStartKnockoutModal = ref(false)
+const showRevealListsModal = ref(false)
 
 const showActionError = (message) => {
   actionError.value = message
@@ -279,7 +315,7 @@ const joinLeague = async () => {
 }
 
 const drawGroups = async () => {
-  if (!confirm('Are you sure you want to draw groups? This action cannot be undone.')) return
+  showDrawGroupsModal.value = false
   actionLoading.value = true
   actionError.value = ''
   try {
@@ -293,7 +329,7 @@ const drawGroups = async () => {
 }
 
 const startKnockout = async () => {
-  if (!confirm('Are you sure you want to start the knockout phase?')) return
+  showStartKnockoutModal.value = false
   actionLoading.value = true
   actionError.value = ''
   try {
@@ -307,7 +343,7 @@ const startKnockout = async () => {
 }
 
 const revealLists = async () => {
-  if (!confirm('Are you sure you want to reveal army lists?')) return
+  showRevealListsModal.value = false
   actionLoading.value = true
   actionError.value = ''
   try {
@@ -364,6 +400,7 @@ const matchStatusText = (status) => {
 
 const knockoutRoundText = (round) => {
   switch (round) {
+    case 'round_of_32': return 'Round of 32'
     case 'round_of_16': return 'Round of 16'
     case 'quarter': return 'Quarter-final'
     case 'semi': return 'Semi-final'

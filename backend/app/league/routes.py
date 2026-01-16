@@ -1,4 +1,4 @@
-"""Endpointy API dla modulu league."""
+"""API endpoints for the league module."""
 
 from datetime import datetime, timedelta
 
@@ -26,7 +26,9 @@ from app.league.service import (
     draw_groups,
     generate_group_matches,
     generate_knockout_matches,
+    get_allowed_knockout_sizes,
     get_group_standings,
+    get_knockout_constraints,
     get_league_player_count,
     get_qualified_players,
     submit_match_result,
@@ -50,16 +52,44 @@ async def create_league(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Tworzy nowa lige (tylko organizer+)."""
+    """Creates a new league (organizer+ only)."""
+    if data.min_group_size > data.max_group_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="min_group_size cannot be greater than max_group_size",
+        )
+
+    if data.max_players is not None and data.min_players > data.max_players:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="min_players cannot be greater than max_players",
+        )
+
+    # Validate knockout_size against min_players constraints
+    if data.knockout_size is not None:
+        if data.knockout_size not in [2, 4, 8, 16, 32]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="knockout_size must be 2, 4, 8, 16, or 32",
+            )
+        _, _, max_knockout = get_knockout_constraints(data.min_players)
+        if data.knockout_size > max_knockout:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"knockout_size ({data.knockout_size}) exceeds maximum ({max_knockout}) for {data.min_players} players",
+            )
+
     league = League(
         name=data.name,
         description=data.description,
         organizer_id=current_user.id,
-        registration_start=data.registration_start,
         registration_end=data.registration_end,
-        points_per_win=data.points_per_win,
-        points_per_draw=data.points_per_draw,
-        points_per_loss=data.points_per_loss,
+        min_players=data.min_players,
+        max_players=data.max_players,
+        min_group_size=data.min_group_size,
+        max_group_size=data.max_group_size,
+        has_knockout_phase=data.has_knockout_phase,
+        knockout_size=data.knockout_size,
     )
     session.add(league)
     session.commit()
@@ -76,7 +106,7 @@ async def create_league(
 async def list_leagues(
     session: Session = Depends(get_session),
 ):
-    """Lista wszystkich lig."""
+    """Lists all leagues."""
     statement = select(League).order_by(League.created_at.desc())
     leagues = session.scalars(statement).all()
 
@@ -106,7 +136,7 @@ async def get_league(
     league_id: int,
     session: Session = Depends(get_session),
 ):
-    """Pobiera szczegoly ligi."""
+    """Gets league details."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -132,7 +162,7 @@ async def update_league(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Aktualizuje lige (tylko organizer ligi lub admin)."""
+    """Updates a league (league organizer or admin only)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -147,6 +177,58 @@ async def update_league(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this league",
         )
+
+    # Validate group size constraints
+    min_group = (
+        data.min_group_size
+        if data.min_group_size is not None
+        else league.min_group_size
+    )
+    max_group = (
+        data.max_group_size
+        if data.max_group_size is not None
+        else league.max_group_size
+    )
+    if min_group > max_group:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="min_group_size cannot be greater than max_group_size",
+        )
+
+    # Validate player constraints
+    min_players = (
+        data.min_players if data.min_players is not None else league.min_players
+    )
+    max_players = (
+        data.max_players if data.max_players is not None else league.max_players
+    )
+    if max_players is not None and min_players > max_players:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="min_players cannot be greater than max_players",
+        )
+
+    # Validate knockout_size
+    player_count = get_league_player_count(session, league_id)
+    if data.knockout_size is not None:
+        if data.knockout_size not in [2, 4, 8, 16, 32]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="knockout_size must be 2, 4, 8, 16, or 32",
+            )
+        # Check against current player count
+        if data.knockout_size > player_count:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"knockout_size ({data.knockout_size}) cannot be greater than player count ({player_count})",
+            )
+        # Check against max allowed for player count
+        _, _, max_knockout = get_knockout_constraints(player_count)
+        if data.knockout_size > max_knockout:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"knockout_size ({data.knockout_size}) exceeds maximum ({max_knockout}) for {player_count} players",
+            )
 
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -171,7 +253,7 @@ async def delete_league(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_admin),
 ):
-    """Usuwa lige (tylko admin)."""
+    """Deletes a league (admin only)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -194,7 +276,7 @@ async def join_league(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Dolacza do ligi (przed rozpoczeciem)."""
+    """Joins a league (before it starts)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -258,7 +340,7 @@ async def add_player(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Dodaje gracza recznie (organizer)."""
+    """Adds a player manually (organizer)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -309,7 +391,7 @@ async def list_players(
     league_id: int,
     session: Session = Depends(get_session),
 ):
-    """Lista graczy w lidze."""
+    """Lists players in a league."""
     statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league_id)
     players = session.scalars(statement).all()
 
@@ -360,7 +442,7 @@ async def remove_player(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Usuwa gracza z ligi (organizer)."""
+    """Removes a player from a league (organizer)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -401,7 +483,7 @@ async def draw_groups_endpoint(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Losuje grupy (organizer)."""
+    """Draws groups (organizer)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -449,7 +531,7 @@ async def get_standings(
     league_id: int,
     session: Session = Depends(get_session),
 ):
-    """Pobiera tabele wszystkich grup."""
+    """Gets standings for all groups."""
     statement = select(Group).where(Group.league_id == league_id)
     groups = session.scalars(statement).all()
 
@@ -500,7 +582,7 @@ async def list_matches(
     phase: str = None,
     session: Session = Depends(get_session),
 ):
-    """Lista meczow w lidze."""
+    """Lists matches in a league."""
     statement = select(Match).where(Match.league_id == league_id)
     if phase:
         statement = statement.where(Match.phase == phase)
@@ -566,7 +648,7 @@ async def submit_result(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Zglasza wynik meczu."""
+    """Submits a match result."""
     statement = select(Match).where(
         Match.id == match_id,
         Match.league_id == league_id,
@@ -624,7 +706,7 @@ async def confirm_result(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Potwierdza wynik meczu."""
+    """Confirms a match result."""
     statement = select(Match).where(
         Match.id == match_id,
         Match.league_id == league_id,
@@ -678,7 +760,7 @@ async def start_knockout(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Rozpoczyna faze pucharowa (organizer)."""
+    """Starts knockout phase (organizer)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -720,7 +802,7 @@ async def reveal_knockout_lists(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Odkrywa listy armii fazy pucharowej (organizer)."""
+    """Reveals knockout phase army lists (organizer)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -750,7 +832,7 @@ async def submit_knockout_list(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Przesyla liste armii na faze pucharowa."""
+    """Submits army list for knockout phase."""
     statement = select(LeaguePlayer).where(
         LeaguePlayer.league_id == league_id,
         LeaguePlayer.user_id == current_user.id,
@@ -789,7 +871,7 @@ async def get_knockout_list(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user_optional),
 ):
-    """Pobiera liste armii gracza (jesli widoczna)."""
+    """Gets player's army list (if visible)."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -845,7 +927,7 @@ async def get_elo_ranking(
     limit: int = 50,
     session: Session = Depends(get_session),
 ):
-    """Pobiera ranking ELO."""
+    """Gets ELO ranking."""
     statement = select(PlayerElo).order_by(PlayerElo.elo.desc()).limit(limit)
     rankings = session.scalars(statement).all()
 
@@ -872,7 +954,7 @@ async def get_player_elo(
     user_id: int,
     session: Session = Depends(get_session),
 ):
-    """Pobiera ELO gracza."""
+    """Gets player's ELO."""
     statement = select(PlayerElo).where(PlayerElo.user_id == user_id)
     elo = session.scalars(statement).first()
 

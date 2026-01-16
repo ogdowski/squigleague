@@ -1,4 +1,4 @@
-"""Logika biznesowa modulu league."""
+"""Business logic for the league module."""
 
 import random
 from datetime import datetime, timedelta
@@ -13,55 +13,103 @@ from sqlmodel import Session, select
 
 
 def get_league_player_count(session: Session, league_id: int) -> int:
-    """Pobiera liczbe graczy w lidze."""
+    """Gets the number of players in a league."""
     statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league_id)
     return len(session.scalars(statement).all())
 
 
-def calculate_num_groups(player_count: int) -> int:
+def calculate_num_groups(
+    player_count: int,
+    min_group_size: int = 4,
+    max_group_size: int = 6,
+) -> int:
     """
-    Oblicza liczbe grup na podstawie liczby graczy.
+    Calculates the optimal number of groups based on player count and constraints.
+    Prefers smaller groups (more groups) within the allowed range.
 
-    8-11: 2 grupy
-    12-15: 3 grupy
-    16-19: 4 grupy
-    20-23: 5 grup
-    24-27: 6 grup
-    28-31: 7 grup
-    32-48: 8 grup
+    Algorithm:
+    1. Minimum number of groups = ceil(player_count / max_group_size)
+    2. Maximum number of groups = floor(player_count / min_group_size)
+    3. Select the largest number of groups (smallest group sizes)
+
+    Example:
+    - 20 players, min=4, max=6: min_groups=4 (ceil(20/6)), max_groups=5 (20/4)
+      -> 5 groups of 4 players each
+    - 8 players, min=4, max=6: min_groups=2 (ceil(8/6)), max_groups=2 (8/4)
+      -> 2 groups of 4 players each
+    """
+    import math
+
+    if player_count < min_group_size:
+        return 1
+
+    min_groups = math.ceil(player_count / max_group_size)
+    max_groups = player_count // min_group_size
+
+    if min_groups > max_groups:
+        return min_groups
+
+    return max_groups
+
+
+def get_knockout_constraints(player_count: int) -> tuple[int, int, int]:
+    """
+    Returns knockout size constraints based on player count.
+
+    Returns:
+        (default_size, min_size, max_size)
+
+    Rules:
+    - 4-7 players: always top 2 (final only)
+    - 8-15 players: default top 4, max top 8
+    - 16-47 players: default top 8, max top 16
+    - 48+ players: default top 16, max top 32
     """
     if player_count < 8:
-        return 1
-    elif player_count <= 11:
-        return 2
-    elif player_count <= 15:
-        return 3
-    elif player_count <= 19:
-        return 4
-    elif player_count <= 23:
-        return 5
-    elif player_count <= 27:
-        return 6
-    elif player_count <= 31:
-        return 7
+        return (2, 2, 2)
+    elif player_count < 16:
+        return (4, 2, 8)
+    elif player_count < 48:
+        return (8, 2, 16)
     else:
-        return 8
+        return (16, 2, 32)
 
 
-def calculate_knockout_size(player_count: int) -> int:
+def get_allowed_knockout_sizes(player_count: int) -> list[int]:
     """
-    Oblicza rozmiar fazy pucharowej.
-
-    8-15: Top 4
-    16-31: Top 8
-    32+: Top 16
+    Returns list of allowed knockout sizes for given player count.
     """
-    if player_count < 16:
-        return 4
-    elif player_count < 32:
-        return 8
-    else:
-        return 16
+    _, _, max_size = get_knockout_constraints(player_count)
+    all_sizes = [2, 4, 8, 16, 32]
+    return [s for s in all_sizes if s <= max_size and s <= player_count]
+
+
+def calculate_knockout_size(
+    player_count: int, configured_size: Optional[int] = None
+) -> int:
+    """
+    Calculates the knockout phase size.
+
+    If configured_size is set, validates and uses it.
+    Otherwise returns default based on player count.
+
+    Rules:
+    - 4-7 players: always top 2 (final only)
+    - 8-15 players: default top 4, max top 8
+    - 16-47 players: default top 8, max top 16
+    - 48+ players: default top 16, max top 32
+    """
+    default_size, _, max_size = get_knockout_constraints(player_count)
+
+    if configured_size is not None:
+        # Validate configured size
+        if configured_size <= player_count and configured_size <= max_size:
+            return configured_size
+        # Fall back to largest valid size
+        allowed = get_allowed_knockout_sizes(player_count)
+        return max(allowed) if allowed else default_size
+
+    return default_size
 
 
 # ============ Group Drawing ============
@@ -73,27 +121,31 @@ def draw_groups(
     baskets: Optional[list[list[int]]] = None,
 ) -> list[Group]:
     """
-    Losuje grupy dla ligi.
+    Draws groups for a league.
 
     Args:
-        session: Sesja bazy danych
-        league: Liga
-        baskets: Opcjonalne koszyki z player_id dla losowania seeded
-                 Jesli None - losowanie calkowicie losowe
+        session: Database session
+        league: League
+        baskets: Optional baskets with player_id for seeded draw
+                 If None - fully random draw
 
     Returns:
-        Lista utworzonych grup
+        List of created groups
     """
     statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league.id)
     players = list(session.scalars(statement).all())
 
-    num_groups = calculate_num_groups(len(players))
+    num_groups = calculate_num_groups(
+        len(players),
+        league.min_group_size,
+        league.max_group_size,
+    )
 
     created_groups = []
     for i in range(num_groups):
         group = Group(
             league_id=league.id,
-            name=f"Grupa {chr(65 + i)}",
+            name=f"Group {chr(65 + i)}",
         )
         session.add(group)
         created_groups.append(group)
@@ -129,15 +181,15 @@ def generate_group_matches(
     weeks_per_match: int = 2,
 ) -> list[Match]:
     """
-    Generuje mecze fazy grupowej (kazdy z kazdym w grupie).
+    Generates group phase matches (round-robin within each group).
 
     Args:
-        session: Sesja bazy danych
-        league: Liga
-        weeks_per_match: Tygodnie na rozegranie meczu (dla deadline)
+        session: Database session
+        league: League
+        weeks_per_match: Weeks per match (for deadline calculation)
 
     Returns:
-        Lista utworzonych meczow
+        List of created matches
     """
     statement = select(Group).where(Group.league_id == league.id)
     groups = session.scalars(statement).all()
@@ -183,7 +235,7 @@ def submit_match_result(
     submitted_by_id: int,
     map_name: Optional[str] = None,
 ) -> Match:
-    """Zglasza wynik meczu."""
+    """Submits a match result."""
     match.player1_score = player1_score
     match.player2_score = player2_score
     match.submitted_by_id = submitted_by_id
@@ -204,7 +256,7 @@ def confirm_match_result(
     match: Match,
     confirmed_by_id: int,
 ) -> Match:
-    """Potwierdza wynik meczu i aktualizuje statystyki."""
+    """Confirms a match result and updates statistics."""
     match.confirmed_by_id = confirmed_by_id
     match.confirmed_at = datetime.utcnow()
     match.status = "confirmed"
@@ -275,12 +327,12 @@ def confirm_match_result(
 
 def get_group_standings(session: Session, group_id: int) -> list[LeaguePlayer]:
     """
-    Pobiera tabele grupy posortowana wg punktow.
+    Gets group standings sorted by points.
 
-    Sortowanie:
-    1. Total points (malejaco)
-    2. Games played (rosnaco - mniej niezagranych = lepiej)
-    3. Average points (malejaco)
+    Sorting:
+    1. Total points (descending)
+    2. Games played (ascending - fewer unplayed = better)
+    3. Average points (descending)
     """
     statement = select(LeaguePlayer).where(LeaguePlayer.group_id == group_id)
     players = list(session.scalars(statement).all())
@@ -295,18 +347,18 @@ def get_group_standings(session: Session, group_id: int) -> list[LeaguePlayer]:
 
 def get_advancement_rules(player_count: int) -> tuple[int, int, int]:
     """
-    Zwraca zasady awansu na podstawie liczby graczy.
+    Returns advancement rules based on player count.
 
     Returns:
         (num_groups, direct_qualifiers_per_group, best_runners_up)
 
-    8-11: 2 grupy, 1+2 miejsca -> Top 4
-    12-15: 3 grupy, 1 miejsca + najlepsze 2 miejsce -> Top 4
-    16-19: 4 grupy, 1+2 miejsca -> Top 8
-    20-23: 5 grup, 1 miejsca + 3 najlepsze 2 miejsca -> Top 8
-    24-27: 6 grup, 1 miejsca + 2 najlepsze 2 miejsca -> Top 8
-    28-31: 7 grup, 1 miejsca + najlepsze 2 miejsce -> Top 8
-    32-48: 8 grup, 1+2 miejsca -> Top 16
+    8-11: 2 groups, 1st+2nd places -> Top 4
+    12-15: 3 groups, 1st places + best 2nd place -> Top 4
+    16-19: 4 groups, 1st+2nd places -> Top 8
+    20-23: 5 groups, 1st places + 3 best 2nd places -> Top 8
+    24-27: 6 groups, 1st places + 2 best 2nd places -> Top 8
+    28-31: 7 groups, 1st places + best 2nd place -> Top 8
+    32-48: 8 groups, 1st+2nd places -> Top 16
     """
     if player_count <= 11:
         return (2, 2, 0)
@@ -326,35 +378,23 @@ def get_advancement_rules(player_count: int) -> tuple[int, int, int]:
 
 def get_qualified_players(session: Session, league: League) -> list[LeaguePlayer]:
     """
-    Pobiera graczy ktorzy awansowali do fazy pucharowej.
+    Gets players who qualified for the knockout phase.
+
+    Uses league.knockout_size to determine the number of qualifiers.
+    If knockout_size is not set, calculates automatically.
 
     Returns:
-        Lista graczy posortowana wg wynikow (najlepszy pierwszy)
+        List of players sorted by results (best first), trimmed to knockout_size
     """
-    statement = select(Group).where(Group.league_id == league.id)
-    groups = list(session.scalars(statement).all())
-
     player_count = get_league_player_count(session, league.id)
-    _, direct_qualifiers, best_runners_up = get_advancement_rules(player_count)
+    knockout_size = calculate_knockout_size(player_count, league.knockout_size)
 
-    qualified = []
-    runners_up = []
+    statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league.id)
+    all_players = list(session.scalars(statement).all())
 
-    for group in groups:
-        standings = get_group_standings(session, group.id)
+    all_players.sort(key=lambda p: (-p.total_points, p.games_played, -p.average_points))
 
-        for i, player in enumerate(standings[:direct_qualifiers]):
-            qualified.append(player)
-
-        if best_runners_up > 0 and len(standings) > direct_qualifiers:
-            runners_up.append(standings[direct_qualifiers])
-
-    runners_up.sort(key=lambda p: (-p.total_points, -p.average_points))
-    qualified.extend(runners_up[:best_runners_up])
-
-    qualified.sort(key=lambda p: (-p.total_points, -p.average_points))
-
-    return qualified
+    return all_players[:knockout_size]
 
 
 def generate_knockout_matches(
@@ -363,20 +403,25 @@ def generate_knockout_matches(
     weeks_per_match: int = 2,
 ) -> list[Match]:
     """
-    Generuje mecze fazy pucharowej.
+    Generates knockout phase matches.
 
-    Najlepszy gra z najgorszym, drugi z przedostatnim itd.
+    Best plays worst, second plays second-to-last, etc.
+    Uses league.knockout_size to determine the bracket size.
     """
     qualified = get_qualified_players(session, league)
     knockout_size = len(qualified)
 
-    if knockout_size not in [4, 8, 16]:
-        raise ValueError(f"Invalid knockout size: {knockout_size}")
+    if knockout_size not in [2, 4, 8, 16, 32]:
+        player_count = get_league_player_count(session, league.id)
+        knockout_size = calculate_knockout_size(player_count, league.knockout_size)
+        qualified = qualified[:knockout_size]
 
     round_names = {
+        2: ["final"],
         4: ["semi", "final"],
         8: ["quarter", "semi", "final"],
         16: ["round_of_16", "quarter", "semi", "final"],
+        32: ["round_of_32", "round_of_16", "quarter", "semi", "final"],
     }
 
     rounds = round_names[knockout_size]
@@ -408,10 +453,10 @@ def generate_knockout_matches(
 
 def advance_knockout_winner(session: Session, match: Match) -> Optional[Match]:
     """
-    Tworzy mecz nastepnej rundy dla zwyciezcy.
+    Creates next round match for the winner.
 
     Returns:
-        Nowy mecz jesli utworzony, None jesli to byl final
+        New match if created, None if it was the final
     """
     if not match.is_completed or match.phase != "knockout":
         return None
@@ -443,10 +488,10 @@ def compare_for_knockout_tiebreaker(
     player2: LeaguePlayer,
 ) -> int:
     """
-    Porownuje graczy dla tiebreakera w fazie pucharowej.
+    Compares players for knockout tiebreaker.
 
     Returns:
-        -1 jesli player1 wygrywa, 1 jesli player2, 0 jesli remis
+        -1 if player1 wins, 1 if player2, 0 if tie
     """
     statement = select(Match).where(
         Match.league_id == player1.league_id,
