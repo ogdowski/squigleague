@@ -67,6 +67,10 @@ class League(SQLModel, table=True):
         default=False, sa_column_kwargs={"server_default": "false"}
     )
 
+    # Current knockout round being played: round_of_32, round_of_16, quarter, semi, final
+    # None = knockout not started yet
+    current_knockout_round: Optional[str] = Field(default=None, max_length=20)
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships

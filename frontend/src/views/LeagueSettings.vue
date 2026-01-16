@@ -145,24 +145,71 @@
           {{ saving ? 'Saving...' : 'Save Settings' }}
         </button>
       </form>
+
+      <!-- Danger Zone -->
+      <div v-if="league?.status !== 'cancelled'" class="card mt-6 border-red-500/50">
+        <h3 class="text-lg font-bold text-red-400 mb-4">Danger Zone</h3>
+        <p class="text-sm text-gray-400 mb-4">
+          Cancelling a league will hide it from the leagues list. This action cannot be undone.
+        </p>
+        <button
+          @click="showCancelModal = true"
+          class="btn-secondary border-red-500 text-red-400 hover:bg-red-900/30"
+        >
+          Cancel League
+        </button>
+      </div>
+
+      <div v-else class="card mt-6 bg-red-900/20 border-red-500/50">
+        <p class="text-red-400">This league has been cancelled.</p>
+      </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-red-400 mb-4">Cancel League</h3>
+        <p class="text-gray-300 mb-6">
+          Are you sure you want to cancel <strong>{{ league?.name }}</strong>?
+          This will remove it from the public leagues list.
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="showCancelModal = false"
+            class="flex-1 btn-secondary"
+          >
+            Keep League
+          </button>
+          <button
+            @click="cancelLeague"
+            :disabled="cancelling"
+            class="flex-1 btn-primary bg-red-600 hover:bg-red-700"
+          >
+            {{ cancelling ? 'Cancelling...' : 'Cancel League' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
 const leagueId = computed(() => route.params.id)
 const loading = ref(true)
 const saving = ref(false)
 const recalculating = ref(false)
+const cancelling = ref(false)
+const showCancelModal = ref(false)
 const error = ref('')
 const success = ref('')
 const league = ref(null)
@@ -253,6 +300,22 @@ const recalculateDates = async () => {
 const formatDateTime = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const cancelLeague = async () => {
+  cancelling.value = true
+  error.value = ''
+
+  try {
+    await axios.patch(`${API_URL}/league/${leagueId.value}`, { status: 'cancelled' })
+    showCancelModal.value = false
+    router.push('/leagues')
+  } catch (err) {
+    error.value = err.response?.data?.detail || 'Failed to cancel league'
+    showCancelModal.value = false
+  } finally {
+    cancelling.value = false
+  }
 }
 
 onMounted(() => {

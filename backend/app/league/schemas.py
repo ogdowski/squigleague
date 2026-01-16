@@ -62,6 +62,7 @@ class LeagueResponse(BaseModel):
     has_knockout_phase: bool
     knockout_size: Optional[int]
     knockout_lists_visible: bool
+    current_knockout_round: Optional[str]
     created_at: datetime
     player_count: Optional[int] = None
     is_registration_open: bool = False
@@ -80,6 +81,8 @@ class LeagueListResponse(BaseModel):
     registration_end: datetime
     player_count: int
     organizer_name: Optional[str] = None
+    is_organizer: bool = False
+    is_player: bool = False
 
     class Config:
         from_attributes = True
@@ -164,6 +167,8 @@ class MatchResponse(BaseModel):
     player2_id: int
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    group_id: Optional[int] = None
+    group_name: Optional[str] = None
     phase: str
     knockout_round: Optional[str]
     player1_score: Optional[int]
@@ -173,6 +178,7 @@ class MatchResponse(BaseModel):
     status: str
     deadline: Optional[datetime]
     map_name: Optional[str]
+    submitted_by_id: Optional[int] = None
     created_at: datetime
     is_completed: bool
 

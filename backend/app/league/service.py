@@ -335,32 +335,7 @@ def submit_match_result(
     submitted_by_id: int,
     map_name: Optional[str] = None,
 ) -> Match:
-    """Submits a match result."""
-    match.player1_score = player1_score
-    match.player2_score = player2_score
-    match.submitted_by_id = submitted_by_id
-    match.submitted_at = datetime.utcnow()
-    match.status = "pending_confirmation"
-
-    if map_name:
-        match.map_name = map_name
-
-    session.add(match)
-    session.commit()
-    session.refresh(match)
-    return match
-
-
-def confirm_match_result(
-    session: Session,
-    match: Match,
-    confirmed_by_id: int,
-) -> Match:
-    """Confirms a match result and updates statistics."""
-    match.confirmed_by_id = confirmed_by_id
-    match.confirmed_at = datetime.utcnow()
-    match.status = "confirmed"
-
+    """Submits a match result and updates player statistics immediately."""
     statement = select(League).where(League.id == match.league_id)
     league = session.scalars(statement).first()
 
@@ -370,17 +345,46 @@ def confirm_match_result(
     statement = select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
     player2 = session.scalars(statement).first()
 
+    # If match already had scores, reverse the previous stats first
+    if match.player1_league_points is not None and player1 and player2:
+        player1.games_played -= 1
+        player1.total_points -= match.player1_league_points
+        player2.games_played -= 1
+        player2.total_points -= match.player2_league_points
+
+        # Reverse win/draw/loss
+        if match.player1_score > match.player2_score:
+            player1.games_won -= 1
+            player2.games_lost -= 1
+        elif match.player1_score < match.player2_score:
+            player1.games_lost -= 1
+            player2.games_won -= 1
+        else:
+            player1.games_drawn -= 1
+            player2.games_drawn -= 1
+
+    # Set new scores
+    match.player1_score = player1_score
+    match.player2_score = player2_score
+    match.submitted_by_id = submitted_by_id
+    match.submitted_at = datetime.utcnow()
+    match.status = "pending_confirmation"
+
+    if map_name:
+        match.map_name = map_name
+
+    # Calculate and apply new stats
     if player1 and player2 and league:
         p1_points = calculate_match_points(
-            match.player1_score,
-            match.player2_score,
+            player1_score,
+            player2_score,
             league.points_per_win,
             league.points_per_draw,
             league.points_per_loss,
         )
         p2_points = calculate_match_points(
-            match.player2_score,
-            match.player1_score,
+            player2_score,
+            player1_score,
             league.points_per_win,
             league.points_per_draw,
             league.points_per_loss,
@@ -394,27 +398,50 @@ def confirm_match_result(
         player2.games_played += 1
         player2.total_points += p2_points
 
-        if match.player1_score > match.player2_score:
+        if player1_score > player2_score:
             player1.games_won += 1
             player2.games_lost += 1
-        elif match.player1_score < match.player2_score:
+        elif player1_score < player2_score:
             player1.games_lost += 1
             player2.games_won += 1
         else:
             player1.games_drawn += 1
             player2.games_drawn += 1
 
-        if player1.user_id and player2.user_id:
-            update_elo_after_match(
-                session,
-                player1.user_id,
-                player2.user_id,
-                match.player1_score,
-                match.player2_score,
-            )
-
         session.add(player1)
         session.add(player2)
+
+    session.add(match)
+    session.commit()
+    session.refresh(match)
+    return match
+
+
+def confirm_match_result(
+    session: Session,
+    match: Match,
+    confirmed_by_id: int,
+) -> Match:
+    """Confirms a match result (locks it from further edits) and updates ELO."""
+    match.confirmed_by_id = confirmed_by_id
+    match.confirmed_at = datetime.utcnow()
+    match.status = "confirmed"
+
+    # Update ELO only on confirmation
+    statement = select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
+    player1 = session.scalars(statement).first()
+
+    statement = select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
+    player2 = session.scalars(statement).first()
+
+    if player1 and player2 and player1.user_id and player2.user_id:
+        update_elo_after_match(
+            session,
+            player1.user_id,
+            player2.user_id,
+            match.player1_score,
+            match.player2_score,
+        )
 
     session.add(match)
     session.commit()
@@ -497,13 +524,37 @@ def get_qualified_players(session: Session, league: League) -> list[LeaguePlayer
     return all_players[:knockout_size]
 
 
+def get_knockout_round_names(knockout_size: int) -> list[str]:
+    """Returns the list of knockout round names for a given bracket size."""
+    round_names = {
+        2: ["final"],
+        4: ["semi", "final"],
+        8: ["quarter", "semi", "final"],
+        16: ["round_of_16", "quarter", "semi", "final"],
+        32: ["round_of_32", "round_of_16", "quarter", "semi", "final"],
+    }
+    return round_names.get(knockout_size, ["final"])
+
+
+def get_next_knockout_round(current_round: str) -> Optional[str]:
+    """Returns the next knockout round, or None if current is final."""
+    round_progression = {
+        "round_of_32": "round_of_16",
+        "round_of_16": "quarter",
+        "quarter": "semi",
+        "semi": "final",
+        "final": None,
+    }
+    return round_progression.get(current_round)
+
+
 def generate_knockout_matches(
     session: Session,
     league: League,
     weeks_per_match: int = 2,
 ) -> list[Match]:
     """
-    Generates knockout phase matches.
+    Generates knockout phase matches for the FIRST ROUND only.
 
     Best plays worst, second plays second-to-last, etc.
     Uses league.knockout_size to determine the bracket size.
@@ -516,15 +567,7 @@ def generate_knockout_matches(
         knockout_size = calculate_knockout_size(player_count, league.knockout_size)
         qualified = qualified[:knockout_size]
 
-    round_names = {
-        2: ["final"],
-        4: ["semi", "final"],
-        8: ["quarter", "semi", "final"],
-        16: ["round_of_16", "quarter", "semi", "final"],
-        32: ["round_of_32", "round_of_16", "quarter", "semi", "final"],
-    }
-
-    rounds = round_names[knockout_size]
+    rounds = get_knockout_round_names(knockout_size)
     first_round = rounds[0]
 
     created_matches = []
@@ -542,13 +585,113 @@ def generate_knockout_matches(
             phase="knockout",
             knockout_round=first_round,
             status="scheduled",
-            deadline=base_deadline + timedelta(weeks=weeks_per_match),
+            deadline=base_deadline + timedelta(days=league.days_per_match),
         )
         session.add(match)
         created_matches.append(match)
 
     session.commit()
     return created_matches
+
+
+def get_round_matches(
+    session: Session, league_id: int, knockout_round: str
+) -> list[Match]:
+    """Gets all matches for a specific knockout round."""
+    statement = select(Match).where(
+        Match.league_id == league_id,
+        Match.phase == "knockout",
+        Match.knockout_round == knockout_round,
+    )
+    return list(session.scalars(statement).all())
+
+
+def all_round_matches_confirmed(
+    session: Session, league_id: int, knockout_round: str
+) -> bool:
+    """Checks if all matches in a knockout round are confirmed."""
+    matches = get_round_matches(session, league_id, knockout_round)
+    if not matches:
+        return False
+    return all(m.status == "confirmed" for m in matches)
+
+
+def get_round_winners(
+    session: Session, league_id: int, knockout_round: str
+) -> list[int]:
+    """
+    Gets winner player IDs from a completed knockout round.
+    Returns list of player IDs in seeding order (best seed first).
+    """
+    matches = get_round_matches(session, league_id, knockout_round)
+    winners = []
+
+    # Sort matches by their position (first match = top seeds, etc.)
+    matches_sorted = sorted(matches, key=lambda m: m.id)
+
+    for match in matches_sorted:
+        if match.winner_id:
+            winners.append(match.winner_id)
+
+    return winners
+
+
+def advance_to_next_knockout_round(
+    session: Session,
+    league: League,
+) -> tuple[Optional[str], list[Match]]:
+    """
+    Advances the knockout to the next round.
+
+    Returns:
+        (new_round_name, created_matches) or (None, []) if already at final
+    """
+    current_round = league.current_knockout_round
+    if not current_round:
+        return (None, [])
+
+    # Check all current round matches are confirmed
+    if not all_round_matches_confirmed(session, league.id, current_round):
+        return (None, [])
+
+    next_round = get_next_knockout_round(current_round)
+    if not next_round:
+        # Already at final, finish league
+        return (None, [])
+
+    # Get winners from current round
+    winners = get_round_winners(session, league.id, current_round)
+
+    if len(winners) < 2:
+        return (None, [])
+
+    # Create matches for next round
+    # Pair 1st with last, 2nd with second-to-last, etc. (bracket style)
+    created_matches = []
+    base_deadline = datetime.utcnow()
+    half = len(winners) // 2
+
+    for i in range(half):
+        player1_id = winners[i]
+        player2_id = winners[len(winners) - 1 - i]
+
+        match = Match(
+            league_id=league.id,
+            player1_id=player1_id,
+            player2_id=player2_id,
+            phase="knockout",
+            knockout_round=next_round,
+            status="scheduled",
+            deadline=base_deadline + timedelta(days=league.days_per_match),
+        )
+        session.add(match)
+        created_matches.append(match)
+
+    league.current_knockout_round = next_round
+    session.add(league)
+    session.commit()
+
+    return (next_round, created_matches)
 
 
 def advance_knockout_winner(session: Session, match: Match) -> Optional[Match]:

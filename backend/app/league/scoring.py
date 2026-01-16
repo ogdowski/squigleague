@@ -1,4 +1,4 @@
-"""System punktacji meczow ligowych."""
+"""League match scoring system."""
 
 
 def calculate_match_points(
@@ -9,20 +9,20 @@ def calculate_match_points(
     points_per_loss: int = 200,
 ) -> int:
     """
-    Oblicza punkty ligowe za mecz.
+    Calculates league points for a match.
 
-    Punktacja:
-    - Wygrana: points_per_win (domyslnie 1000)
-    - Remis: points_per_draw (domyslnie 600)
-    - Przegrana: points_per_loss (domyslnie 200)
+    Scoring:
+    - Win: points_per_win (default 1000)
+    - Draw: points_per_draw (default 600)
+    - Loss: points_per_loss (default 200)
 
-    Plus bonus za roznice wynikow:
+    Plus bonus for score difference:
     - diff = player_score - opponent_score
     - bonus = min(100, max(0, diff + 50))
 
-    Przyklad:
-    - Wygrales 72-68: 1000 + min(100, max(0, 4+50)) = 1000 + 54 = 1054
-    - Przegrales 68-72: 200 + min(100, max(0, -4+50)) = 200 + 46 = 246
+    Example:
+    - Won 72-68: 1000 + min(100, max(0, 4+50)) = 1000 + 54 = 1054
+    - Lost 68-72: 200 + min(100, max(0, -4+50)) = 200 + 46 = 246
     """
     if player_score > opponent_score:
         base = points_per_win
@@ -38,7 +38,7 @@ def calculate_match_points(
 
 
 def determine_match_result(player_score: int, opponent_score: int) -> str:
-    """Okresla wynik meczu: win, draw, loss."""
+    """Determines match result: win, draw, loss."""
     if player_score > opponent_score:
         return "win"
     elif player_score < opponent_score:

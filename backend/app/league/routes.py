@@ -22,6 +22,8 @@ from app.league.schemas import (
     StandingsEntry,
 )
 from app.league.service import (
+    advance_to_next_knockout_round,
+    all_round_matches_confirmed,
     calculate_phase_dates,
     confirm_match_result,
     draw_groups,
@@ -30,7 +32,9 @@ from app.league.service import (
     get_allowed_knockout_sizes,
     get_group_standings,
     get_knockout_constraints,
+    get_knockout_round_names,
     get_league_player_count,
+    get_next_knockout_round,
     get_qualified_players,
     get_qualifying_info,
     submit_match_result,
@@ -110,9 +114,14 @@ async def create_league(
 @router.get("", response_model=list[LeagueListResponse])
 async def list_leagues(
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_optional),
 ):
-    """Lists all leagues."""
-    statement = select(League).order_by(League.created_at.desc())
+    """Lists all leagues with user participation info (excludes cancelled)."""
+    statement = (
+        select(League)
+        .where(League.status != "cancelled")
+        .order_by(League.created_at.desc())
+    )
     leagues = session.scalars(statement).all()
 
     result = []
@@ -122,6 +131,17 @@ async def list_leagues(
         statement = select(User).where(User.id == league.organizer_id)
         organizer = session.scalars(statement).first()
 
+        is_organizer = False
+        is_player = False
+
+        if current_user:
+            is_organizer = league.organizer_id == current_user.id
+            stmt = select(LeaguePlayer).where(
+                LeaguePlayer.league_id == league.id,
+                LeaguePlayer.user_id == current_user.id,
+            )
+            is_player = session.scalars(stmt).first() is not None
+
         result.append(
             LeagueListResponse(
                 id=league.id,
@@ -130,6 +150,8 @@ async def list_leagues(
                 registration_end=league.registration_end,
                 player_count=player_count,
                 organizer_name=organizer.username if organizer else None,
+                is_organizer=is_organizer,
+                is_player=is_player,
             )
         )
 
@@ -734,6 +756,16 @@ async def list_matches(
             else:
                 p2_username = p2.discord_username
 
+        # Get group info from player1 (both players should be in same group for group matches)
+        group_id = None
+        group_name = None
+        if p1 and p1.group_id:
+            group_id = p1.group_id
+            stmt = select(Group).where(Group.id == p1.group_id)
+            group = session.scalars(stmt).first()
+            if group:
+                group_name = group.name
+
         result.append(
             MatchResponse(
                 id=match.id,
@@ -742,6 +774,8 @@ async def list_matches(
                 player2_id=match.player2_id,
                 player1_username=p1_username,
                 player2_username=p2_username,
+                group_id=group_id,
+                group_name=group_name,
                 phase=match.phase,
                 knockout_round=match.knockout_round,
                 player1_score=match.player1_score,
@@ -751,6 +785,7 @@ async def list_matches(
                 status=match.status,
                 deadline=match.deadline,
                 map_name=match.map_name,
+                submitted_by_id=match.submitted_by_id,
                 created_at=match.created_at,
                 is_completed=match.is_completed,
             )
@@ -825,7 +860,7 @@ async def confirm_result(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Confirms a match result."""
+    """Confirms a match result. Only organizer or admin can confirm."""
     statement = select(Match).where(
         Match.id == match_id,
         Match.league_id == league_id,
@@ -838,36 +873,104 @@ async def confirm_result(
             detail="Match not found",
         )
 
-    if match.status != "pending_confirmation":
+    if match.status == "confirmed":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Match is not pending confirmation",
+            detail="Match is already confirmed",
         )
 
+    if match.player1_score is None or match.player2_score is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot confirm match without scores",
+        )
+
+    stmt = select(League).where(League.id == league_id)
+    league = session.scalars(stmt).first()
+
+    # Get players to check if current user is the opponent
     stmt = select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
     p1 = session.scalars(stmt).first()
     stmt = select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
     p2 = session.scalars(stmt).first()
 
-    stmt = select(League).where(League.id == league_id)
-    league = session.scalars(stmt).first()
-
-    submitter_is_p1 = p1 and p1.user_id == match.submitted_by_id
-    is_opponent = (submitter_is_p1 and p2 and p2.user_id == current_user.id) or (
-        not submitter_is_p1 and p1 and p1.user_id == current_user.id
-    )
     is_organizer = league and league.organizer_id == current_user.id
     is_admin = current_user.role == "admin"
+
+    # Check if current user is the opponent (not the one who submitted)
+    is_opponent = False
+    if match.submitted_by_id:
+        if (
+            p1
+            and p1.user_id == match.submitted_by_id
+            and p2
+            and p2.user_id == current_user.id
+        ):
+            is_opponent = True
+        elif (
+            p2
+            and p2.user_id == match.submitted_by_id
+            and p1
+            and p1.user_id == current_user.id
+        ):
+            is_opponent = True
 
     if not (is_opponent or is_organizer or is_admin):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to confirm this match",
+            detail="Only opponent, organizer or admin can confirm matches",
         )
 
     confirm_match_result(session, match, current_user.id)
 
     return {"message": "Result confirmed"}
+
+
+@router.post("/{league_id}/matches/{match_id}/unlock")
+async def unlock_result(
+    league_id: int,
+    match_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Unlocks a confirmed match result (organizer or admin only)."""
+    statement = select(Match).where(
+        Match.id == match_id,
+        Match.league_id == league_id,
+    )
+    match = session.scalars(statement).first()
+
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Match not found",
+        )
+
+    if match.status != "confirmed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Match is not confirmed",
+        )
+
+    stmt = select(League).where(League.id == league_id)
+    league = session.scalars(stmt).first()
+
+    is_organizer = league and league.organizer_id == current_user.id
+    is_admin = current_user.role == "admin"
+
+    if not (is_organizer or is_admin):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only organizer or admin can unlock matches",
+        )
+
+    match.status = "pending_confirmation"
+    match.confirmed_by_id = None
+    match.confirmed_at = None
+    session.add(match)
+    session.commit()
+
+    return {"message": "Match unlocked for editing"}
 
 
 # ============ Knockout Phase ============
@@ -909,7 +1012,14 @@ async def start_knockout(
 
     matches = generate_knockout_matches(session, league)
 
+    # Determine the first round based on knockout size
+    player_count = get_league_player_count(session, league_id)
+    knockout_size = league.knockout_size or len(matches) * 2
+    rounds = get_knockout_round_names(knockout_size)
+    first_round = rounds[0] if rounds else "final"
+
     league.status = "knockout_phase"
+    league.current_knockout_round = first_round
     league.group_phase_end = datetime.utcnow()
     league.knockout_phase_start = datetime.utcnow()
     session.add(league)
@@ -918,6 +1028,80 @@ async def start_knockout(
     return {
         "message": f"Started knockout phase with {len(matches)} matches",
         "qualified_count": len(matches) * 2,
+        "current_round": first_round,
+    }
+
+
+@router.post("/{league_id}/advance-knockout")
+async def advance_knockout(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Advances to the next knockout round (organizer). All current round matches must be confirmed."""
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if league.status != "knockout_phase":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="League is not in knockout phase",
+        )
+
+    if not league.current_knockout_round:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No current knockout round set",
+        )
+
+    # Check if all matches in current round are confirmed
+    if not all_round_matches_confirmed(
+        session, league.id, league.current_knockout_round
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="All matches in current round must be confirmed before advancing",
+        )
+
+    # Check if we're at the final
+    next_round = get_next_knockout_round(league.current_knockout_round)
+    if not next_round:
+        # Final is complete, finish league
+        league.status = "finished"
+        league.knockout_phase_end = datetime.utcnow()
+        session.add(league)
+        session.commit()
+        return {
+            "message": "Knockout phase complete! League finished.",
+            "finished": True,
+        }
+
+    # Advance to next round
+    new_round, matches = advance_to_next_knockout_round(session, league)
+
+    if not new_round:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to advance to next round",
+        )
+
+    return {
+        "message": f"Advanced to {new_round}",
+        "current_round": new_round,
+        "matches_created": len(matches),
+        "finished": False,
     }
 
 
