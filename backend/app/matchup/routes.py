@@ -65,7 +65,7 @@ async def get_my_matchups(
     )
 
     results = session.exec(statement).all()
-    
+
     # Fetch player2 usernames separately
     matchup_list = []
     for matchup, player1 in results:
@@ -74,7 +74,7 @@ async def get_my_matchups(
             player2 = session.get(User, matchup.player2_id)
             if player2:
                 player2_username = player2.username
-        
+
         matchup_list.append(
             MatchupStatus(
                 name=matchup.name,
@@ -87,7 +87,7 @@ async def get_my_matchups(
                 player2_username=player2_username,
             )
         )
-    
+
     return matchup_list
 
 
@@ -109,7 +109,7 @@ async def get_stats(session: Session = Depends(get_session)):
     return {
         "exchanges_completed": completed_count,
         "exchanges_expired": expired_count,
-        "version": "0.3.0",
+        "version": "0.3.2",
     }
 
 
@@ -137,12 +137,12 @@ async def get_matchup_status(
     # Fetch player usernames if they exist
     player1_username = None
     player2_username = None
-    
+
     if matchup.player1_id:
         player1 = session.get(User, matchup.player1_id)
         if player1:
             player1_username = player1.username
-    
+
     if matchup.player2_id:
         player2 = session.get(User, matchup.player2_id)
         if player2:
@@ -192,11 +192,11 @@ async def submit_army_list(
 
     try:
         matchup = submit_list(
-            matchup, 
-            submission.army_list, 
-            is_player1, 
+            matchup,
+            submission.army_list,
+            is_player1,
             session,
-            user_id=current_user.id if current_user else None
+            user_id=current_user.id if current_user else None,
         )
     except ValueError as e:
         raise HTTPException(
@@ -234,12 +234,12 @@ async def reveal_matchup(
     # Fetch player usernames if they exist
     player1_username = None
     player2_username = None
-    
+
     if matchup.player1_id:
         player1 = session.get(User, matchup.player1_id)
         if player1:
             player1_username = player1.username
-    
+
     if matchup.player2_id:
         player2 = session.get(User, matchup.player2_id)
         if player2:
