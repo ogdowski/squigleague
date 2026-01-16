@@ -4,6 +4,24 @@
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: squig-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: squigleague
+      POSTGRES_USER: squig
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - squig-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U squig -d squigleague"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     # Build locally for development
     build:
@@ -12,6 +30,20 @@ services:
 
     # Development-specific settings
     restart: unless-stopped
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    environment:
+      - DATABASE_URL=postgresql://squig:changeme@postgres:5432/squigleague
+      - SECRET_KEY=dev-secret-key-for-local-testing
+      - ENVIRONMENT=development
+      - SQUIG_VERSION=0.3.0-dev
+      - BASE_URL=http://localhost
+    
+    networks:
+      - squig-network
 
     # Verbose logging for development
     logging:
@@ -28,6 +60,9 @@ services:
 
     # Development-specific settings
     restart: unless-stopped
+    
+    networks:
+      - squig-network
 
     # Verbose logging for development
     logging:
@@ -45,3 +80,20 @@ services:
     # Override prod config with http-only for local development
     volumes:
       - ./nginx/nginx.http-only.conf:/etc/nginx/nginx.conf:ro
+    
+    ports:
+      - "80:80"
+    
+    depends_on:
+      - backend
+      - frontend
+    
+    networks:
+      - squig-network
+
+networks:
+  squig-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
