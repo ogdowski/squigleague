@@ -31,7 +31,7 @@
             <h3 class="text-xl font-bold text-squig-yellow mb-2">
               {{ matchup.name }}
             </h3>
-            <div class="flex gap-6 text-sm">
+            <div class="flex gap-6 text-sm mb-2">
               <div>
                 <span class="text-gray-400">Created:</span>
                 <span class="text-white ml-2">{{ formatDate(matchup.created_at) }}</span>
@@ -39,6 +39,16 @@
               <div>
                 <span class="text-gray-400">Expires:</span>
                 <span class="text-white ml-2">{{ formatDate(matchup.expires_at) }}</span>
+              </div>
+            </div>
+            <div v-if="matchup.player1_username || matchup.player2_username" class="flex gap-4 text-sm">
+              <div v-if="matchup.player1_username">
+                <span class="text-gray-400">P1:</span>
+                <span class="text-squig-yellow ml-1">{{ matchup.player1_username }}</span>
+              </div>
+              <div v-if="matchup.player2_username">
+                <span class="text-gray-400">P2:</span>
+                <span class="text-squig-yellow ml-1">{{ matchup.player2_username }}</span>
               </div>
             </div>
           </div>

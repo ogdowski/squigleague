@@ -21,13 +21,23 @@
 
         <div class="grid md:grid-cols-2 gap-4 mb-6">
           <div class="bg-gray-900 p-4 rounded">
-            <h3 class="font-bold mb-2">Player 1</h3>
+            <h3 class="font-bold mb-2">
+              Player 1
+              <span v-if="matchup.player1_username" class="text-squig-yellow ml-2">
+                ({{ matchup.player1_username }})
+              </span>
+            </h3>
             <p :class="matchup.player1_submitted ? 'text-green-400' : 'text-gray-400'">
               {{ matchup.player1_submitted ? '✓ List submitted' : '○ Waiting for list' }}
             </p>
           </div>
           <div class="bg-gray-900 p-4 rounded">
-            <h3 class="font-bold mb-2">Player 2</h3>
+            <h3 class="font-bold mb-2">
+              Player 2
+              <span v-if="matchup.player2_username" class="text-squig-yellow ml-2">
+                ({{ matchup.player2_username }})
+              </span>
+            </h3>
             <p :class="matchup.player2_submitted ? 'text-green-400' : 'text-gray-400'">
               {{ matchup.player2_submitted ? '✓ List submitted' : '○ Waiting for list' }}
             </p>
@@ -92,14 +102,24 @@
 
           <div class="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 class="text-xl font-bold mb-3">Player 1 List</h3>
+              <h3 class="text-xl font-bold mb-3">
+                Player 1 List
+                <span v-if="reveal.player1_username" class="text-squig-yellow text-base ml-2">
+                  ({{ reveal.player1_username }})
+                </span>
+              </h3>
               <div class="bg-gray-900 p-4 rounded">
                 <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player1_list }}</pre>
               </div>
             </div>
 
             <div>
-              <h3 class="text-xl font-bold mb-3">Player 2 List</h3>
+              <h3 class="text-xl font-bold mb-3">
+                Player 2 List
+                <span v-if="reveal.player2_username" class="text-squig-yellow text-base ml-2">
+                  ({{ reveal.player2_username }})
+                </span>
+              </h3>
               <div class="bg-gray-900 p-4 rounded">
                 <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player2_list }}</pre>
               </div>
