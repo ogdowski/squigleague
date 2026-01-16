@@ -250,10 +250,15 @@ release VERSION:
     @echo "✅ Updated backend/app/config.py and routes.py to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 4/7: Updating environment files..."
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example || true
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example || true
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local || true
-    @sed -i '' 's/SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod || true
+    @for f in .env.local.example .env.prod.example .env.local .env.prod; do \
+        if [ -f "$$f" ]; then \
+            if grep -q '^SQUIG_VERSION=' "$$f"; then \
+                sed -i '' 's/^SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' "$$f"; \
+            else \
+                echo 'SQUIG_VERSION={{VERSION}}' >> "$$f"; \
+            fi; \
+        fi; \
+    done
     @echo "✅ Updated env files to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 5/7: Committing changes..."
@@ -269,7 +274,7 @@ release VERSION:
     @echo ""
     @echo "📋 Step 7/7: Building and pushing Docker images..."
     @echo "🏗️  This will build multi-arch images and push to registry..."
-    just push
+    SQUIG_VERSION={{VERSION}} just push
     @echo ""
     @echo "✅ Release v{{VERSION}} complete!"
     @echo ""
