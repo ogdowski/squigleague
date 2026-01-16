@@ -11,6 +11,7 @@ from app.matchup.schemas import (
     MatchupSubmit,
 )
 from app.matchup.service import submit_list
+from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, func, select
 
@@ -52,7 +53,8 @@ async def get_my_matchups(
     from sqlalchemy import or_
 
     statement = (
-        select(Matchup)
+        select(Matchup, User)
+        .outerjoin(User, Matchup.player1_id == User.id)
         .where(
             or_(
                 Matchup.player1_id == current_user.id,
@@ -62,19 +64,31 @@ async def get_my_matchups(
         .order_by(Matchup.created_at.desc())
     )
 
-    matchups = session.exec(statement).all()
-
-    return [
-        MatchupStatus(
-            name=m.name,
-            player1_submitted=m.player1_submitted,
-            player2_submitted=m.player2_submitted,
-            is_revealed=m.is_revealed,
-            created_at=m.created_at,
-            expires_at=m.expires_at,
+    results = session.exec(statement).all()
+    
+    # Fetch player2 usernames separately
+    matchup_list = []
+    for matchup, player1 in results:
+        player2_username = None
+        if matchup.player2_id:
+            player2 = session.get(User, matchup.player2_id)
+            if player2:
+                player2_username = player2.username
+        
+        matchup_list.append(
+            MatchupStatus(
+                name=matchup.name,
+                player1_submitted=matchup.player1_submitted,
+                player2_submitted=matchup.player2_submitted,
+                is_revealed=matchup.is_revealed,
+                created_at=matchup.created_at,
+                expires_at=matchup.expires_at,
+                player1_username=player1.username if player1 else None,
+                player2_username=player2_username,
+            )
         )
-        for m in matchups
-    ]
+    
+    return matchup_list
 
 
 @router.get("/stats")
@@ -120,6 +134,20 @@ async def get_matchup_status(
             detail="Matchup has expired",
         )
 
+    # Fetch player usernames if they exist
+    player1_username = None
+    player2_username = None
+    
+    if matchup.player1_id:
+        player1 = session.get(User, matchup.player1_id)
+        if player1:
+            player1_username = player1.username
+    
+    if matchup.player2_id:
+        player2 = session.get(User, matchup.player2_id)
+        if player2:
+            player2_username = player2.username
+
     return MatchupStatus(
         name=matchup.name,
         player1_submitted=matchup.player1_submitted,
@@ -127,6 +155,8 @@ async def get_matchup_status(
         is_revealed=matchup.is_revealed,
         created_at=matchup.created_at,
         expires_at=matchup.expires_at,
+        player1_username=player1_username,
+        player2_username=player2_username,
     )
 
 
@@ -161,7 +191,13 @@ async def submit_army_list(
         is_player1 = True
 
     try:
-        matchup = submit_list(matchup, submission.army_list, is_player1, session)
+        matchup = submit_list(
+            matchup, 
+            submission.army_list, 
+            is_player1, 
+            session,
+            user_id=current_user.id if current_user else None
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -195,10 +231,26 @@ async def reveal_matchup(
             detail="Both players must submit their lists before revealing",
         )
 
+    # Fetch player usernames if they exist
+    player1_username = None
+    player2_username = None
+    
+    if matchup.player1_id:
+        player1 = session.get(User, matchup.player1_id)
+        if player1:
+            player1_username = player1.username
+    
+    if matchup.player2_id:
+        player2 = session.get(User, matchup.player2_id)
+        if player2:
+            player2_username = player2.username
+
     return MatchupReveal(
         name=matchup.name,
         player1_list=matchup.player1_list,
         player2_list=matchup.player2_list,
         map_name=matchup.map_name,
         revealed_at=matchup.revealed_at,
+        player1_username=player1_username,
+        player2_username=player2_username,
     )

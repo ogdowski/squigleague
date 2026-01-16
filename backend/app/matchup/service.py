@@ -50,6 +50,7 @@ def submit_list(
     army_list: str,
     is_player1: bool,
     session: Session,
+    user_id: int = None,
 ) -> Matchup:
     """Submit an army list for a matchup."""
     if is_player1:
@@ -57,11 +58,15 @@ def submit_list(
             raise ValueError("Player 1 has already submitted their list")
         matchup.player1_list = army_list
         matchup.player1_submitted = True
+        if user_id and not matchup.player1_id:
+            matchup.player1_id = user_id
     else:
         if matchup.player2_submitted:
             raise ValueError("Player 2 has already submitted their list")
         matchup.player2_list = army_list
         matchup.player2_submitted = True
+        if user_id:
+            matchup.player2_id = user_id
 
     session.add(matchup)
     session.commit()
