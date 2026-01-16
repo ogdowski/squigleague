@@ -6,7 +6,6 @@ from sqlmodel import Session
 
 # Hardcoded maps from GHB 2025/2026 (will be replaced with BSData later)
 MAPS = [
-    "Scoring Sheet",
     "Passing Seasons",
     "Paths of the Fey",
     "Roiling Roots",
