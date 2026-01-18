@@ -29,7 +29,7 @@ for slug, data in MISSION_DATA.items():
             else:
                 # Handle polygon zones
                 coords_str = ' → '.join([f"({x}\", {y}\")" for x, y in zone['coords']])
-                name = f"{zone['player']} Exclusion (9\")"
+                name = zone.get('note', 'Exclusion Zone (9\")')
             
             elements.append({
                 'type': 'exclusion_zone',
