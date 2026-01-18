@@ -91,15 +91,29 @@ MISSIONS = {
     "aos-cyclic-shifts": {
         "name": "Cyclic Shifts",
         "deployment_zones": [
-            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 19), (0, 19)]},
-            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 25), (60, 25), (60, 44), (0, 44)]},
+            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 11), (0, 11)]},
+            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 33), (60, 33), (60, 44), (0, 44)]},
         ],
         "exclusion_zones": [
-            {"type": "circle", "center": (30, 22), "radius": 9, "color": "#666666", "alpha": 0.15, "note": "9\" from center point"},
+            # No exclusion zones - deployment zones are >9" apart (22" neutral territory)
         ],
         "objectives": [
+            {"name": "Green South", "x": 30, "y": 11, "color": "green", "type": "objective", "size": "large"},
+            {"name": "Green North", "x": 30, "y": 33, "color": "green", "type": "objective", "size": "large"},
+            {"name": "Red Southwest", "x": 7.5, "y": 17.5, "color": "red", "type": "objective", "size": "large"},
+            {"name": "Red Northeast", "x": 52.5, "y": 26.5, "color": "red", "type": "objective", "size": "large"},
+            {"name": "Blue Grid-1", "x": 7.5, "y": 38.5, "color": "blue", "type": "objective", "size": "large"},
+            {"name": "Purple Grid-16", "x": 52.5, "y": 5.5, "color": "purple", "type": "objective", "size": "large"},
         ],
         "terrain": [
+            {"name": "Forest G3", "x": 41.25, "y": 34.75, "type": "forest", "size": "large"},
+            {"name": "Forest G14", "x": 18.75, "y": 8.25, "type": "forest", "size": "large"},
+            {"name": "Ruins G2", "x": 18.75, "y": 35.75, "type": "ruins", "size": "small"},
+            {"name": "Ruins G15", "x": 41.25, "y": 8.25, "type": "ruins", "size": "small"},
+            {"name": "Place of Power G5", "x": 9, "y": 27.5, "type": "place_of_power", "size": "small"},
+            {"name": "Place of Power G12", "x": 51, "y": 16.5, "type": "place_of_power", "size": "small"},
+            {"name": "Place of Power G6", "x": 24, "y": 23.5, "type": "place_of_power", "size": "large"},
+            {"name": "Place of Power G11", "x": 36, "y": 20.5, "type": "place_of_power", "size": "large"},
         ]
     },
     "aos-grasp-of-thorns": {

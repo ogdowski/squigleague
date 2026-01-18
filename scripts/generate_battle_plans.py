@@ -126,7 +126,7 @@ def draw_place_of_power(ax, terrain):
 def draw_ruins(ax, terrain):
     """Draw Ruins."""
     x, y = terrain['x'], terrain['y']
-    size = 5  # Standard ruins size
+    size = SIZES.get(terrain.get('size', 'medium'), 5)  # Use size from terrain data
     
     # Main structure (broken rectangle)
     points = [
