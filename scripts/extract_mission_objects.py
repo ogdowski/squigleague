@@ -176,26 +176,28 @@ MISSIONS = {
     "aos-linked-ley-lines": {
         "name": "Linked Ley Lines",
         "deployment_zones": [
-            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 19), (45, 0), (60, 0), (60, 25), (15, 44), (0, 44)]},
-            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 0), (0, 19), (15, 44), (60, 44), (60, 25), (45, 0)]},
+            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 11), (0, 11)]},
+            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 33), (60, 33), (60, 44), (0, 44)]},
         ],
         "exclusion_zones": [
-            {"type": "circle", "center": (30, 22), "radius": 9, "color": "#666666", "alpha": 0.15, "note": "9\" from center point"},
+            # No exclusion zones - deployment zones are >9" apart (22" neutral territory)
         ],
         "objectives": [
-            {"name": "Center", "x": 30, "y": 22, "color": "blue", "type": "objective", "size": "large"},
-            {"name": "North", "x": 30, "y": 33, "color": "red", "type": "objective", "size": "large"},
-            {"name": "South", "x": 30, "y": 11, "color": "red", "type": "objective", "size": "large"},
-            {"name": "West", "x": 15, "y": 22, "color": "red", "type": "objective", "size": "large"},
-            {"name": "East", "x": 45, "y": 22, "color": "green", "type": "objective", "size": "large"},
+            {"name": "Blue Center", "x": 30, "y": 22, "color": "blue", "type": "objective", "size": "large"},
+            {"name": "Red South", "x": 30, "y": 11, "color": "red", "type": "objective", "size": "large"},
+            {"name": "Red North", "x": 30, "y": 33, "color": "red", "type": "objective", "size": "large"},
+            {"name": "Green West", "x": 15, "y": 22, "color": "green", "type": "objective", "size": "large"},
+            {"name": "Green East", "x": 45, "y": 22, "color": "green", "type": "objective", "size": "large"},
         ],
         "terrain": [
-            {"name": "Place of Power N", "x": 52.5, "y": 38.5, "type": "place_of_power", "size": "small"},
-            {"name": "Place of Power S", "x": 7.5, "y": 5.5, "type": "place_of_power", "size": "small"},
-            {"name": "Ruins NW", "x": 7.5, "y": 33, "type": "ruins"},
-            {"name": "Ruins SE", "x": 52.5, "y": 11, "type": "ruins"},
-            {"name": "Forest NE", "x": 52.5, "y": 38.5, "type": "forest"},
-            {"name": "Forest SW", "x": 7.5, "y": 5.5, "type": "forest"},
+            {"name": "Forest Northeast", "x": 41.5, "y": 33, "type": "forest", "size": "large"},
+            {"name": "Forest Southwest", "x": 18.5, "y": 11, "type": "forest", "size": "large"},
+            {"name": "Place of Power Northwest", "x": 18, "y": 34.5, "type": "place_of_power", "size": "large"},
+            {"name": "Place of Power Southeast", "x": 42, "y": 9.5, "type": "place_of_power", "size": "large"},
+            {"name": "Place of Power West", "x": 5, "y": 22, "type": "place_of_power", "size": "small"},
+            {"name": "Place of Power East", "x": 55, "y": 22, "type": "place_of_power", "size": "small"},
+            {"name": "Ruins Northwest", "x": 6, "y": 36, "type": "ruins", "size": "large"},
+            {"name": "Ruins Southeast", "x": 54, "y": 8, "type": "ruins", "size": "large"},
         ]
     },
     "aos-noxious-nexus": {

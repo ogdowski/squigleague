@@ -5,7 +5,17 @@ import subprocess
 from extract_mission_objects import MISSIONS as MISSION_DATA
 
 # Current mission being worked on (shows first in gallery)
-CURRENT_MISSION = "aos-lifecycle"
+CURRENT_MISSION = "aos-linked-ley-lines"
+
+# Locked missions (completed and verified)
+LOCKED_MISSIONS = [
+    "aos-passing-seasons",
+    "aos-creeping-corruption",
+    "aos-bountiful-equinox",
+    "aos-cyclic-shifts",
+    "aos-grasp-of-thorns",
+    "aos-lifecycle",
+]
 
 # Convert MISSIONS dict to list format for template
 missions = []
@@ -50,11 +60,21 @@ for slug in mission_order:
             elem['coords'] = f"({elem['x']}\", {elem['y']}\")"
         elements.append(elem)
     
-    missions.append((data["name"], slug, elements))
+    missions.append({
+        'name': data['name'],
+        'slug': slug,
+        'elements': elements,
+        'locked': slug in LOCKED_MISSIONS
+    })
 
 # Build mission cards
 cards = []
-for i, (title, slug, elements) in enumerate(missions, 1):
+for i, mission in enumerate(missions, 1):
+    title = mission['name']
+    slug = mission['slug']
+    elements = mission['elements']
+    locked_badge = ' <span style="color: #28a745; font-weight: bold;">[LOCKED]</span>' if mission['locked'] else ''
+    
     # Build elements list
     elem_html = []
     for e in elements:
@@ -89,7 +109,7 @@ for i, (title, slug, elements) in enumerate(missions, 1):
             <div class="card">
                 <div class="card-header">
                     <div class="mission-num">Mission {i} of 12</div>
-                    <h2>{title}</h2>
+                    <h2>{title}{locked_badge}</h2>
                 </div>
                 <div class="grid4">
                     <div class="col">
@@ -122,6 +142,12 @@ for i, (title, slug, elements) in enumerate(missions, 1):
                 </div>
             </div>''')
 
+# Calculate status counts
+total_missions = len(missions)
+locked_count = len(LOCKED_MISSIONS)
+in_progress_count = 1  # Current mission
+remaining_count = total_missions - locked_count - in_progress_count
+
 html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,9 +157,16 @@ html = f'''<!DOCTYPE html>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: system-ui, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 20px; }}
-        .header {{ text-align: center; padding: 40px; background: linear-gradient(135deg, #2c3e50, #34495e); border-radius: 12px; margin-bottom: 40px; }}
+        .header {{ text-align: center; padding: 40px; background: linear-gradient(135deg, #2c3e50, #34495e); border-radius: 12px; margin-bottom: 20px; }}
         .header h1 {{ font-size: 2.5em; color: #ecf0f1; margin-bottom: 10px; }}
         .header p {{ color: #bdc3c7; font-size: 1.1em; }}
+        .status-summary {{ background: #34495e; border-radius: 8px; padding: 20px; margin-bottom: 40px; display: flex; justify-content: center; gap: 40px; }}
+        .status-item {{ text-align: center; }}
+        .status-count {{ font-size: 2em; font-weight: bold; display: block; }}
+        .status-count.locked {{ color: #28a745; }}
+        .status-count.progress {{ color: #ffc107; }}
+        .status-count.remaining {{ color: #6c757d; }}
+        .status-label {{ color: #bdc3c7; font-size: 0.9em; margin-top: 5px; }}
         .card {{ background: #2c3e50; border-radius: 12px; margin-bottom: 30px; overflow: hidden; }}
         .card-header {{ background: linear-gradient(135deg, #2c3e50, #34495e); padding: 20px; border-bottom: 3px solid #3498db; }}
         .card-header h2 {{ color: #ecf0f1; margin-bottom: 5px; }}
@@ -170,6 +203,20 @@ html = f'''<!DOCTYPE html>
     <div class="header">
         <h1>Battle Plans Gallery</h1>
         <p>Age of Sigmar GH 2025-2026 - 4-Column Comparison</p>
+    </div>
+    <div class="status-summary">
+        <div class="status-item">
+            <span class="status-count locked">{locked_count}</span>
+            <div class="status-label">LOCKED</div>
+        </div>
+        <div class="status-item">
+            <span class="status-count progress">{in_progress_count}</span>
+            <div class="status-label">IN PROGRESS</div>
+        </div>
+        <div class="status-item">
+            <span class="status-count remaining">{remaining_count}</span>
+            <div class="status-label">REMAINING</div>
+        </div>
     </div>
     <div class="container">
 {''.join(cards)}
