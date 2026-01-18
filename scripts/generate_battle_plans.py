@@ -49,6 +49,40 @@ def draw_deployment_zones(ax, zones):
                 edgecolor='none'
             )
             ax.add_patch(circle)
+        elif zone.get('type') == 'semicircle':
+            # Semicircle zone
+            if zone.get('orientation') == 'top':
+                theta1, theta2 = 0, 180
+            elif zone.get('orientation') == 'bottom':
+                theta1, theta2 = 180, 360
+            elif zone.get('orientation') == 'left':
+                theta1, theta2 = 90, 270
+            else:  # right
+                theta1, theta2 = 270, 90
+            wedge = patches.Wedge(
+                zone['center'],
+                zone['radius'],
+                theta1=theta1,
+                theta2=theta2,
+                facecolor=zone['color'],
+                alpha=zone.get('alpha', 0.3),
+                edgecolor='none'
+            )
+            ax.add_patch(wedge)
+        elif zone.get('type') == 'quarter_circle':
+            # Quarter circle zone
+            theta1 = {'top_right': 0, 'top_left': 90, 'bottom_left': 180, 'bottom_right': 270}.get(zone.get('quadrant', 'top_right'), 0)
+            theta2 = theta1 + 90
+            wedge = patches.Wedge(
+                zone['center'],
+                zone['radius'],
+                theta1=theta1,
+                theta2=theta2,
+                facecolor=zone['color'],
+                alpha=zone.get('alpha', 0.3),
+                edgecolor='none'
+            )
+            ax.add_patch(wedge)
         else:
             # Polygon zone (default)
             polygon = patches.Polygon(

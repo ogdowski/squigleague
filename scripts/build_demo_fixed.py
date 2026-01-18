@@ -5,7 +5,7 @@ import subprocess
 from extract_mission_objects import MISSIONS as MISSION_DATA
 
 # Current mission being worked on (shows first in gallery)
-CURRENT_MISSION = "aos-surge-of-slaughter"
+CURRENT_MISSION = ""
 
 # Locked missions (completed and verified)
 LOCKED_MISSIONS = [
@@ -19,11 +19,13 @@ LOCKED_MISSIONS = [
     "aos-noxious-nexus",
     "aos-paths-of-the-fey",
     "aos-roiling-roots",
+    "aos-surge-of-slaughter",
+    "aos-the-liferoots",
 ]
 
 # Convert MISSIONS dict to list format for template
 missions = []
-mission_order = [CURRENT_MISSION] + [k for k in MISSION_DATA.keys() if k != CURRENT_MISSION]
+mission_order = [k for k in MISSION_DATA.keys()] if not CURRENT_MISSION else [CURRENT_MISSION] + [k for k in MISSION_DATA.keys() if k != CURRENT_MISSION]
 
 for slug in mission_order:
     data = MISSION_DATA[slug]
@@ -46,10 +48,16 @@ for slug in mission_order:
             if zone.get('type') == 'circle':
                 coords_str = f"Center: ({zone['center'][0]}\", {zone['center'][1]}\"), Radius: {zone['radius']}\""
                 name = zone.get('note', 'Exclusion Zone')
+            elif zone.get('type') == 'semicircle':
+                coords_str = f"Center: ({zone['center'][0]}\", {zone['center'][1]}\"), Radius: {zone['radius']}\", Orientation: {zone.get('orientation', 'N/A')}"
+                name = zone.get('note', 'Semicircle Exclusion')
+            elif zone.get('type') == 'quarter_circle':
+                coords_str = f"Center: ({zone['center'][0]}\", {zone['center'][1]}\"), Radius: {zone['radius']}\", Quadrant: {zone.get('quadrant', 'N/A')}"
+                name = zone.get('note', 'Quarter Circle Exclusion')
             else:
                 # Handle polygon zones
                 coords_str = ' → '.join([f"({x}\", {y}\")" for x, y in zone['coords']])
-                name = zone.get('note', 'Exclusion Zone (9\")')
+                name = zone.get('note', zone.get('player', 'Exclusion Zone (9\")'))
             
             elements.append({
                 'type': 'exclusion_zone',
