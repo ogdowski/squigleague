@@ -7,9 +7,16 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 20px; }
-        .header { text-align: center; padding: 40px; background: linear-gradient(135deg, #2c3e50, #34495e); border-radius: 12px; margin-bottom: 40px; }
+        .header { text-align: center; padding: 40px; background: linear-gradient(135deg, #2c3e50, #34495e); border-radius: 12px; margin-bottom: 20px; }
         .header h1 { font-size: 2.5em; color: #ecf0f1; margin-bottom: 10px; }
         .header p { color: #bdc3c7; font-size: 1.1em; }
+        .status-summary { background: #34495e; border-radius: 8px; padding: 20px; margin-bottom: 40px; display: flex; justify-content: center; gap: 40px; }
+        .status-item { text-align: center; }
+        .status-count { font-size: 2em; font-weight: bold; display: block; }
+        .status-count.locked { color: #28a745; }
+        .status-count.progress { color: #ffc107; }
+        .status-count.remaining { color: #6c757d; }
+        .status-label { color: #bdc3c7; font-size: 0.9em; margin-top: 5px; }
         .card { background: #2c3e50; border-radius: 12px; margin-bottom: 30px; overflow: hidden; }
         .card-header { background: linear-gradient(135deg, #2c3e50, #34495e); padding: 20px; border-bottom: 3px solid #3498db; }
         .card-header h2 { color: #ecf0f1; margin-bottom: 5px; }
@@ -47,12 +54,75 @@
         <h1>Battle Plans Gallery</h1>
         <p>Age of Sigmar GH 2025-2026 - 4-Column Comparison</p>
     </div>
+    <div class="status-summary">
+        <div class="status-item">
+            <span class="status-count locked">6</span>
+            <div class="status-label">LOCKED</div>
+        </div>
+        <div class="status-item">
+            <span class="status-count progress">1</span>
+            <div class="status-label">IN PROGRESS</div>
+        </div>
+        <div class="status-item">
+            <span class="status-count remaining">5</span>
+            <div class="status-label">REMAINING</div>
+        </div>
+    </div>
     <div class="container">
 
             <div class="card">
                 <div class="card-header">
                     <div class="mission-num">Mission 1 of 12</div>
-                    <h2>Passing Seasons</h2>
+                    <h2>Linked Ley Lines</h2>
+                </div>
+                <div class="grid4">
+                    <div class="col">
+                        <h3><span class="badge badge-waha">WAHAPEDIA</span></h3>
+                        <div class="img-box">
+                            <img src="assets/battle-plans/aos-linked-ley-lines.png" alt="Linked Ley Lines Wahapedia">
+                            <div class="img-label">Original Source</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3><span class="badge badge-aoi">AGE OF INDEX</span></h3>
+                        <div class="img-box">
+                            <img src="assets/battle-plans-ageofindex/aos-linked-ley-lines.png" alt="Linked Ley Lines AOI">
+                            <div class="img-label">ageofindex.com</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3><span class="badge badge-matplot">MATPLOTLIB</span></h3>
+                        <div class="img-box">
+                            <img src="assets/battle-plans-matplotlib/aos-linked-ley-lines-matplotlib.png" alt="Linked Ley Lines Generated">
+                            <div class="img-label">Generated Diagram</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3><span class="badge badge-elem">BATTLEFIELD ELEMENTS</span></h3>
+                        <div class="elem-list">
+                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 0") → (60", 0") → (60", 11") → (0", 11")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 33") → (60", 33") → (60", 44") → (0", 44")</div></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Blue Center (large)<span class="coords">(30", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red South (large)<span class="coords">(30", 11")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red North (large)<span class="coords">(30", 33")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Green West (large)<span class="coords">(15", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Green East (large)<span class="coords">(45", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest Northeast (large)<span class="coords">(41.5", 33")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest Southwest (large)<span class="coords">(18.5", 11")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power Northwest (large)<span class="coords">(18", 34.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power Southeast (large)<span class="coords">(42", 9.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power West (small)<span class="coords">(5", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power East (small)<span class="coords">(55", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins Northwest (large)<span class="coords">(6", 36")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins Southeast (large)<span class="coords">(54", 8")</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="mission-num">Mission 2 of 12</div>
+                    <h2>Passing Seasons <span style="color: #28a745; font-weight: bold;">[LOCKED]</span></h2>
                 </div>
                 <div class="grid4">
                     <div class="col">
@@ -100,8 +170,8 @@
             </div>
             <div class="card">
                 <div class="card-header">
-                    <div class="mission-num">Mission 2 of 12</div>
-                    <h2>Bountiful Equinox</h2>
+                    <div class="mission-num">Mission 3 of 12</div>
+                    <h2>Bountiful Equinox <span style="color: #28a745; font-weight: bold;">[LOCKED]</span></h2>
                 </div>
                 <div class="grid4">
                     <div class="col">
@@ -130,8 +200,8 @@
                         <div class="elem-list">
                             <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 0") → (60", 0") → (60", 22") → (0", 22")</div></div>
                                 <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 22") → (60", 22") → (60", 44") → (0", 44")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> Attacker Exclusion (9")<div class="zone-coords">(0", 13") → (60", 13") → (60", 22") → (0", 22")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> Defender Exclusion (9")<div class="zone-coords">(0", 22") → (60", 22") → (60", 31") → (0", 31")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> 9" from middle<div class="zone-coords">(0", 13") → (60", 13") → (60", 22") → (0", 22")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> 9" from middle<div class="zone-coords">(0", 22") → (60", 22") → (60", 31") → (0", 31")</div></div>
                                 <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Center (large)<span class="coords">(30.0", 22.0")</span></div>
                                 <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Upper-Right (large)<span class="coords">(45", 33")</span></div>
                                 <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Lower-Left (large)<span class="coords">(15", 11")</span></div>
@@ -151,8 +221,8 @@
             </div>
             <div class="card">
                 <div class="card-header">
-                    <div class="mission-num">Mission 3 of 12</div>
-                    <h2>Creeping Corruption</h2>
+                    <div class="mission-num">Mission 4 of 12</div>
+                    <h2>Creeping Corruption <span style="color: #28a745; font-weight: bold;">[LOCKED]</span></h2>
                 </div>
                 <div class="grid4">
                     <div class="col">
@@ -181,8 +251,8 @@
                         <div class="elem-list">
                             <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 0") → (60", 0") → (60", 22") → (0", 22")</div></div>
                                 <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 22") → (60", 22") → (60", 44") → (0", 44")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> Attacker Exclusion (9")<div class="zone-coords">(0", 13") → (60", 13") → (60", 22") → (0", 22")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> Defender Exclusion (9")<div class="zone-coords">(0", 22") → (60", 22") → (60", 31") → (0", 31")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> 9" from middle<div class="zone-coords">(0", 13") → (60", 13") → (60", 22") → (0", 22")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> 9" from middle<div class="zone-coords">(0", 22") → (60", 22") → (60", 31") → (0", 31")</div></div>
                                 <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Blue Center-Top (large)<span class="coords">(30", 33")</span></div>
                                 <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red A Upper-Left (large)<span class="coords">(7.5", 33")</span></div>
                                 <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red B Lower-Right (large)<span class="coords">(52.5", 11")</span></div>
@@ -203,8 +273,8 @@
             </div>
             <div class="card">
                 <div class="card-header">
-                    <div class="mission-num">Mission 4 of 12</div>
-                    <h2>Cyclic Shifts</h2>
+                    <div class="mission-num">Mission 5 of 12</div>
+                    <h2>Cyclic Shifts <span style="color: #28a745; font-weight: bold;">[LOCKED]</span></h2>
                 </div>
                 <div class="grid4">
                     <div class="col">
@@ -231,17 +301,30 @@
                     <div class="col">
                         <h3><span class="badge badge-elem">BATTLEFIELD ELEMENTS</span></h3>
                         <div class="elem-list">
-                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 0") → (60", 0") → (60", 19") → (0", 19")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 25") → (60", 25") → (60", 44") → (0", 44")</div></div>
-                                <div class="elem-item"><span class="elem-type">Exclusion zone</span> 9" from center point <span class="coords">Center: (30", 22"), Radius: 9"</span></div>
+                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 0") → (60", 0") → (60", 11") → (0", 11")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 33") → (60", 33") → (60", 44") → (0", 44")</div></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Green South (large)<span class="coords">(30", 11")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Green North (large)<span class="coords">(30", 33")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red Southwest (large)<span class="coords">(7.5", 17.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red Northeast (large)<span class="coords">(52.5", 26.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Blue Grid-1 (large)<span class="coords">(7.5", 38.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-purple"></span>Purple Grid-16 (large)<span class="coords">(52.5", 5.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest G3 (large)<span class="coords">(41.25", 34.75")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest G14 (large)<span class="coords">(18.75", 8.25")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins G2 (small)<span class="coords">(18.75", 35.75")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins G15 (small)<span class="coords">(41.25", 8.25")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G5 (small)<span class="coords">(9", 27.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G12 (small)<span class="coords">(51", 16.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G6 (large)<span class="coords">(24", 23.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G11 (large)<span class="coords">(36", 20.5")</span></div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="card">
                 <div class="card-header">
-                    <div class="mission-num">Mission 5 of 12</div>
-                    <h2>Grasp of Thorns</h2>
+                    <div class="mission-num">Mission 6 of 12</div>
+                    <h2>Grasp of Thorns <span style="color: #28a745; font-weight: bold;">[LOCKED]</span></h2>
                 </div>
                 <div class="grid4">
                     <div class="col">
@@ -268,30 +351,30 @@
                     <div class="col">
                         <h3><span class="badge badge-elem">BATTLEFIELD ELEMENTS</span></h3>
                         <div class="elem-list">
-                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 22") → (30", 22") → (30", 44") → (0", 44")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(30", 0") → (60", 0") → (60", 22") → (30", 22")</div></div>
-                                <div class="elem-item"><span class="elem-type">Exclusion zone</span> 9" from center point <span class="coords">Center: (30", 22"), Radius: 9"</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>NW (large)<span class="coords">(15", 33")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>N-Center (large)<span class="coords">(30", 33")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>NE (large)<span class="coords">(45", 33")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>SW (large)<span class="coords">(15", 11")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>S-Center (large)<span class="coords">(30", 11")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>SE (large)<span class="coords">(45", 11")</span></div>
-                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power NW (small)<span class="coords">(7.5", 38.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power SE (small)<span class="coords">(52.5", 5.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins N <span class="coords">(22.5", 27.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins S <span class="coords">(37.5", 16.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins E <span class="coords">(52.5", 22")</span></div>
-                                <div class="elem-item"><span class="elem-type">Forest</span> Forest NW <span class="coords">(7.5", 38.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Forest</span> Forest SE <span class="coords">(52.5", 5.5")</span></div>
+                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 22") → (60", 22") → (60", 44") → (0", 44")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 0") → (60", 0") → (60", 22") → (0", 22")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> 9" from middle line (lower)<div class="zone-coords">(0", 13") → (60", 13") → (60", 22") → (0", 22")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Exclusion zone</span> 9" from middle line (upper)<div class="zone-coords">(0", 22") → (60", 22") → (60", 31") → (0", 31")</div></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Green Top-Left (large)<span class="coords">(15", 33")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-purple"></span>Purple Top-Right (large)<span class="coords">(45", 33")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Blue Bottom-Left (large)<span class="coords">(15", 11")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red Bottom-Right (large)<span class="coords">(45", 11")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest G5 (large)<span class="coords">(7.5", 27.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest G12 (large)<span class="coords">(52.5", 16.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G2 (small)<span class="coords">(20", 38.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G15 (small)<span class="coords">(40", 5.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G3 (large)<span class="coords">(33", 35.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power G14 (large)<span class="coords">(27", 8.5")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins G6 (large)<span class="coords">(22.5", 24")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins G11 (large)<span class="coords">(37.5", 20")</span></div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="card">
                 <div class="card-header">
-                    <div class="mission-num">Mission 6 of 12</div>
-                    <h2>Lifecycle</h2>
+                    <div class="mission-num">Mission 7 of 12</div>
+                    <h2>Lifecycle <span style="color: #28a745; font-weight: bold;">[LOCKED]</span></h2>
                 </div>
                 <div class="grid4">
                     <div class="col">
@@ -318,68 +401,25 @@
                     <div class="col">
                         <h3><span class="badge badge-elem">BATTLEFIELD ELEMENTS</span></h3>
                         <div class="elem-list">
-                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 0") → (21", 0") → (21", 44") → (0", 44")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(39", 0") → (60", 0") → (60", 44") → (39", 44")</div></div>
-                                <div class="elem-item"><span class="elem-type">Exclusion zone</span> 9" from center point <span class="coords">Center: (30", 22"), Radius: 9"</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Center (large)<span class="coords">(30", 22")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>NW (large)<span class="coords">(15", 33")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>NE (large)<span class="coords">(45", 33")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>SW (large)<span class="coords">(15", 11")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>SE (large)<span class="coords">(45", 11")</span></div>
-                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power N (small)<span class="coords">(30", 38.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power S (small)<span class="coords">(30", 5.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins W <span class="coords">(7.5", 22")</span></div>
-                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins E <span class="coords">(52.5", 22")</span></div>
-                                <div class="elem-item"><span class="elem-type">Forest</span> Forest NE <span class="coords">(52.5", 38.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Forest</span> Forest SW <span class="coords">(7.5", 5.5")</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <div class="mission-num">Mission 7 of 12</div>
-                    <h2>Linked Ley Lines</h2>
-                </div>
-                <div class="grid4">
-                    <div class="col">
-                        <h3><span class="badge badge-waha">WAHAPEDIA</span></h3>
-                        <div class="img-box">
-                            <img src="assets/battle-plans/aos-linked-ley-lines.png" alt="Linked Ley Lines Wahapedia">
-                            <div class="img-label">Original Source</div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <h3><span class="badge badge-aoi">AGE OF INDEX</span></h3>
-                        <div class="img-box">
-                            <img src="assets/battle-plans-ageofindex/aos-linked-ley-lines.png" alt="Linked Ley Lines AOI">
-                            <div class="img-label">ageofindex.com</div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <h3><span class="badge badge-matplot">MATPLOTLIB</span></h3>
-                        <div class="img-box">
-                            <img src="assets/battle-plans-matplotlib/aos-linked-ley-lines-matplotlib.png" alt="Linked Ley Lines Generated">
-                            <div class="img-label">Generated Diagram</div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <h3><span class="badge badge-elem">BATTLEFIELD ELEMENTS</span></h3>
-                        <div class="elem-list">
-                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 19") → (45", 0") → (60", 0") → (60", 25") → (15", 44") → (0", 44")</div></div>
-                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 0") → (0", 19") → (15", 44") → (60", 44") → (60", 25") → (45", 0")</div></div>
-                                <div class="elem-item"><span class="elem-type">Exclusion zone</span> 9" from center point <span class="coords">Center: (30", 22"), Radius: 9"</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Center (large)<span class="coords">(30", 22")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>North (large)<span class="coords">(30", 33")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>South (large)<span class="coords">(30", 11")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>West (large)<span class="coords">(15", 22")</span></div>
-                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>East (large)<span class="coords">(45", 22")</span></div>
-                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power N (small)<span class="coords">(52.5", 38.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power S (small)<span class="coords">(7.5", 5.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins NW <span class="coords">(7.5", 33")</span></div>
-                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins SE <span class="coords">(52.5", 11")</span></div>
-                                <div class="elem-item"><span class="elem-type">Forest</span> Forest NE <span class="coords">(52.5", 38.5")</span></div>
-                                <div class="elem-item"><span class="elem-type">Forest</span> Forest SW <span class="coords">(7.5", 5.5")</span></div>
+                            <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 33") → (60", 33") → (60", 44") → (0", 44")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(0", 22") → (15", 22") → (15", 33") → (0", 33")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Attacker Zone<div class="zone-coords">(45", 22") → (60", 22") → (60", 33") → (45", 33")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 0") → (60", 0") → (60", 11") → (0", 11")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(0", 11") → (15", 11") → (15", 22") → (0", 22")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Defender Zone<div class="zone-coords">(45", 11") → (60", 11") → (60", 22") → (45", 22")</div></div>
+                                <div class="elem-item zone-item"><span class="elem-type">Deployment zone</span> Neutral Zone<div class="zone-coords">(15", 11") → (45", 11") → (45", 33") → (15", 33")</div></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-purple"></span>Purple North (large)<span class="coords">(30", 33")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-green"></span>Green East (large)<span class="coords">(45", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-blue"></span>Blue South (large)<span class="coords">(30", 11")</span></div>
+                                <div class="elem-item"><span class="elem-type">Objective</span> <span class="color-badge color-red"></span>Red West (large)<span class="coords">(15", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest G4 (large)<span class="coords">(46.75", 34.75")</span></div>
+                                <div class="elem-item"><span class="elem-type">Forest</span> Forest G13 (large)<span class="coords">(13.25", 9.25")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power 1 (small)<span class="coords">(22.5", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power 2 (small)<span class="coords">(37.5", 22")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power 3 (small)<span class="coords">(7.5", 28")</span></div>
+                                <div class="elem-item"><span class="elem-type">Place of power</span> Place of Power 4 (small)<span class="coords">(52.5", 16")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins North (large)<span class="coords">(18.5", 33")</span></div>
+                                <div class="elem-item"><span class="elem-type">Ruins</span> Ruins South (large)<span class="coords">(41.5", 11")</span></div>
                         </div>
                     </div>
                 </div>
