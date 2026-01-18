@@ -53,10 +53,10 @@ MISSIONS = {
             {"name": "Place of Power R-Upper", "x": 53.7, "y": 27.7, "type": "place_of_power", "size": "small"},
             {"name": "Place of Power L-Lower", "x": 6.0, "y": 17.0, "type": "place_of_power", "size": "small"},
             {"name": "Place of Power R-Lower", "x": 49.8, "y": 17.0, "type": "place_of_power", "size": "small"},
-            {"name": "Forest N", "x": 30, "y": 33, "type": "forest", "size": "large"},
-            {"name": "Forest W", "x": 15, "y": 22, "type": "forest", "size": "large"},
-            {"name": "Forest E", "x": 45, "y": 22, "type": "forest", "size": "large"},
-            {"name": "Forest S", "x": 30, "y": 11, "type": "forest", "size": "large"},
+            {"name": "Forest N", "x": 30, "y": 30.5, "type": "forest", "size": "large"},
+            {"name": "Forest W", "x": 20, "y": 22, "type": "forest", "size": "large"},
+            {"name": "Forest E", "x": 40, "y": 22, "type": "forest", "size": "large"},
+            {"name": "Forest S", "x": 30, "y": 13.5, "type": "forest", "size": "large"},
         ]
     },
     "aos-creeping-corruption": {
@@ -79,8 +79,8 @@ MISSIONS = {
         "terrain": [
             {"name": "Place of Power Left", "x": 5, "y": 22, "type": "place_of_power", "size": "small"},
             {"name": "Place of Power Right", "x": 55, "y": 22, "type": "place_of_power", "size": "small"},
-            {"name": "Place of Power Lower-Right", "x": 40, "y": 7, "type": "place_of_power", "size": "small"},
-            {"name": "Place of Power Upper-Left", "x": 20, "y": 37, "type": "place_of_power", "size": "small"},
+            {"name": "Place of Power Lower-Right", "x": 40, "y": 10, "type": "place_of_power", "size": "small"},
+            {"name": "Place of Power Upper-Left", "x": 20, "y": 34, "type": "place_of_power", "size": "small"},
             {"name": "Forest Lower-Right", "x": 42, "y": 20, "type": "forest", "size": "large"},
             {"name": "Forest Upper-Left", "x": 18, "y": 24, "type": "forest", "size": "large"},
             {"name": "Ruins Lower-Left", "x": 18, "y": 9.5, "type": "ruins", "size": "large"},
@@ -97,20 +97,8 @@ MISSIONS = {
             {"type": "circle", "center": (30, 22), "radius": 9, "color": "#666666", "alpha": 0.15, "note": "9\" from center point"},
         ],
         "objectives": [
-            {"name": "W", "x": 7.5, "y": 22, "color": "red", "type": "objective", "size": "large"},
-            {"name": "Center-W", "x": 22.5, "y": 22, "color": "purple", "type": "objective", "size": "large"},
-            {"name": "Center-E", "x": 37.5, "y": 22, "color": "blue", "type": "objective", "size": "large"},
-            {"name": "E", "x": 52.5, "y": 22, "color": "green", "type": "objective", "size": "large"},
         ],
         "terrain": [
-            {"name": "Place of Power NW", "x": 15, "y": 38.5, "type": "place_of_power", "size": "small"},
-            {"name": "Place of Power NE", "x": 45, "y": 38.5, "type": "place_of_power", "size": "small"},
-            {"name": "Place of Power SW", "x": 15, "y": 5.5, "type": "place_of_power", "size": "small"},
-            {"name": "Place of Power SE", "x": 45, "y": 5.5, "type": "place_of_power", "size": "small"},
-            {"name": "Ruins N", "x": 30, "y": 33, "type": "ruins"},
-            {"name": "Ruins S", "x": 30, "y": 11, "type": "ruins"},
-            {"name": "Forest NW", "x": 7.5, "y": 33, "type": "forest"},
-            {"name": "Forest SE", "x": 52.5, "y": 11, "type": "forest"},
         ]
     },
     "aos-grasp-of-thorns": {
