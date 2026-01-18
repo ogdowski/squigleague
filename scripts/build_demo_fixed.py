@@ -4,9 +4,15 @@ import sys
 import subprocess
 from extract_mission_objects import MISSIONS as MISSION_DATA
 
+# Current mission being worked on (shows first in gallery)
+CURRENT_MISSION = "aos-lifecycle"
+
 # Convert MISSIONS dict to list format for template
 missions = []
-for slug, data in MISSION_DATA.items():
+mission_order = [CURRENT_MISSION] + [k for k in MISSION_DATA.keys() if k != CURRENT_MISSION]
+
+for slug in mission_order:
+    data = MISSION_DATA[slug]
     elements = []
     
     # Add deployment zones
