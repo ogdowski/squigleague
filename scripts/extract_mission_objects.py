@@ -203,26 +203,28 @@ MISSIONS = {
     "aos-noxious-nexus": {
         "name": "Noxious Nexus",
         "deployment_zones": [
-            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 19), (0, 19)]},
-            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 25), (60, 25), (60, 44), (0, 44)]},
+            {"player": "Neutral", "color": "#666666", "alpha": 0.2, "coords": [(0, 0), (30, 0), (30, 44), (0, 44)]},
+            {"player": "Red", "color": "#dc3545", "alpha": 0.3, "coords": [(30, 22), (60, 22), (60, 44), (30, 44)]},
+            {"player": "Blue", "color": "#007bff", "alpha": 0.3, "coords": [(30, 0), (60, 0), (60, 22), (30, 22)]},
         ],
         "exclusion_zones": [
-            {"type": "circle", "center": (30, 22), "radius": 9, "color": "#666666", "alpha": 0.15, "note": "9\" from center point"},
+            {"type": "rect", "coords": [(30, 13), (60, 13), (60, 22), (30, 22)], "color": "#666666", "alpha": 0.15, "note": "9\" from blue edge"},
+            {"type": "rect", "coords": [(30, 22), (60, 22), (60, 31), (30, 31)], "color": "#666666", "alpha": 0.15, "note": "9\" from red edge"},
         ],
         "objectives": [
-            {"name": "W-North", "x": 15, "y": 33, "color": "red", "type": "objective", "size": "large"},
-            {"name": "W-South", "x": 15, "y": 11, "color": "green", "type": "objective", "size": "large"},
-            {"name": "Center", "x": 30, "y": 22, "color": "purple", "type": "objective", "size": "large"},
-            {"name": "E-North", "x": 45, "y": 33, "color": "red", "type": "objective", "size": "large"},
-            {"name": "E-South", "x": 45, "y": 11, "color": "blue", "type": "objective", "size": "large"},
+            {"name": "West", "x": 15, "y": 22, "color": "blue", "type": "objective", "size": "large"},
+            {"name": "Center", "x": 30, "y": 22, "color": "green", "type": "objective", "size": "large"},
+            {"name": "East", "x": 45, "y": 22, "color": "red", "type": "objective", "size": "large"},
         ],
         "terrain": [
-            {"name": "Place of Power NW", "x": 7.5, "y": 38.5, "type": "place_of_power", "size": "small"},
-            {"name": "Place of Power SE", "x": 52.5, "y": 5.5, "type": "place_of_power", "size": "small"},
-            {"name": "Ruins NW", "x": 22.5, "y": 33, "type": "ruins"},
-            {"name": "Ruins S", "x": 37.5, "y": 5.5, "type": "ruins"},
-            {"name": "Forest NE", "x": 52.5, "y": 33, "type": "forest"},
-            {"name": "Forest SW", "x": 7.5, "y": 11, "type": "forest"},
+            {"name": "Ruins W", "x": 5, "y": 22, "type": "ruins", "size": "small"},
+            {"name": "Ruins E", "x": 55, "y": 22, "type": "ruins", "size": "small"},
+            {"name": "Forest N1", "x": 22.5, "y": 33, "type": "forest", "size": "large"},
+            {"name": "Forest S1", "x": 22.5, "y": 11, "type": "forest", "size": "large"},
+            {"name": "Forest N2", "x": 46, "y": 35, "type": "forest", "size": "large"},
+            {"name": "Forest S2", "x": 46, "y": 9, "type": "forest", "size": "large"},
+            {"name": "PoP N", "x": 37.5, "y": 27.5, "type": "place_of_power", "size": "small"},
+            {"name": "PoP S", "x": 37.5, "y": 16.5, "type": "place_of_power", "size": "small"},
         ]
     },
     "aos-paths-of-the-fey": {

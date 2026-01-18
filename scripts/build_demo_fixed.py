@@ -5,7 +5,7 @@ import subprocess
 from extract_mission_objects import MISSIONS as MISSION_DATA
 
 # Current mission being worked on (shows first in gallery)
-CURRENT_MISSION = "aos-linked-ley-lines"
+CURRENT_MISSION = "aos-noxious-nexus"
 
 # Locked missions (completed and verified)
 LOCKED_MISSIONS = [
@@ -15,6 +15,7 @@ LOCKED_MISSIONS = [
     "aos-cyclic-shifts",
     "aos-grasp-of-thorns",
     "aos-lifecycle",
+    "aos-linked-ley-lines",
 ]
 
 # Convert MISSIONS dict to list format for template
