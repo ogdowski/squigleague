@@ -242,8 +242,24 @@ def generate_battle_plan(mission_slug, mission_data):
 
 def main():
     """Generate all battle plan images."""
+    import sys
+    
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
+    # Check if specific mission requested
+    if len(sys.argv) > 1:
+        mission_slug = sys.argv[1]
+        if mission_slug not in MISSIONS:
+            print(f"Error: Mission '{mission_slug}' not found")
+            print(f"Available missions: {', '.join(MISSIONS.keys())}")
+            sys.exit(1)
+        
+        print(f"Generating {MISSIONS[mission_slug]['name']}...", end=' ')
+        output_path = generate_battle_plan(mission_slug, MISSIONS[mission_slug])
+        print(f"OK ({output_path.stat().st_size // 1024}KB)")
+        return
+    
+    # Generate all missions
     print(f"Generating battle plans to {OUTPUT_DIR}/")
     print("=" * 60)
     
@@ -257,3 +273,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

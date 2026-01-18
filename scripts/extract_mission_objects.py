@@ -34,19 +34,19 @@ MISSIONS = {
     "aos-bountiful-equinox": {
         "name": "Bountiful Equinox",
         "deployment_zones": [
-            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 31), (60, 31), (60, 44), (0, 44)]},
-            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 13), (0, 13)]},
+            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 22), (0, 22)]},
+            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 22), (60, 22), (60, 44), (0, 44)]},
         ],
         "exclusion_zones": [
-            {"player": "Attacker", "color": "#666666", "alpha": 0.15, "coords": [(0, 22), (60, 22), (60, 31), (0, 31)], "note": "9\" from territory boundary"},
-            {"player": "Defender", "color": "#666666", "alpha": 0.15, "coords": [(0, 13), (60, 13), (60, 22), (0, 22)], "note": "9\" from territory boundary"},
+            {"player": "Attacker", "color": "#666666", "alpha": 0.15, "coords": [(0, 13), (60, 13), (60, 22), (0, 22)], "note": "9\" from middle"},
+            {"player": "Defender", "color": "#666666", "alpha": 0.15, "coords": [(0, 22), (60, 22), (60, 31), (0, 31)], "note": "9\" from middle"},
         ],
         "objectives": [
             {"name": "Center", "x": 30.0, "y": 22.0, "color": "blue", "type": "objective", "size": "large"},
-            {"name": "Upper-Right", "x": 41.3, "y": 30.5, "color": "green", "type": "objective", "size": "large"},
-            {"name": "Lower-Left", "x": 18.7, "y": 13.5, "color": "green", "type": "objective", "size": "large"},
-            {"name": "Upper-Left", "x": 18.7, "y": 30.5, "color": "red", "type": "objective", "size": "large"},
-            {"name": "Lower-Right", "x": 41.3, "y": 13.5, "color": "red", "type": "objective", "size": "large"},
+            {"name": "Upper-Right", "x": 45, "y": 33, "color": "green", "type": "objective", "size": "large"},
+            {"name": "Lower-Left", "x": 15, "y": 11, "color": "green", "type": "objective", "size": "large"},
+            {"name": "Upper-Left", "x": 15, "y": 33, "color": "red", "type": "objective", "size": "large"},
+            {"name": "Lower-Right", "x": 45, "y": 11, "color": "red", "type": "objective", "size": "large"},
         ],
         "terrain": [
             {"name": "Place of Power L-Upper", "x": 9.9, "y": 27.7, "type": "place_of_power", "size": "small"},
@@ -62,11 +62,12 @@ MISSIONS = {
     "aos-creeping-corruption": {
         "name": "Creeping Corruption",
         "deployment_zones": [
-            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 19), (0, 19)]},
-            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 25), (60, 25), (60, 44), (0, 44)]},
+            {"player": "Attacker", "color": "#dc3545", "alpha": 0.3, "coords": [(0, 0), (60, 0), (60, 22), (0, 22)]},
+            {"player": "Defender", "color": "#007bff", "alpha": 0.3, "coords": [(0, 22), (60, 22), (60, 44), (0, 44)]},
         ],
         "exclusion_zones": [
-            {"type": "circle", "center": (30, 22), "radius": 9, "color": "#666666", "alpha": 0.15, "note": "9\" from center point"},
+            {"player": "Attacker", "color": "#666666", "alpha": 0.15, "coords": [(0, 13), (60, 13), (60, 22), (0, 22)], "note": "9\" from middle"},
+            {"player": "Defender", "color": "#666666", "alpha": 0.15, "coords": [(0, 22), (60, 22), (60, 31), (0, 31)], "note": "9\" from middle"},
         ],
         "objectives": [
             {"name": "Blue Center-Top", "x": 30, "y": 33, "color": "blue", "type": "objective", "size": "large"},
