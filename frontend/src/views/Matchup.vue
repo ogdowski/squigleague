@@ -107,11 +107,6 @@
 
               <!-- Battle Plan Details -->
               <div class="mt-6 space-y-4">
-                <div v-if="reveal.deployment" class="border-t border-gray-700 pt-4">
-                  <h3 class="text-lg font-semibold text-squig-yellow mb-2">Deployment</h3>
-                  <p class="text-gray-300">{{ reveal.deployment }}</p>
-                </div>
-
                 <div v-if="reveal.objectives" class="border-t border-gray-700 pt-4">
                   <h3 class="text-lg font-semibold text-squig-yellow mb-2">Objectives</h3>
                   <div v-if="reveal.objective_types && reveal.objective_types.length > 0" class="mb-3 flex flex-wrap gap-2">
@@ -260,8 +255,7 @@ const getObjectiveClass = (type) => {
     'Gnarlroot': 'bg-red-900/50 text-red-200 border border-red-700',
     'Oakenbrow': 'bg-green-900/50 text-green-200 border border-green-700',
     'Heartwood': 'bg-blue-900/50 text-blue-200 border border-blue-700',
-    'Winterleaf': 'bg-purple-900/50 text-purple-200 border border-purple-700',
-    'Liferoot': 'bg-teal-900/50 text-teal-200 border border-teal-700'
+    'Winterleaf': 'bg-purple-900/50 text-purple-200 border border-purple-700'
   }
   return colors[type] || 'bg-gray-900/50 text-gray-200 border border-gray-700'
 }
@@ -271,8 +265,7 @@ const getObjectiveDotClass = (type) => {
     'Gnarlroot': 'bg-red-500',
     'Oakenbrow': 'bg-green-500',
     'Heartwood': 'bg-blue-500',
-    'Winterleaf': 'bg-purple-500',
-    'Liferoot': 'bg-teal-500'
+    'Winterleaf': 'bg-purple-500'
   }
   return colors[type] || 'bg-gray-500'
 }
