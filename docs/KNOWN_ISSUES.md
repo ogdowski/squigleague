@@ -107,6 +107,91 @@ RUN VITE_API_URL=$VITE_API_URL npm run build
 
 ---
 
+## [ISSUE-010] Enhanced Images Destroyed Without Recovery
+**Date Discovered:** 2026-01-19  
+**Severity:** CRITICAL  
+**Root Cause:** Agent destroyed work-in-progress files that were never committed to git  
+**Symptoms:**
+- 11 enhanced battleplan images (frontend/public/assets/battle-plans-enhanced/*.png) were created 2026-01-19 20:39
+- Agent overwrote them with wrong matplotlib diagrams 2026-01-19 21:28
+- Agent then deleted all files
+- Files were NEVER committed to git - permanently lost
+- No documentation exists explaining what they were or how they were created
+
+**Process Gap:**
+- No enforcement of "commit before modifying" rule
+- No documentation of what enhanced images were
+- No backup/verification before destructive operations
+- Agent created files without user permission
+
+**Prevention Added:**
+- [x] Documented in BATTLE_PLANS_GENERATION.md
+- [x] Created KNOWN_ISSUES.md entry
+- [ ] Add pre-commit hook requiring documentation for new image assets
+- [ ] Add validation preventing file deletion without git backup
+
+**Related Issues:** [ISSUE-011], [ISSUE-012]  
+**Related Solutions:** None - data permanently lost
+
+---
+
+## [ISSUE-011] No Process Documentation for Image Generation
+**Date Discovered:** 2026-01-19  
+**Severity:** CRITICAL  
+**Root Cause:** Work completed yesterday (2026-01-18) with zero documentation  
+**Symptoms:**
+- Matplotlib battle plan images generated and committed
+- Scripts created and committed
+- No README, no docs, no comments explaining process
+- 90 minutes wasted re-discovering what was done yesterday
+- Agent made assumptions instead of reading non-existent docs
+
+**Process Gap:**
+- PROCESS-FIRST PROTOCOL not followed
+- No documentation requirement before committing generated assets
+- No session summary documenting deliverables
+- No handoff documentation between sessions
+
+**Prevention Added:**
+- [x] Created BATTLE_PLANS_GENERATION.md documenting full process
+- [x] Created KNOWN_ISSUES.md entry
+- [ ] Add pre-commit hook requiring docs/ entry for new assets
+- [ ] Add session summary template requirement
+- [ ] Add documentation validation to approval process
+
+**Related Issues:** [ISSUE-010], [ISSUE-012]  
+**Related Solutions:** [SOLUTION-010]
+
+---
+
+## [ISSUE-012] Agent Used Wrong Data Source Repeatedly
+**Date Discovered:** 2026-01-19  
+**Severity:** HIGH  
+**Root Cause:** Agent assumed objectives_corrected.json was correct data source without verification  
+**Symptoms:**
+- Created 4 different Python scripts all reading objectives_corrected.json
+- User repeatedly said "WRONG SOURCE"
+- Agent didn't stop and verify correct source
+- Agent didn't read existing scripts to understand data flow
+
+**Process Gap:**
+- No verification step before creating scripts
+- No requirement to check existing code for data sources
+- Agent proceeded with assumptions instead of investigation
+- No "read before write" protocol
+
+**Prevention Added:**
+- [x] Documented FORBIDDEN data sources in BATTLE_PLANS_GENERATION.md
+- [x] Created KNOWN_ISSUES.md entry
+- [ ] Add validation script checking for objectives_corrected.json usage
+- [ ] Add pre-script-creation checklist: "What data source? Verify it exists and is correct"
+- [ ] Add "read existing code" step before creating new scripts
+
+**Related Issues:** [ISSUE-010], [ISSUE-011]  
+**Related Solutions:** [SOLUTION-011]
+
+---
+
 ## Template for New Issues
 
 ```markdown

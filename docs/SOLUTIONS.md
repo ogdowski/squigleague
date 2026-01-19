@@ -151,6 +151,50 @@ Start-Sleep -Seconds 3
 
 ---
 
+## [SOLUTION-010] Battle Plans Generation Documentation
+**Solves:** [ISSUE-011]  
+**Type:** Documentation  
+**Implementation:**
+- Created docs/BATTLE_PLANS_GENERATION.md
+- Documents all 4 image sets (Wahapedia, Age of Index, Matplotlib, Enhanced-destroyed)
+- Documents generation process for matplotlib images
+- Documents data source (MISSIONS dictionary in extract_mission_objects.py)
+- Documents forbidden data sources (objectives_corrected.json, extracted_positions.json)
+- Provides step-by-step generation instructions
+- Lists all available mission slugs
+
+**Validation:**
+- Documentation exists and is comprehensive
+- Future agents can read this to understand process
+- No need to re-discover via git history
+
+**Maintenance:**
+- Update when new image sets are added
+- Update when generation process changes
+- Keep forbidden sources list current
+
+---
+
+## [SOLUTION-011] Wrong Data Source Prevention
+**Solves:** [ISSUE-012]  
+**Type:** Documentation + Process  
+**Implementation:**
+- Documented FORBIDDEN data sources in BATTLE_PLANS_GENERATION.md
+- Created KNOWN_ISSUES.md documenting the failure pattern
+- Added explicit warning about objectives_corrected.json
+
+**Validation:**
+- Future scripts must check against forbidden list
+- Documentation clearly states correct source: MISSIONS dictionary
+- Pre-script-creation checklist required (TODO)
+
+**Maintenance:**
+- Add new forbidden sources as discovered
+- Update when correct data source changes
+- Review before any battle plan generation work
+
+---
+
 ## Template for New Solutions
 
 ```markdown
