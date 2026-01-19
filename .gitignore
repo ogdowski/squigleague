@@ -58,3 +58,4 @@ htmlcov/
 # Other
 TODO.md
 /frontend/node_modules/
+/frontend/dist/

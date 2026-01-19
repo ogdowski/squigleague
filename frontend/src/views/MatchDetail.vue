@@ -41,6 +41,10 @@
                 ({{ match.player1_elo_after > match.player1_elo_before ? '+' : '' }}{{ match.player1_elo_after - match.player1_elo_before }})
               </span>
             </div>
+            <div v-if="match.player1_league_points !== null && match.status === 'confirmed'" class="text-sm mt-1">
+              <span class="text-gray-400">League Points:</span>
+              <span class="ml-1 text-squig-yellow font-semibold">+{{ match.player1_league_points }}</span>
+            </div>
           </div>
 
           <!-- Player 2 -->
@@ -63,6 +67,10 @@
                 {{ match.player2_elo_after }}
                 ({{ match.player2_elo_after > match.player2_elo_before ? '+' : '' }}{{ match.player2_elo_after - match.player2_elo_before }})
               </span>
+            </div>
+            <div v-if="match.player2_league_points !== null && match.status === 'confirmed'" class="text-sm mt-1">
+              <span class="text-gray-400">League Points:</span>
+              <span class="ml-1 text-squig-yellow font-semibold">+{{ match.player2_league_points }}</span>
             </div>
           </div>
         </div>

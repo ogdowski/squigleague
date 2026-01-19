@@ -24,6 +24,9 @@ class UserUpdate(BaseModel):
 
     username: Optional[str] = Field(None, min_length=3, max_length=100)
     email: Optional[EmailStr] = None
+    discord_username: Optional[str] = Field(None, max_length=100)
+    show_email: Optional[bool] = None
+    avatar_url: Optional[str] = Field(None, max_length=500)
 
 
 class UserResponse(BaseModel):
@@ -35,6 +38,10 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     is_verified: bool
+    discord_username: Optional[str] = None
+    show_email: bool = False
+    avatar_url: Optional[str] = None
+    has_discord_oauth: bool = False  # True if discord linked via OAuth
     created_at: datetime
 
     class Config:

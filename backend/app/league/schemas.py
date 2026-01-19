@@ -110,6 +110,10 @@ class GroupResponse(BaseModel):
         from_attributes = True
 
 
+class GroupUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+
+
 # ============ LeaguePlayer Schemas ============
 
 
@@ -132,6 +136,7 @@ class LeaguePlayerResponse(BaseModel):
     is_claimed: bool
     discord_username: Optional[str]
     username: Optional[str] = None
+    avatar_url: Optional[str] = None
     joined_at: datetime
     group_army_faction: Optional[str] = None
     group_list_submitted: bool = False
@@ -149,7 +154,10 @@ class StandingsEntry(BaseModel):
     user_id: Optional[int] = None  # User ID for profile link (None if external player)
     username: Optional[str]
     discord_username: Optional[str]
+    avatar_url: Optional[str] = None
     army_faction: Optional[str] = None  # Current phase army faction
+    army_list: Optional[str] = None  # Army list text (if visible)
+    list_submitted: bool = False  # Whether list is submitted for current phase
     games_played: int
     games_won: int
     games_drawn: int
@@ -367,6 +375,9 @@ class ArmyStatEntry(BaseModel):
 
     army_faction: str
     games_played: int
+    wins: int
+    draws: int
+    losses: int
     percentage: float
 
 
@@ -375,6 +386,10 @@ class PlayerProfileResponse(BaseModel):
 
     user_id: int
     username: str
+    avatar_url: Optional[str] = None
+    # Contact info (email only if user allows)
+    email: Optional[str] = None
+    discord_username: Optional[str] = None
     # ELO info
     elo: int
     elo_games_played: int

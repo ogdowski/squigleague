@@ -46,17 +46,21 @@ async def get_player_profile(
     # Build player_id -> LeaguePlayer mapping
     player_map = {lp.id: lp for lp in league_players}
 
-    # Collect army faction usage
-    army_counts: dict[str, int] = {}
-    for lp in league_players:
-        if lp.group_army_faction:
-            army_counts[lp.group_army_faction] = (
-                army_counts.get(lp.group_army_faction, 0) + 1
-            )
-        if lp.knockout_army_faction:
-            army_counts[lp.knockout_army_faction] = (
-                army_counts.get(lp.knockout_army_faction, 0) + 1
-            )
+    # Track army stats (games, wins, draws, losses per army)
+    army_stats_dict: dict[str, dict] = {}  # faction -> {games, wins, draws, losses}
+
+    def add_army_result(faction: str, result: str):
+        if not faction:
+            return
+        if faction not in army_stats_dict:
+            army_stats_dict[faction] = {"games": 0, "wins": 0, "draws": 0, "losses": 0}
+        army_stats_dict[faction]["games"] += 1
+        if result == "win":
+            army_stats_dict[faction]["wins"] += 1
+        elif result == "draw":
+            army_stats_dict[faction]["draws"] += 1
+        elif result == "loss":
+            army_stats_dict[faction]["losses"] += 1
 
     # Global stats
     total_wins = 0
@@ -99,7 +103,7 @@ async def get_player_profile(
                 else match.player2_league_points
             )
 
-            # Determine result
+            # Determine result and track army stats
             result = None
             if match.status == "confirmed" and player_score is not None:
                 if player_score > opponent_score:
@@ -111,6 +115,14 @@ async def get_player_profile(
                 else:
                     result = "draw"
                     total_draws += 1
+
+                # Track army faction for this match
+                army_faction = (
+                    league_player.knockout_army_faction
+                    if match.phase == "knockout"
+                    else league_player.group_army_faction
+                )
+                add_army_result(army_faction, result)
 
             # Get opponent info
             opponent_lp = session.scalars(
@@ -186,25 +198,36 @@ async def get_player_profile(
     win_rate = (total_wins / total_games * 100) if total_games > 0 else 0.0
 
     # Calculate army stats
-    total_army_uses = sum(army_counts.values())
+    total_army_uses = sum(stats["games"] for stats in army_stats_dict.values())
     most_played_army = None
     army_stats = []
-    if army_counts:
-        most_played_army = max(army_counts, key=army_counts.get)
+    if army_stats_dict:
+        most_played_army = max(
+            army_stats_dict, key=lambda x: army_stats_dict[x]["games"]
+        )
         army_stats = [
             ArmyStatEntry(
                 army_faction=faction,
-                games_played=count,
-                percentage=round(count / total_army_uses * 100, 1),
+                games_played=stats["games"],
+                wins=stats["wins"],
+                draws=stats["draws"],
+                losses=stats["losses"],
+                percentage=round(stats["games"] / total_army_uses * 100, 1),
             )
-            for faction, count in sorted(
-                army_counts.items(), key=lambda x: x[1], reverse=True
+            for faction, stats in sorted(
+                army_stats_dict.items(), key=lambda x: x[1]["games"], reverse=True
             )
         ]
+
+    # Contact info - email only if user allows it
+    email = user.email if user.show_email else None
 
     return PlayerProfileResponse(
         user_id=user.id,
         username=user.username,
+        avatar_url=user.avatar_url,
+        email=email,
+        discord_username=user.discord_username,
         elo=elo,
         elo_games_played=elo_games,
         total_games=total_games,

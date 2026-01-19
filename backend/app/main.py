@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from app.config import settings
 from app.db import create_db_and_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 @asynccontextmanager
@@ -65,3 +67,11 @@ app.include_router(matchup_router, prefix="/matchup", tags=["Matchup"])
 app.include_router(league_router, prefix="/league", tags=["League"])
 app.include_router(player_router, prefix="/player", tags=["Player"])
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])
+
+# Serve uploaded files (directory created by Dockerfile)
+try:
+    Path("/app/uploads/avatars").mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory="/app/uploads"), name="uploads")
+except PermissionError:
+    # Running in environment without write access, skip static mount
+    pass

@@ -10,7 +10,9 @@ from app.league.models import Group, League, LeaguePlayer, Match, PlayerElo
 from app.league.schemas import (
     ArmyListResponse,
     ArmyListSubmit,
+    GroupResponse,
     GroupStandings,
+    GroupUpdate,
     KnockoutBracket,
     KnockoutListResponse,
     KnockoutListSubmit,
@@ -458,10 +460,13 @@ async def list_players(
     result = []
     for player in players:
         username = None
+        avatar_url = None
         if player.user_id:
             statement = select(User).where(User.id == player.user_id)
             user = session.scalars(statement).first()
-            username = user.username if user else None
+            if user:
+                username = user.username
+                avatar_url = user.avatar_url
 
         group_name = None
         if player.group_id:
@@ -485,6 +490,7 @@ async def list_players(
                 is_claimed=player.is_claimed,
                 discord_username=player.discord_username,
                 username=username,
+                avatar_url=avatar_url,
                 joined_at=player.joined_at,
                 group_army_faction=player.group_army_faction,
                 group_list_submitted=player.group_army_list is not None,
@@ -598,6 +604,45 @@ async def draw_groups_endpoint(
         "group_phase_end": group_end.isoformat() if group_end else None,
         "knockout_phase_end": knockout_end.isoformat() if knockout_end else None,
     }
+
+
+@router.patch("/{league_id}/groups/{group_id}", response_model=GroupResponse)
+async def update_group(
+    league_id: int,
+    group_id: int,
+    group_update: GroupUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Update group name (organizer only)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the organizer can edit groups",
+        )
+
+    group = session.scalars(
+        select(Group).where(Group.id == group_id, Group.league_id == league_id)
+    ).first()
+    if not group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Group not found",
+        )
+
+    group.name = group_update.name
+    session.add(group)
+    session.commit()
+    session.refresh(group)
+
+    return group
 
 
 @router.post("/{league_id}/recalculate-dates")
@@ -753,22 +798,33 @@ async def get_standings(
         standings = []
         for position, player in enumerate(players, 1):
             username = None
+            avatar_url = None
             if player.user_id:
                 stmt = select(User).where(User.id == player.user_id)
                 user = session.scalars(stmt).first()
-                username = user.username if user else None
+                if user:
+                    username = user.username
+                    avatar_url = user.avatar_url
 
             qualifies = position <= guaranteed_per_group
             qualifies_as_runner_up = (
                 not qualifies and player.id in qualifying_runner_up_ids
             )
 
-            # Show army faction based on phase
+            # Show army faction and list based on phase
             army_faction = None
+            army_list = None
+            list_submitted = False
             if league.status == "knockout_phase":
                 army_faction = player.knockout_army_faction
+                list_submitted = player.knockout_army_list is not None
+                if league.knockout_lists_visible:
+                    army_list = player.knockout_army_list
             else:
                 army_faction = player.group_army_faction
+                list_submitted = player.group_army_list is not None
+                if league.group_lists_visible:
+                    army_list = player.group_army_list
 
             standings.append(
                 StandingsEntry(
@@ -777,7 +833,10 @@ async def get_standings(
                     user_id=player.user_id,
                     username=username,
                     discord_username=player.discord_username,
+                    avatar_url=avatar_url,
                     army_faction=army_faction,
+                    army_list=army_list,
+                    list_submitted=list_submitted,
                     games_played=player.games_played,
                     games_won=player.games_won,
                     games_drawn=player.games_drawn,

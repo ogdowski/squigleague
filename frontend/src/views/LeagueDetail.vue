@@ -238,11 +238,27 @@
         <h2 class="text-xl font-bold mb-4">Registered Players ({{ players.length }})</h2>
         <div v-if="players.length === 0" class="text-gray-500">No players registered yet.</div>
         <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-3 py-2">
-            <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow">
+          <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-3 py-2 flex items-center gap-2">
+            <!-- Avatar thumbnail -->
+            <div v-if="player.avatar_url" class="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+              <img :src="player.avatar_url" :alt="player.username" class="w-full h-full object-cover" />
+            </div>
+            <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
+              {{ (player.username || player.discord_username || '?').charAt(0).toUpperCase() }}
+            </div>
+            <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow flex-1 truncate">
               {{ player.username || player.discord_username }}
             </router-link>
-            <span v-else>{{ player.username || player.discord_username }}</span>
+            <span v-else class="flex-1 truncate">{{ player.username || player.discord_username }}</span>
+            <!-- List status icon (if group phase lists are required) -->
+            <span v-if="league.has_group_phase_lists" :title="player.group_list_submitted ? 'List submitted' : 'List not submitted'">
+              <svg v-if="player.group_list_submitted" class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
           </div>
         </div>
       </div>
@@ -250,7 +266,39 @@
       <div v-if="activeTab === 'standings'" class="space-y-6">
         <div v-for="group in standings" :key="group.group_id" class="card">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold">{{ group.group_name }}</h3>
+            <div class="flex items-center gap-2">
+              <h3 v-if="editingGroupId !== group.group_id" class="text-xl font-bold">{{ group.group_name }}</h3>
+              <input
+                v-else
+                v-model="editingGroupName"
+                @keyup.enter="saveGroupName(group.group_id)"
+                @keyup.escape="cancelEditGroupName"
+                class="text-xl font-bold bg-gray-700 border border-gray-600 rounded px-2 py-1 w-48"
+                ref="groupNameInput"
+              />
+              <button
+                v-if="isOrganizer && editingGroupId !== group.group_id"
+                @click="startEditGroupName(group)"
+                class="text-gray-400 hover:text-white"
+                title="Edit group name"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+              <template v-if="editingGroupId === group.group_id">
+                <button @click="saveGroupName(group.group_id)" class="text-green-400 hover:text-green-300" title="Save">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+                <button @click="cancelEditGroupName" class="text-red-400 hover:text-red-300" title="Cancel">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </template>
+            </div>
             <span v-if="group.qualifying_spots" class="text-sm text-gray-400">
               Top {{ group.qualifying_spots }} advance
             </span>
@@ -261,6 +309,7 @@
                 <tr class="text-gray-400 border-b border-gray-700">
                   <th class="text-left py-2 px-2">#</th>
                   <th class="text-left py-2 px-2">Player</th>
+                  <th class="text-center py-2 px-2" title="Army List">List</th>
                   <th class="text-center py-2 px-2">P</th>
                   <th class="text-center py-2 px-2">W</th>
                   <th class="text-center py-2 px-2">D</th>
@@ -285,11 +334,43 @@
                     <span v-else>{{ entry.position }}</span>
                   </td>
                   <td class="py-2 px-2">
-                    <router-link v-if="entry.user_id" :to="`/player/${entry.user_id}`" class="hover:text-squig-yellow">
-                      {{ entry.username || entry.discord_username }}
-                    </router-link>
-                    <span v-else>{{ entry.username || entry.discord_username }}</span>
-                    <span v-if="entry.army_faction" class="ml-2 text-xs text-gray-500">({{ entry.army_faction }})</span>
+                    <div class="flex items-center gap-2">
+                      <div v-if="entry.avatar_url" class="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                        <img :src="entry.avatar_url" :alt="entry.username" class="w-full h-full object-cover" />
+                      </div>
+                      <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
+                        {{ (entry.username || entry.discord_username || '?').charAt(0).toUpperCase() }}
+                      </div>
+                      <div>
+                        <router-link v-if="entry.user_id" :to="`/player/${entry.user_id}`" class="hover:text-squig-yellow">
+                          {{ entry.username || entry.discord_username }}
+                        </router-link>
+                        <span v-else>{{ entry.username || entry.discord_username }}</span>
+                        <span v-if="entry.army_faction" class="ml-2 text-xs text-gray-500">({{ entry.army_faction }})</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-2 px-2 text-center">
+                    <button
+                      v-if="entry.list_submitted && entry.army_list"
+                      @click="showListModal(entry)"
+                      class="text-green-400 hover:text-green-300"
+                      title="View army list"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </button>
+                    <span v-else-if="entry.list_submitted" class="text-green-400" title="List submitted (not visible yet)">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <span v-else class="text-gray-600" title="List not submitted">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </span>
                   </td>
                   <td class="py-2 px-2 text-center">{{ entry.games_played }}</td>
                   <td class="py-2 px-2 text-center text-green-400">{{ entry.games_won }}</td>
@@ -669,6 +750,40 @@
         </button>
       </div>
     </div>
+
+    <!-- Army List Modal -->
+    <div v-if="showArmyListModal && selectedListEntry" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div v-if="selectedListEntry.avatar_url" class="w-10 h-10 rounded-full overflow-hidden">
+              <img :src="selectedListEntry.avatar_url" :alt="selectedListEntry.username" class="w-full h-full object-cover" />
+            </div>
+            <div v-else class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg text-gray-400">
+              {{ (selectedListEntry.username || selectedListEntry.discord_username || '?').charAt(0).toUpperCase() }}
+            </div>
+            <div>
+              <h3 class="text-xl font-bold">{{ selectedListEntry.username || selectedListEntry.discord_username }}</h3>
+              <p v-if="selectedListEntry.army_faction" class="text-sm text-gray-400">{{ selectedListEntry.army_faction }}</p>
+            </div>
+          </div>
+          <button @click="showArmyListModal = false" class="text-gray-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="bg-gray-900 rounded p-4 overflow-y-auto flex-1">
+          <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ selectedListEntry.army_list }}</pre>
+        </div>
+        <button
+          @click="showArmyListModal = false"
+          class="mt-4 w-full btn-secondary"
+        >
+          Close
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -712,6 +827,14 @@ const showAdvanceKnockoutModal = ref(false)
 const showMatchModal = ref(false)
 const selectedMatch = ref(null)
 const submittingScore = ref(false)
+
+// Army list viewing modal
+const showArmyListModal = ref(false)
+const selectedListEntry = ref(null)
+
+// Group name editing
+const editingGroupId = ref(null)
+const editingGroupName = ref('')
 const matchError = ref('')
 const scoreForm = ref({
   player1_score: null,
@@ -1081,6 +1204,42 @@ const openMatchModal = (match) => {
     custom_map: isStandardMap ? '' : existingMap,
   }
   showMatchModal.value = true
+}
+
+// Open army list modal
+const showListModal = (entry) => {
+  selectedListEntry.value = entry
+  showArmyListModal.value = true
+}
+
+// Group name editing
+const startEditGroupName = (group) => {
+  editingGroupId.value = group.group_id
+  editingGroupName.value = group.group_name
+}
+
+const cancelEditGroupName = () => {
+  editingGroupId.value = null
+  editingGroupName.value = ''
+}
+
+const saveGroupName = async (groupId) => {
+  if (!editingGroupName.value.trim()) return
+
+  try {
+    await axios.patch(`${API_URL}/league/${league.value.id}/groups/${groupId}`, {
+      name: editingGroupName.value.trim()
+    })
+    // Update local state
+    const group = standings.value.find(g => g.group_id === groupId)
+    if (group) {
+      group.group_name = editingGroupName.value.trim()
+    }
+    cancelEditGroupName()
+  } catch (err) {
+    console.error('Failed to update group name:', err)
+    showActionError(err.response?.data?.detail || 'Failed to update group name')
+  }
 }
 
 // Navigate to match detail page (for bracket clicks)

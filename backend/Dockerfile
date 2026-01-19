@@ -38,6 +38,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=appuser:appuser . .
 
+# Create uploads directory with proper permissions
+RUN mkdir -p /app/uploads/avatars && chown -R appuser:appuser /app/uploads
+
 # Switch to non-root user
 USER appuser
 
