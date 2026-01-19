@@ -1,0 +1,294 @@
+{
+  "aos-passing-seasons.png": {
+    "name": "Passing Seasons",
+    "objective_count": 4,
+    "objectives": [
+      {
+        "x": 44.5,
+        "y": 29.7
+      },
+      {
+        "x": 1.1,
+        "y": 8.2
+      },
+      {
+        "x": 35.2,
+        "y": 19.6
+      },
+      {
+        "x": 30.9,
+        "y": 28.8
+      }
+    ]
+  },
+  "aos-paths-of-the-fey.png": {
+    "name": "Paths of the Fey",
+    "objective_count": 5,
+    "objectives": [
+      {
+        "x": 19.7,
+        "y": 13.2
+      },
+      {
+        "x": 39.1,
+        "y": 13.3
+      },
+      {
+        "x": 57.7,
+        "y": 36.1
+      },
+      {
+        "x": 53.8,
+        "y": 6.7
+      },
+      {
+        "x": 1.8,
+        "y": 8.8
+      }
+    ]
+  },
+  "aos-roiling-roots.png": {
+    "name": "Roiling Roots",
+    "objective_count": 6,
+    "objectives": [
+      {
+        "x": 52.4,
+        "y": 34.1
+      },
+      {
+        "x": 22.5,
+        "y": 3.7
+      },
+      {
+        "x": 57.8,
+        "y": 36.0
+      },
+      {
+        "x": 8.5,
+        "y": 17.4
+      },
+      {
+        "x": 50.6,
+        "y": 6.6
+      },
+      {
+        "x": 32.7,
+        "y": 15.3
+      }
+    ]
+  },
+  "aos-cyclic-shifts.png": {
+    "name": "Cyclic Shifts",
+    "objective_count": 6,
+    "objectives": [
+      {
+        "x": 57.7,
+        "y": 35.7
+      },
+      {
+        "x": 56.8,
+        "y": 10.3
+      },
+      {
+        "x": 53.7,
+        "y": 7.3
+      },
+      {
+        "x": 2.4,
+        "y": 8.3
+      },
+      {
+        "x": 4.6,
+        "y": 22.4
+      },
+      {
+        "x": 24.8,
+        "y": 2.6
+      }
+    ]
+  },
+  "aos-surge-of-slaughter.png": {
+    "name": "Surge of Slaughter",
+    "objective_count": 5,
+    "objectives": [
+      {
+        "x": 32.3,
+        "y": 28.1
+      },
+      {
+        "x": 19.2,
+        "y": 9.3
+      },
+      {
+        "x": 42.3,
+        "y": 15.3
+      },
+      {
+        "x": 48.0,
+        "y": 32.3
+      },
+      {
+        "x": 13.3,
+        "y": 31.2
+      }
+    ]
+  },
+  "aos-linked-ley-lines.png": {
+    "name": "Linked Ley Lines",
+    "objective_count": 5,
+    "objectives": [
+      {
+        "x": 57.6,
+        "y": 35.6
+      },
+      {
+        "x": 53.8,
+        "y": 6.8
+      },
+      {
+        "x": 4.0,
+        "y": 6.8
+      },
+      {
+        "x": 2.2,
+        "y": 8.5
+      },
+      {
+        "x": 4.6,
+        "y": 22.5
+      }
+    ]
+  },
+  "aos-noxious-nexus.png": {
+    "name": "Noxious Nexus",
+    "objective_count": 3,
+    "objectives": [
+      {
+        "x": 37.3,
+        "y": 21.3
+      },
+      {
+        "x": 54.2,
+        "y": 13.0
+      },
+      {
+        "x": 37.3,
+        "y": 3.7
+      }
+    ]
+  },
+  "aos-the-liferoots.png": {
+    "name": "The Liferoots",
+    "objective_count": 2,
+    "objectives": [
+      {
+        "x": 38.6,
+        "y": 28.8
+      },
+      {
+        "x": 56.9,
+        "y": 35.6
+      }
+    ]
+  },
+  "aos-bountiful-equinox.png": {
+    "name": "Bountiful Equinox",
+    "objective_count": 5,
+    "objectives": [
+      {
+        "x": 8.6,
+        "y": 20.2
+      },
+      {
+        "x": 54.0,
+        "y": 20.2
+      },
+      {
+        "x": 51.2,
+        "y": 4.3
+      },
+      {
+        "x": 5.8,
+        "y": 4.4
+      },
+      {
+        "x": 57.0,
+        "y": 35.5
+      }
+    ]
+  },
+  "aos-lifecycle.png": {
+    "name": "Lifecycle",
+    "objective_count": 4,
+    "objectives": [
+      {
+        "x": 7.6,
+        "y": 22.5
+      },
+      {
+        "x": 52.2,
+        "y": 3.3
+      },
+      {
+        "x": 57.0,
+        "y": 35.5
+      },
+      {
+        "x": 21.2,
+        "y": 29.0
+      }
+    ]
+  },
+  "aos-creeping-corruption.png": {
+    "name": "Creeping Corruption",
+    "objective_count": 6,
+    "objectives": [
+      {
+        "x": 18.8,
+        "y": 31.5
+      },
+      {
+        "x": 54.4,
+        "y": 12.9
+      },
+      {
+        "x": 5.4,
+        "y": 13.0
+      },
+      {
+        "x": 56.9,
+        "y": 35.8
+      },
+      {
+        "x": 42.4,
+        "y": 34.1
+      },
+      {
+        "x": 2.7,
+        "y": 29.1
+      }
+    ]
+  },
+  "aos-grasp-of-thorns.png": {
+    "name": "Grasp of Thorns",
+    "objective_count": 4,
+    "objectives": [
+      {
+        "x": 22.1,
+        "y": 34.1
+      },
+      {
+        "x": 56.9,
+        "y": 35.6
+      },
+      {
+        "x": 39.4,
+        "y": 8.6
+      },
+      {
+        "x": 47.8,
+        "y": 32.1
+      }
+    ]
+  }
+}
