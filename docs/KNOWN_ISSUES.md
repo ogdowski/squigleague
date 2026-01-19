@@ -64,6 +64,49 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --no-deps f
 
 ---
 
+## [ISSUE-003] Frontend Build Uses Wrong API_URL (Hardcoded localhost:8000)
+
+**Date Discovered:** 2026-01-19  
+**Severity:** CRITICAL  
+**Root Cause:** Vite environment variables must be shell variables during `npm run build`, not Docker ENV. Using `ENV VITE_API_URL` doesn't make variable available to Vite build process.  
+**Symptoms:**
+- User login fails in browser with "Login failed. Please try again."
+- Backend API endpoints work when tested with PowerShell/curl
+- Frontend JavaScript contains `"http://localhost:8000"` instead of `"/api"`
+- Browser tries to reach backend directly (unreachable) instead of via nginx proxy
+- All frontend API calls bypass nginx routing
+
+**Process Gap:**
+- No validation of ACTUAL API_URL value in built JavaScript
+- Validation only checked absence of localhost:8000, not presence of correct value
+- No understanding of Vite environment variable mechanics (build-time vs runtime)
+- Test script validated backend API but not frontend code
+- Premature success declaration without comprehensive validation
+
+**Prevention Added:**
+- [x] Updated instruction file with "FRONTEND BUILD VALIDATION PROTOCOL"
+- [x] Created scripts/validate-frontend-build.ps1 to extract and verify API_URL
+- [x] Fixed Dockerfile: `RUN VITE_API_URL=$VITE_API_URL npm run build`
+- [x] Documented in KNOWN_ISSUES.md
+- [x] Added MANDATORY validation before declaring build success
+
+**Correct Dockerfile:**
+```dockerfile
+ARG VITE_API_URL=/api
+RUN VITE_API_URL=$VITE_API_URL npm run build
+```
+
+**MANDATORY Validation After Build:**
+```powershell
+.\scripts\validate-frontend-build.ps1
+# Must exit 0 before declaring success
+```
+
+**Related Issues:** ISSUE-002  
+**Related Solutions:** SOLUTION-003
+
+---
+
 ## Template for New Issues
 
 ```markdown

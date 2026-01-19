@@ -10,7 +10,7 @@ from app.matchup.schemas import (
     MatchupStatus,
     MatchupSubmit,
 )
-from app.matchup.service import submit_list
+from app.matchup.service import get_map_image, get_battle_plan_data, submit_list
 from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, func, select
@@ -245,11 +245,20 @@ async def reveal_matchup(
         if player2:
             player2_username = player2.username
 
+    # Get battle plan data
+    battle_plan = get_battle_plan_data(matchup.map_name) if matchup.map_name else None
+
     return MatchupReveal(
         name=matchup.name,
         player1_list=matchup.player1_list,
         player2_list=matchup.player2_list,
         map_name=matchup.map_name,
+        map_image=get_map_image(matchup.map_name) if matchup.map_name else None,
+        deployment=battle_plan.get("deployment") if battle_plan else None,
+        objectives=battle_plan.get("objectives") if battle_plan else None,
+        scoring=battle_plan.get("scoring") if battle_plan else None,
+        underdog_ability=battle_plan.get("underdog_ability") if battle_plan else None,
+        objective_types=battle_plan.get("objective_types") if battle_plan else None,
         revealed_at=matchup.revealed_at,
         player1_username=player1_username,
         player2_username=player2_username,
