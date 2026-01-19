@@ -1,11 +1,15 @@
 """API endpoints for the league module."""
 
+import random
 from datetime import datetime, timedelta
 
 from app.core.deps import get_current_user, get_current_user_optional, require_role
 from app.db import get_session
+from app.league.constants import MISSION_MAPS
 from app.league.models import Group, League, LeaguePlayer, Match, PlayerElo
 from app.league.schemas import (
+    ArmyListResponse,
+    ArmyListSubmit,
     GroupStandings,
     KnockoutBracket,
     KnockoutListResponse,
@@ -16,6 +20,8 @@ from app.league.schemas import (
     LeaguePlayerResponse,
     LeagueResponse,
     LeagueUpdate,
+    MatchDetailResponse,
+    MatchMapSet,
     MatchResponse,
     MatchResultSubmit,
     PlayerEloResponse,
@@ -24,6 +30,7 @@ from app.league.schemas import (
 from app.league.service import (
     advance_to_next_knockout_round,
     all_round_matches_confirmed,
+    calculate_knockout_size,
     calculate_phase_dates,
     confirm_match_result,
     draw_groups,
@@ -97,6 +104,8 @@ async def create_league(
         days_per_match=data.days_per_match,
         has_knockout_phase=data.has_knockout_phase,
         knockout_size=data.knockout_size,
+        has_group_phase_lists=data.has_group_phase_lists,
+        has_knockout_phase_lists=data.has_knockout_phase_lists,
     )
     session.add(league)
     session.commit()
@@ -325,6 +334,15 @@ async def join_league(
             detail="Registration is closed",
         )
 
+    # Check max_players limit
+    if league.max_players is not None:
+        current_count = get_league_player_count(session, league_id)
+        if current_count >= league.max_players:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="League is full",
+            )
+
     statement = select(LeaguePlayer).where(
         LeaguePlayer.league_id == league_id,
         LeaguePlayer.user_id == current_user.id,
@@ -388,6 +406,15 @@ async def add_player(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized",
         )
+
+    # Check max_players limit
+    if league.max_players is not None:
+        current_count = get_league_player_count(session, league_id)
+        if current_count >= league.max_players:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="League is full",
+            )
 
     player = LeaguePlayer(
         league_id=league_id,
@@ -459,6 +486,9 @@ async def list_players(
                 discord_username=player.discord_username,
                 username=username,
                 joined_at=player.joined_at,
+                group_army_faction=player.group_army_faction,
+                group_list_submitted=player.group_army_list is not None,
+                knockout_army_faction=player.knockout_army_faction,
                 knockout_list_submitted=player.knockout_army_list is not None,
             )
         )
@@ -666,17 +696,59 @@ async def get_standings(
     league_id: int,
     session: Session = Depends(get_session),
 ):
-    """Gets standings for all groups."""
-    # Get league for qualifying info
+    """Gets standings for all groups with qualification info."""
     league = session.scalars(select(League).where(League.id == league_id)).first()
-    spots_per_group, _ = get_qualifying_info(session, league) if league else (0, 0)
+    if not league:
+        return []
 
     statement = select(Group).where(Group.league_id == league_id)
-    groups = session.scalars(statement).all()
+    groups = list(session.scalars(statement).all())
+    num_groups = len(groups)
 
-    result = []
+    if num_groups == 0:
+        return []
+
+    # Calculate knockout qualification rules
+    player_count = get_league_player_count(session, league_id)
+    knockout_size = league.knockout_size
+    if knockout_size is None:
+        knockout_size = calculate_knockout_size(player_count)
+    knockout_size = min(knockout_size, player_count)
+
+    guaranteed_per_group = knockout_size // num_groups
+    extra_spots = knockout_size % num_groups
+
+    # First pass: collect all runners-up to determine who qualifies
+    runners_up = []  # (player_id, total_points, games_played, average_points, group_id)
+    group_standings_data = {}
+
     for group in groups:
         players = get_group_standings(session, group.id)
+        group_standings_data[group.id] = players
+
+        # Collect runner-up (position after guaranteed spots)
+        if extra_spots > 0 and len(players) > guaranteed_per_group:
+            runner_up = players[guaranteed_per_group]
+            runners_up.append(
+                (
+                    runner_up.id,
+                    runner_up.total_points,
+                    runner_up.games_played,
+                    runner_up.average_points,
+                    group.id,
+                )
+            )
+
+    # Sort runners-up and find which ones qualify
+    runners_up.sort(
+        key=lambda r: (-r[1], r[2], -r[3])
+    )  # points desc, games asc, avg desc
+    qualifying_runner_up_ids = {r[0] for r in runners_up[:extra_spots]}
+
+    # Second pass: build response with qualification flags
+    result = []
+    for group in groups:
+        players = group_standings_data[group.id]
 
         standings = []
         for position, player in enumerate(players, 1):
@@ -686,19 +758,34 @@ async def get_standings(
                 user = session.scalars(stmt).first()
                 username = user.username if user else None
 
+            qualifies = position <= guaranteed_per_group
+            qualifies_as_runner_up = (
+                not qualifies and player.id in qualifying_runner_up_ids
+            )
+
+            # Show army faction based on phase
+            army_faction = None
+            if league.status == "knockout_phase":
+                army_faction = player.knockout_army_faction
+            else:
+                army_faction = player.group_army_faction
+
             standings.append(
                 StandingsEntry(
                     position=position,
                     player_id=player.id,
+                    user_id=player.user_id,
                     username=username,
                     discord_username=player.discord_username,
+                    army_faction=army_faction,
                     games_played=player.games_played,
                     games_won=player.games_won,
                     games_drawn=player.games_drawn,
                     games_lost=player.games_lost,
                     total_points=player.total_points,
                     average_points=player.average_points,
-                    qualifies=position <= spots_per_group,
+                    qualifies=qualifies,
+                    qualifies_as_runner_up=qualifies_as_runner_up,
                 )
             )
 
@@ -707,7 +794,8 @@ async def get_standings(
                 group_id=group.id,
                 group_name=group.name,
                 standings=standings,
-                qualifying_spots=spots_per_group,
+                qualifying_spots=guaranteed_per_group,
+                runner_up_spots=extra_spots,
             )
         )
 
@@ -722,8 +810,12 @@ async def list_matches(
     league_id: int,
     phase: str = None,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_optional),
 ):
-    """Lists matches in a league."""
+    """Lists matches in a league with army lists (if visible)."""
+    # Get league for list visibility settings
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
     statement = select(Match).where(Match.league_id == league_id)
     if phase:
         statement = statement.where(Match.phase == phase)
@@ -735,6 +827,10 @@ async def list_matches(
     for match in matches:
         p1_username = None
         p2_username = None
+        p1_army_faction = None
+        p2_army_faction = None
+        p1_army_list = None
+        p2_army_list = None
 
         stmt = select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
         p1 = session.scalars(stmt).first()
@@ -756,6 +852,23 @@ async def list_matches(
             else:
                 p2_username = p2.discord_username
 
+        # Get army faction based on match phase
+        if match.phase == "group":
+            p1_army_faction = p1.group_army_faction if p1 else None
+            p2_army_faction = p2.group_army_faction if p2 else None
+        else:
+            p1_army_faction = p1.knockout_army_faction if p1 else None
+            p2_army_faction = p2.knockout_army_faction if p2 else None
+
+        # Determine army list visibility (only when revealed)
+        if league:
+            if match.phase == "group" and league.group_lists_visible:
+                p1_army_list = p1.group_army_list if p1 else None
+                p2_army_list = p2.group_army_list if p2 else None
+            elif match.phase == "knockout" and league.knockout_lists_visible:
+                p1_army_list = p1.knockout_army_list if p1 else None
+                p2_army_list = p2.knockout_army_list if p2 else None
+
         # Get group info from player1 (both players should be in same group for group matches)
         group_id = None
         group_name = None
@@ -774,6 +887,8 @@ async def list_matches(
                 player2_id=match.player2_id,
                 player1_username=p1_username,
                 player2_username=p2_username,
+                player1_army_faction=p1_army_faction,
+                player2_army_faction=p2_army_faction,
                 group_id=group_id,
                 group_name=group_name,
                 phase=match.phase,
@@ -788,10 +903,214 @@ async def list_matches(
                 submitted_by_id=match.submitted_by_id,
                 created_at=match.created_at,
                 is_completed=match.is_completed,
+                player1_army_list=p1_army_list,
+                player2_army_list=p2_army_list,
             )
         )
 
     return result
+
+
+@router.get("/{league_id}/matches/{match_id}", response_model=MatchDetailResponse)
+async def get_match_detail(
+    league_id: int,
+    match_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_optional),
+):
+    """Gets detailed match information including ELO changes."""
+    match = session.scalars(
+        select(Match).where(Match.id == match_id, Match.league_id == league_id)
+    ).first()
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    # Get player info
+    player1 = session.scalars(
+        select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
+    ).first()
+    player2 = session.scalars(
+        select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
+    ).first()
+
+    # Get usernames
+    p1_username = None
+    p2_username = None
+    if player1 and player1.user_id:
+        u1 = session.scalars(select(User).where(User.id == player1.user_id)).first()
+        p1_username = u1.username if u1 else player1.discord_username
+    elif player1:
+        p1_username = player1.discord_username
+    if player2 and player2.user_id:
+        u2 = session.scalars(select(User).where(User.id == player2.user_id)).first()
+        p2_username = u2.username if u2 else player2.discord_username
+    elif player2:
+        p2_username = player2.discord_username
+
+    # Get group name
+    group_name = None
+    if player1 and player1.group_id:
+        group = session.scalars(
+            select(Group).where(Group.id == player1.group_id)
+        ).first()
+        if group:
+            group_name = group.name
+
+    # Determine army faction and list based on phase
+    p1_army_faction = None
+    p2_army_faction = None
+    p1_army_list = None
+    p2_army_list = None
+    if player1 and player2:
+        if match.phase == "knockout":
+            p1_army_faction = player1.knockout_army_faction
+            p2_army_faction = player2.knockout_army_faction
+            # Show lists if visible or user is participant/org
+            if league.knockout_lists_visible or (
+                current_user
+                and (
+                    current_user.id == player1.user_id
+                    or current_user.id == player2.user_id
+                    or current_user.id == league.organizer_id
+                    or current_user.role == "admin"
+                )
+            ):
+                p1_army_list = player1.knockout_army_list
+                p2_army_list = player2.knockout_army_list
+        else:
+            p1_army_faction = player1.group_army_faction
+            p2_army_faction = player2.group_army_faction
+            if league.group_lists_visible or (
+                current_user
+                and (
+                    current_user.id == player1.user_id
+                    or current_user.id == player2.user_id
+                    or current_user.id == league.organizer_id
+                    or current_user.role == "admin"
+                )
+            ):
+                p1_army_list = player1.group_army_list
+                p2_army_list = player2.group_army_list
+
+    # Determine permissions
+    is_participant = (
+        current_user
+        and player1
+        and player2
+        and (current_user.id == player1.user_id or current_user.id == player2.user_id)
+    )
+    is_org_or_admin = current_user and (
+        current_user.id == league.organizer_id or current_user.role == "admin"
+    )
+    can_edit = (is_participant or is_org_or_admin) and match.status != "confirmed"
+    can_set_map = is_participant or is_org_or_admin
+
+    return MatchDetailResponse(
+        id=match.id,
+        league_id=match.league_id,
+        league_name=league.name,
+        player1_id=match.player1_id,
+        player2_id=match.player2_id,
+        player1_user_id=player1.user_id if player1 else None,
+        player2_user_id=player2.user_id if player2 else None,
+        player1_username=p1_username,
+        player2_username=p2_username,
+        player1_army_faction=p1_army_faction,
+        player2_army_faction=p2_army_faction,
+        player1_army_list=p1_army_list,
+        player2_army_list=p2_army_list,
+        phase=match.phase,
+        knockout_round=match.knockout_round,
+        group_name=group_name,
+        player1_score=match.player1_score,
+        player2_score=match.player2_score,
+        player1_league_points=match.player1_league_points,
+        player2_league_points=match.player2_league_points,
+        status=match.status,
+        map_name=match.map_name,
+        deadline=match.deadline,
+        player1_elo_before=match.player1_elo_before,
+        player1_elo_after=match.player1_elo_after,
+        player2_elo_before=match.player2_elo_before,
+        player2_elo_after=match.player2_elo_after,
+        submitted_by_id=match.submitted_by_id,
+        submitted_at=match.submitted_at,
+        confirmed_by_id=match.confirmed_by_id,
+        confirmed_at=match.confirmed_at,
+        created_at=match.created_at,
+        can_edit=can_edit,
+        can_set_map=can_set_map,
+    )
+
+
+@router.post("/{league_id}/matches/{match_id}/map")
+async def set_match_map(
+    league_id: int,
+    match_id: int,
+    data: MatchMapSet,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Sets or randomizes the map for a match (participants or organizer)."""
+    match = session.scalars(
+        select(Match).where(Match.id == match_id, Match.league_id == league_id)
+    ).first()
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    # Get players
+    player1 = session.scalars(
+        select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
+    ).first()
+    player2 = session.scalars(
+        select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
+    ).first()
+
+    # Check permissions
+    is_participant = (
+        player1
+        and player2
+        and (current_user.id == player1.user_id or current_user.id == player2.user_id)
+    )
+    is_org_or_admin = (
+        current_user.id == league.organizer_id or current_user.role == "admin"
+    )
+
+    if not is_participant and not is_org_or_admin:
+        raise HTTPException(
+            status_code=403, detail="Only participants or organizer can set the map"
+        )
+
+    # Cannot change map if match is confirmed
+    if match.status == "confirmed":
+        raise HTTPException(
+            status_code=400, detail="Cannot change map for confirmed match"
+        )
+
+    # Cannot change map if league is finished
+    if league.status == "finished":
+        raise HTTPException(
+            status_code=400, detail="Cannot modify matches in a finished league"
+        )
+
+    # Set map
+    if data.random:
+        match.map_name = random.choice(MISSION_MAPS)
+    elif data.map_name:
+        match.map_name = data.map_name
+    else:
+        raise HTTPException(
+            status_code=400, detail="Provide map_name or set random=true"
+        )
+
+    session.add(match)
+    session.commit()
+
+    return {"map_name": match.map_name}
 
 
 @router.post("/{league_id}/matches/{match_id}/result")
@@ -819,6 +1138,15 @@ async def submit_result(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Match result already confirmed",
+        )
+
+    # Check league status
+    league_stmt = select(League).where(League.id == league_id)
+    league_check = session.scalars(league_stmt).first()
+    if league_check and league_check.status == "finished":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot modify results in a finished league",
         )
 
     stmt = select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
@@ -887,6 +1215,13 @@ async def confirm_result(
 
     stmt = select(League).where(League.id == league_id)
     league = session.scalars(stmt).first()
+
+    # Check league status
+    if league and league.status == "finished":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot modify results in a finished league",
+        )
 
     # Get players to check if current user is the opponent
     stmt = select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
@@ -1105,13 +1440,318 @@ async def advance_knockout(
     }
 
 
+# ============ Group Phase Lists ============
+
+
+@router.post("/{league_id}/group-list")
+async def submit_group_list(
+    league_id: int,
+    data: ArmyListSubmit,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Submits army list for group phase (before league starts)."""
+    statement = select(LeaguePlayer).where(
+        LeaguePlayer.league_id == league_id,
+        LeaguePlayer.user_id == current_user.id,
+    )
+    player = session.scalars(statement).first()
+
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not a player in this league",
+        )
+
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league or not league.has_group_phase_lists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This league does not have group phase lists",
+        )
+
+    if league.group_lists_frozen:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Group lists are frozen, cannot submit or edit",
+        )
+
+    # Lists must be submitted before league starts (during registration)
+    if league.status != "registration":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Group lists can only be submitted during registration",
+        )
+
+    player.group_army_faction = data.army_faction
+    player.group_army_list = data.army_list
+    player.group_list_submitted_at = datetime.utcnow()
+    session.add(player)
+    session.commit()
+
+    return {"message": "Group list submitted"}
+
+
+@router.get("/{league_id}/group-list/{player_id}", response_model=ArmyListResponse)
+async def get_group_list(
+    league_id: int,
+    player_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_optional),
+):
+    """Gets player's group phase army list (if visible)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    player = session.scalars(
+        select(LeaguePlayer).where(LeaguePlayer.id == player_id)
+    ).first()
+
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found",
+        )
+
+    # Check visibility - only own list or when revealed
+    is_own = current_user and player.user_id == current_user.id
+
+    if not is_own and not league.group_lists_visible:
+        return ArmyListResponse(
+            player_id=player.id,
+            username=None,
+            army_faction=None,
+            army_list=None,
+            submitted_at=None,
+        )
+
+    username = None
+    if player.user_id:
+        user = session.scalars(select(User).where(User.id == player.user_id)).first()
+        username = user.username if user else player.discord_username
+    else:
+        username = player.discord_username
+
+    return ArmyListResponse(
+        player_id=player.id,
+        username=username,
+        army_faction=player.group_army_faction,
+        army_list=player.group_army_list,
+        submitted_at=player.group_list_submitted_at,
+    )
+
+
+@router.post("/{league_id}/freeze-group-lists")
+async def freeze_group_lists(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Freezes group phase army lists (organizer). No more player edits."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    league.group_lists_frozen = True
+    session.add(league)
+    session.commit()
+
+    return {"message": "Group lists are now frozen"}
+
+
+@router.post("/{league_id}/unfreeze-group-lists")
+async def unfreeze_group_lists(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Unfreezes group phase army lists (organizer). Players can edit again, lists hidden."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    league.group_lists_frozen = False
+    league.group_lists_visible = False  # Hide lists when unfreezing
+    session.add(league)
+    session.commit()
+
+    return {"message": "Group lists are now unfrozen and hidden"}
+
+
+@router.post("/{league_id}/reveal-group-lists")
+async def reveal_group_lists(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Reveals group phase army lists (organizer). Also freezes them."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    league.group_lists_visible = True
+    league.group_lists_frozen = True
+    session.add(league)
+    session.commit()
+
+    return {"message": "Group lists are now visible"}
+
+
+@router.put("/{league_id}/group-list/{player_id}")
+async def edit_group_list_organizer(
+    league_id: int,
+    player_id: int,
+    data: ArmyListSubmit,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Edits player's group list (organizer only, even after freeze)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    player = session.scalars(
+        select(LeaguePlayer).where(
+            LeaguePlayer.id == player_id, LeaguePlayer.league_id == league_id
+        )
+    ).first()
+
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found",
+        )
+
+    player.group_army_faction = data.army_faction
+    player.group_army_list = data.army_list
+    player.group_list_submitted_at = datetime.utcnow()
+    session.add(player)
+    session.commit()
+
+    return {"message": "Group list updated"}
+
+
+# ============ Knockout Phase Lists ============
+
+
+@router.post("/{league_id}/freeze-lists")
+async def freeze_knockout_lists(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Freezes knockout phase army lists (organizer). No more edits allowed."""
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if league.knockout_lists_frozen:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lists are already frozen",
+        )
+
+    league.knockout_lists_frozen = True
+    session.add(league)
+    session.commit()
+
+    return {"message": "Knockout lists are now frozen"}
+
+
+@router.post("/{league_id}/unfreeze-lists")
+async def unfreeze_knockout_lists(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Unfreezes knockout phase army lists (organizer). Players can edit again, lists hidden."""
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    league.knockout_lists_frozen = False
+    league.knockout_lists_visible = False  # Hide lists when unfreezing
+    session.add(league)
+    session.commit()
+
+    return {"message": "Knockout lists are now unfrozen and hidden"}
+
+
 @router.post("/{league_id}/reveal-lists")
 async def reveal_knockout_lists(
     league_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Reveals knockout phase army lists (organizer)."""
+    """Reveals knockout phase army lists (organizer). Also freezes them if not already."""
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -1128,6 +1768,7 @@ async def reveal_knockout_lists(
         )
 
     league.knockout_lists_visible = True
+    league.knockout_lists_frozen = True  # Revealing also freezes
     session.add(league)
     session.commit()
 
@@ -1157,12 +1798,13 @@ async def submit_knockout_list(
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
-    if league and league.knockout_lists_visible:
+    if league and league.knockout_lists_frozen:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Lists are already revealed, cannot submit",
+            detail="Lists are frozen, cannot submit or edit",
         )
 
+    player.knockout_army_faction = data.army_faction
     player.knockout_army_list = data.army_list
     player.knockout_list_submitted_at = datetime.utcnow()
     session.add(player)
@@ -1203,13 +1845,15 @@ async def get_knockout_list(
         )
 
     is_owner = current_user and player.user_id == current_user.id
-    is_organizer = current_user and league.organizer_id == current_user.id
-    is_admin = current_user and current_user.role == "admin"
 
-    if not league.knockout_lists_visible and not (is_owner or is_organizer or is_admin):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Knockout lists are not visible yet",
+    # Only owner can see before reveal
+    if not league.knockout_lists_visible and not is_owner:
+        return KnockoutListResponse(
+            player_id=player.id,
+            username=None,
+            army_faction=None,
+            army_list=None,
+            submitted_at=None,
         )
 
     username = None
@@ -1223,6 +1867,7 @@ async def get_knockout_list(
     return KnockoutListResponse(
         player_id=player.id,
         username=username,
+        army_faction=player.knockout_army_faction,
         army_list=player.knockout_army_list,
         submitted_at=player.knockout_list_submitted_at,
     )

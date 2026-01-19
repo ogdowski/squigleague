@@ -71,6 +71,17 @@ const routes = [
     name: 'LeagueSettings',
     component: () => import('../views/LeagueSettings.vue'),
   },
+  {
+    path: '/league/:leagueId/match/:matchId',
+    name: 'MatchDetail',
+    component: () => import('../views/MatchDetail.vue'),
+  },
+  // Player routes
+  {
+    path: '/player/:userId',
+    name: 'PlayerProfile',
+    component: () => import('../views/PlayerProfile.vue'),
+  },
   // Admin routes
   {
     path: '/admin/users',

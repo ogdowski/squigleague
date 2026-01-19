@@ -103,19 +103,11 @@
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label class="block text-sm font-medium text-gray-300 mb-2">Group Phase Ends</label>
-              <input
-                v-model="form.group_phase_end"
-                type="datetime-local"
-                class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-              />
+              <DateHourPicker v-model="form.group_phase_end" />
             </div>
             <div v-if="league?.has_knockout_phase">
               <label class="block text-sm font-medium text-gray-300 mb-2">Knockout Ends</label>
-              <input
-                v-model="form.knockout_phase_end"
-                type="datetime-local"
-                class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-              />
+              <DateHourPicker v-model="form.knockout_phase_end" />
             </div>
           </div>
 
@@ -198,6 +190,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
+import DateHourPicker from '@/components/DateHourPicker.vue'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()

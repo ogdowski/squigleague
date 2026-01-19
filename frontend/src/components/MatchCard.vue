@@ -1,12 +1,15 @@
 <template>
   <div
     :class="[
-      'card cursor-pointer hover:brightness-110 transition-all py-3',
+      'card hover:brightness-110 transition-all py-3',
       resultClass
     ]"
   >
     <div class="flex items-center justify-between">
-      <div class="flex-1">
+      <router-link
+        :to="`/league/${leagueId}/match/${match.id}`"
+        class="flex-1 cursor-pointer"
+      >
         <div class="flex items-center gap-4">
           <span class="font-bold">{{ match.player1_username }}</span>
           <span v-if="match.player1_score !== null" class="text-2xl font-bold text-squig-yellow">
@@ -22,9 +25,15 @@
           </span>
           <span v-if="match.map_name"> | Map: {{ match.map_name }}</span>
         </div>
-      </div>
+      </router-link>
       <div class="flex items-center gap-2">
-        <span v-if="canEdit" class="text-xs text-gray-500">Click to edit</span>
+        <button
+          v-if="canEdit"
+          @click.stop="$emit('edit', match)"
+          class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded"
+        >
+          Edit
+        </button>
         <div
           :class="matchStatusClass(match.status)"
           class="px-3 py-1 rounded text-sm"
@@ -44,6 +53,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  leagueId: {
+    type: [Number, String],
+    required: true,
+  },
   canEdit: {
     type: Boolean,
     default: false,
@@ -57,6 +70,8 @@ const props = defineProps({
     default: null,
   },
 })
+
+defineEmits(['edit'])
 
 const resultClass = computed(() => {
   if (!props.currentPlayerId || props.match.player1_score === null) {

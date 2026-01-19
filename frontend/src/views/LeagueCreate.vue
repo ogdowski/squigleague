@@ -26,12 +26,7 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-300 mb-2">Registration End</label>
-        <input
-          v-model="form.registration_end"
-          type="datetime-local"
-          required
-          class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-        />
+        <DateHourPicker v-model="form.registration_end" required />
       </div>
 
       <!-- Player Limits -->
@@ -138,6 +133,44 @@
         </select>
       </div>
 
+      <!-- Army Lists -->
+      <div class="border-t border-gray-700 pt-6">
+        <h3 class="text-lg font-semibold mb-3">Army Lists</h3>
+        <p class="text-xs text-gray-500 mb-4">Choose when players need to submit army lists.</p>
+
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <input
+              v-model="form.has_group_phase_lists"
+              @change="onGroupListsChange"
+              type="checkbox"
+              id="has_group_lists"
+              class="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-squig-yellow"
+            />
+            <label for="has_group_lists" class="text-sm font-medium text-gray-300">
+              Group Phase Lists
+              <span class="text-xs text-gray-500 block">Players submit lists before league starts</span>
+            </label>
+          </div>
+
+          <div v-if="form.has_knockout_phase" class="flex items-center gap-3">
+            <input
+              v-model="form.has_knockout_phase_lists"
+              type="checkbox"
+              id="has_knockout_lists"
+              :disabled="form.has_group_phase_lists"
+              class="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-squig-yellow disabled:opacity-50"
+            />
+            <label for="has_knockout_lists" class="text-sm font-medium text-gray-300">
+              Knockout Phase Lists
+              <span class="text-xs text-gray-500 block">
+                {{ form.has_group_phase_lists ? 'Auto-enabled when group lists are on' : 'Players submit lists after group phase ends' }}
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <div v-if="error" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
         {{ error }}
       </div>
@@ -157,6 +190,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import DateHourPicker from '@/components/DateHourPicker.vue'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const router = useRouter()
@@ -172,10 +206,18 @@ const form = ref({
   days_per_match: 14,
   has_knockout_phase: true,
   knockout_size: null,
+  has_group_phase_lists: false,
+  has_knockout_phase_lists: true,
 })
 
 const submitting = ref(false)
 const error = ref('')
+
+const onGroupListsChange = () => {
+  if (form.value.has_group_phase_lists) {
+    form.value.has_knockout_phase_lists = true
+  }
+}
 
 const createLeague = async () => {
   submitting.value = true
@@ -193,6 +235,8 @@ const createLeague = async () => {
       days_per_match: form.value.days_per_match,
       has_knockout_phase: form.value.has_knockout_phase,
       knockout_size: form.value.has_knockout_phase ? form.value.knockout_size : null,
+      has_group_phase_lists: form.value.has_group_phase_lists,
+      has_knockout_phase_lists: form.value.has_knockout_phase ? form.value.has_knockout_phase_lists : false,
     }
 
     const response = await axios.post(`${API_URL}/league`, payload)

@@ -19,6 +19,9 @@ class LeagueCreate(BaseModel):
     knockout_size: Optional[int] = Field(
         default=None
     )  # 2, 4, 8, 16, 32 or None for auto
+    # Army lists configuration
+    has_group_phase_lists: bool = Field(default=False)
+    has_knockout_phase_lists: bool = Field(default=True)
 
 
 class LeagueUpdate(BaseModel):
@@ -61,6 +64,12 @@ class LeagueResponse(BaseModel):
     days_per_match: int
     has_knockout_phase: bool
     knockout_size: Optional[int]
+    # Army lists
+    has_group_phase_lists: bool
+    has_knockout_phase_lists: bool
+    group_lists_frozen: bool
+    group_lists_visible: bool
+    knockout_lists_frozen: bool
     knockout_lists_visible: bool
     current_knockout_round: Optional[str]
     created_at: datetime
@@ -124,7 +133,11 @@ class LeaguePlayerResponse(BaseModel):
     discord_username: Optional[str]
     username: Optional[str] = None
     joined_at: datetime
+    group_army_faction: Optional[str] = None
+    group_list_submitted: bool = False
+    knockout_army_faction: Optional[str] = None
     knockout_list_submitted: bool = False
+    knockout_placement: Optional[str] = None  # "1", "2", "top_4", "top_8", etc.
 
     class Config:
         from_attributes = True
@@ -133,22 +146,26 @@ class LeaguePlayerResponse(BaseModel):
 class StandingsEntry(BaseModel):
     position: int
     player_id: int
+    user_id: Optional[int] = None  # User ID for profile link (None if external player)
     username: Optional[str]
     discord_username: Optional[str]
+    army_faction: Optional[str] = None  # Current phase army faction
     games_played: int
     games_won: int
     games_drawn: int
     games_lost: int
     total_points: int
     average_points: float
-    qualifies: bool = False  # True if this position advances to knockout
+    qualifies: bool = False  # True if guaranteed to advance
+    qualifies_as_runner_up: bool = False  # True if qualifies as "best runner-up"
 
 
 class GroupStandings(BaseModel):
     group_id: int
     group_name: str
     standings: list[StandingsEntry]
-    qualifying_spots: int = 0  # How many from this group advance
+    qualifying_spots: int = 0  # Guaranteed spots per group
+    runner_up_spots: int = 0  # Extra spots for best runners-up across all groups
 
 
 # ============ Match Schemas ============
@@ -160,6 +177,11 @@ class MatchResultSubmit(BaseModel):
     map_name: Optional[str] = None
 
 
+class MatchMapSet(BaseModel):
+    map_name: Optional[str] = None  # If None, random map will be assigned
+    random: bool = False  # If True, assign random map
+
+
 class MatchResponse(BaseModel):
     id: int
     league_id: int
@@ -167,6 +189,8 @@ class MatchResponse(BaseModel):
     player2_id: int
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    player1_army_faction: Optional[str] = None
+    player2_army_faction: Optional[str] = None
     group_id: Optional[int] = None
     group_name: Optional[str] = None
     phase: str
@@ -181,9 +205,56 @@ class MatchResponse(BaseModel):
     submitted_by_id: Optional[int] = None
     created_at: datetime
     is_completed: bool
+    # Army lists (visible based on league settings)
+    player1_army_list: Optional[str] = None
+    player2_army_list: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class MatchDetailResponse(BaseModel):
+    """Full match details including ELO changes."""
+
+    id: int
+    league_id: int
+    league_name: str
+    # Players
+    player1_id: int
+    player2_id: int
+    player1_user_id: Optional[int] = None
+    player2_user_id: Optional[int] = None
+    player1_username: Optional[str] = None
+    player2_username: Optional[str] = None
+    player1_army_faction: Optional[str] = None
+    player2_army_faction: Optional[str] = None
+    player1_army_list: Optional[str] = None
+    player2_army_list: Optional[str] = None
+    # Match info
+    phase: str
+    knockout_round: Optional[str] = None
+    group_name: Optional[str] = None
+    player1_score: Optional[int] = None
+    player2_score: Optional[int] = None
+    player1_league_points: Optional[int] = None
+    player2_league_points: Optional[int] = None
+    status: str
+    map_name: Optional[str] = None
+    deadline: Optional[datetime] = None
+    # ELO changes
+    player1_elo_before: Optional[int] = None
+    player1_elo_after: Optional[int] = None
+    player2_elo_before: Optional[int] = None
+    player2_elo_after: Optional[int] = None
+    # Metadata
+    submitted_by_id: Optional[int] = None
+    submitted_at: Optional[datetime] = None
+    confirmed_by_id: Optional[int] = None
+    confirmed_at: Optional[datetime] = None
+    created_at: datetime
+    # Permissions (for current user)
+    can_edit: bool = False
+    can_set_map: bool = False
 
 
 class BracketMatch(BaseModel):
@@ -204,18 +275,25 @@ class KnockoutBracket(BaseModel):
     rounds: dict[str, list[BracketMatch]]
 
 
-# ============ Knockout List Schemas ============
+# ============ Army List Schemas ============
 
 
-class KnockoutListSubmit(BaseModel):
+class ArmyListSubmit(BaseModel):
+    army_faction: str = Field(min_length=1, max_length=50)
     army_list: str = Field(min_length=1)
 
 
-class KnockoutListResponse(BaseModel):
+class ArmyListResponse(BaseModel):
     player_id: int
     username: Optional[str]
+    army_faction: Optional[str]
     army_list: Optional[str]
     submitted_at: Optional[datetime]
+
+
+# Legacy alias for backward compatibility
+KnockoutListSubmit = ArmyListSubmit
+KnockoutListResponse = ArmyListResponse
 
 
 # ============ ELO Schemas ============
@@ -238,3 +316,76 @@ class EloRanking(BaseModel):
     username: Optional[str]
     elo: int
     games_played: int
+
+
+# ============ Player Profile Schemas ============
+
+
+class ProfileMatchResponse(BaseModel):
+    """Match info for player profile."""
+
+    match_id: int
+    phase: str
+    knockout_round: Optional[str]
+    opponent_id: int
+    opponent_username: Optional[str]
+    player_score: Optional[int]
+    opponent_score: Optional[int]
+    player_league_points: Optional[int]
+    result: Optional[str]  # "win", "loss", "draw", None (not played)
+    status: str
+    played_at: Optional[datetime]
+    # Army list (only if visible)
+    player_army_list: Optional[str] = None
+    opponent_army_list: Optional[str] = None
+
+
+class ProfileLeagueResponse(BaseModel):
+    """League participation info for player profile."""
+
+    league_id: int
+    league_name: str
+    league_status: str
+    # Player stats in this league
+    games_played: int
+    games_won: int
+    games_drawn: int
+    games_lost: int
+    total_points: int
+    average_points: float
+    # Knockout list for this league (if visible)
+    knockout_army_list: Optional[str] = None
+    knockout_list_submitted: bool = False
+    # Final placement in knockout (if applicable)
+    knockout_placement: Optional[str] = None  # "1", "2", "top_4", etc.
+    # Matches in this league
+    matches: list[ProfileMatchResponse]
+
+
+class ArmyStatEntry(BaseModel):
+    """Stats for a single army faction."""
+
+    army_faction: str
+    games_played: int
+    percentage: float
+
+
+class PlayerProfileResponse(BaseModel):
+    """Full player profile with matches and ELO."""
+
+    user_id: int
+    username: str
+    # ELO info
+    elo: int
+    elo_games_played: int
+    # Global stats (aggregated across all leagues)
+    total_games: int
+    total_wins: int
+    total_draws: int
+    total_losses: int
+    win_rate: float
+    # Army stats
+    most_played_army: Optional[str] = None
+    army_stats: list[ArmyStatEntry] = []
+    # Leagues participation (matches grouped by league)
+    leagues: list[ProfileLeagueResponse]

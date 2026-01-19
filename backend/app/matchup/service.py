@@ -1,29 +1,14 @@
 import random
 from datetime import datetime
 
+from app.league.constants import MISSION_MAPS
 from app.matchup.models import Matchup
 from sqlmodel import Session
-
-# Hardcoded maps from GHB 2025/2026 (will be replaced with BSData later)
-MAPS = [
-    "Passing Seasons",
-    "Paths of the Fey",
-    "Roiling Roots",
-    "Cyclic Shifts",
-    "Surge of Slaughter",
-    "Linked Ley Lines",
-    "Noxious Nexus",
-    "The Liferoots",
-    "Bountiful Equinox",
-    "Lifecycle",
-    "Creeping Corruption",
-    "Grasp of Thorns",
-]
 
 
 def draw_random_map() -> str:
     """Draw a random map from the available maps."""
-    return random.choice(MAPS)
+    return random.choice(MISSION_MAPS)
 
 
 def reveal_matchup(matchup: Matchup, session: Session) -> Matchup:

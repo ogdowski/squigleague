@@ -158,6 +158,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  leagueId: {
+    type: [Number, String],
+    required: true,
+  },
   currentRound: {
     type: String,
     default: null,

@@ -127,15 +127,95 @@
           >
             Finish League
           </button>
+          <!-- Group list actions -->
           <button
-            v-if="league.status === 'knockout_phase' && !league.knockout_lists_visible"
+            v-if="league.has_group_phase_lists && !league.group_lists_frozen && league.status === 'registration'"
+            @click="freezeGroupLists"
+            class="btn-secondary"
+            :disabled="actionLoading"
+          >
+            Freeze Group Lists
+          </button>
+          <button
+            v-if="league.has_group_phase_lists && league.group_lists_frozen && !league.group_lists_visible"
+            @click="revealGroupLists"
+            class="btn-secondary"
+            :disabled="actionLoading"
+          >
+            Reveal Group Lists
+          </button>
+          <!-- Knockout list actions -->
+          <button
+            v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_frozen"
+            @click="freezeKnockoutLists"
+            class="btn-secondary"
+            :disabled="actionLoading"
+          >
+            Freeze Knockout Lists
+          </button>
+          <button
+            v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_visible"
             @click="showRevealListsModal = true"
             class="btn-secondary"
             :disabled="actionLoading"
           >
-            Reveal Lists
+            Reveal Knockout Lists
           </button>
         </template>
+      </div>
+
+      <!-- Army List Submission (for players) -->
+      <div v-if="isJoined && canSubmitList" class="card mb-8">
+        <h3 class="text-lg font-semibold mb-3">
+          {{ listSubmissionPhase === 'group' ? 'Group Phase Army List' : 'Knockout Phase Army List' }}
+        </h3>
+        <p class="text-sm text-gray-400 mb-4">
+          <template v-if="listSubmissionPhase === 'group'">
+            Submit your army list before the league starts. Lists will be revealed by the organizer.
+          </template>
+          <template v-else>
+            Submit your army list for the knockout phase.
+          </template>
+        </p>
+
+        <div v-if="currentPlayerListSubmitted" class="mb-4 p-3 bg-green-900/20 border border-green-600 rounded">
+          <p class="text-green-300 text-sm">List submitted!</p>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-300 mb-2">Army Faction</label>
+          <select
+            v-model="armyFactionForm"
+            class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
+            :disabled="listIsFrozen"
+          >
+            <option value="">Select your army...</option>
+            <option v-for="faction in armyFactions" :key="faction" :value="faction">{{ faction }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Army List</label>
+          <textarea
+            v-model="armyListForm"
+            rows="8"
+            class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow font-mono text-sm"
+            placeholder="Paste your army list here..."
+            :disabled="listIsFrozen"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-between mt-4">
+          <p v-if="listIsFrozen" class="text-sm text-yellow-400">Lists are frozen - no more changes allowed.</p>
+          <button
+            v-if="!listIsFrozen"
+            @click="submitArmyList"
+            class="btn-primary"
+            :disabled="submittingList || !armyListForm.trim() || !armyFactionForm"
+          >
+            {{ submittingList ? 'Submitting...' : (currentPlayerListSubmitted ? 'Update List' : 'Submit List') }}
+          </button>
+        </div>
       </div>
 
       <!-- Tabs -->
@@ -152,6 +232,21 @@
       </div>
 
       <!-- Tab Content -->
+
+      <!-- Registration Phase - Show registered players -->
+      <div v-if="league.status === 'registration'" class="card mb-6">
+        <h2 class="text-xl font-bold mb-4">Registered Players ({{ players.length }})</h2>
+        <div v-if="players.length === 0" class="text-gray-500">No players registered yet.</div>
+        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-3 py-2">
+            <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow">
+              {{ player.username || player.discord_username }}
+            </router-link>
+            <span v-else>{{ player.username || player.discord_username }}</span>
+          </div>
+        </div>
+      </div>
+
       <div v-if="activeTab === 'standings'" class="space-y-6">
         <div v-for="group in standings" :key="group.group_id" class="card">
           <div class="flex justify-between items-center mb-4">
@@ -189,7 +284,13 @@
                     <span v-if="entry.qualifies" class="text-green-400">{{ entry.position }}</span>
                     <span v-else>{{ entry.position }}</span>
                   </td>
-                  <td class="py-2 px-2">{{ entry.username || entry.discord_username }}</td>
+                  <td class="py-2 px-2">
+                    <router-link v-if="entry.user_id" :to="`/player/${entry.user_id}`" class="hover:text-squig-yellow">
+                      {{ entry.username || entry.discord_username }}
+                    </router-link>
+                    <span v-else>{{ entry.username || entry.discord_username }}</span>
+                    <span v-if="entry.army_faction" class="ml-2 text-xs text-gray-500">({{ entry.army_faction }})</span>
+                  </td>
                   <td class="py-2 px-2 text-center">{{ entry.games_played }}</td>
                   <td class="py-2 px-2 text-center text-green-400">{{ entry.games_won }}</td>
                   <td class="py-2 px-2 text-center text-yellow-400">{{ entry.games_drawn }}</td>
@@ -231,10 +332,11 @@
               v-for="match in knockoutMatches"
               :key="match.id"
               :match="match"
+              :league-id="league.id"
               :can-edit="canEditMatch(match)"
               :current-player-id="currentUserPlayerId"
               :show-round="true"
-              @click="openMatchModal(match)"
+              @edit="openMatchModal"
             />
           </div>
         </div>
@@ -265,9 +367,10 @@
                 v-for="match in group.myMatches"
                 :key="match.id"
                 :match="match"
+                :league-id="league.id"
                 :can-edit="canEditMatch(match)"
                 :current-player-id="currentUserPlayerId"
-                @click="openMatchModal(match)"
+                @edit="openMatchModal"
               />
             </div>
 
@@ -278,9 +381,10 @@
                 v-for="match in group.otherMatches"
                 :key="match.id"
                 :match="match"
+                :league-id="league.id"
                 :can-edit="canEditMatch(match)"
                 :current-player-id="currentUserPlayerId"
-                @click="openMatchModal(match)"
+                @edit="openMatchModal"
               />
             </div>
           </div>
@@ -296,6 +400,7 @@
                 <th class="text-left py-2 px-2">Group</th>
                 <th class="text-center py-2 px-2">Games</th>
                 <th class="text-right py-2 px-2">Points</th>
+                <th v-if="showKnockoutPlacement" class="text-center py-2 px-2">Knockout</th>
               </tr>
             </thead>
             <tbody>
@@ -308,12 +413,21 @@
                 ]"
               >
                 <td class="py-2 px-2">
-                  <span>{{ player.username || player.discord_username }}</span>
+                  <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow">
+                    {{ player.username || player.discord_username }}
+                  </router-link>
+                  <span v-else>{{ player.username || player.discord_username }}</span>
                   <span v-if="player.wouldQualify" class="ml-2 text-xs text-green-400" title="Would advance to knockout">Q</span>
                 </td>
                 <td class="py-2 px-2">{{ player.group_name || '-' }}</td>
                 <td class="py-2 px-2 text-center text-gray-400">{{ player.games_played }}</td>
                 <td class="py-2 px-2 text-right font-bold">{{ player.total_points }}</td>
+                <td v-if="showKnockoutPlacement" class="py-2 px-2 text-center">
+                  <span v-if="player.knockout_placement" :class="placementClass(player.knockout_placement)">
+                    {{ formatPlacement(player.knockout_placement) }}
+                  </span>
+                  <span v-else class="text-gray-600">-</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -351,11 +465,12 @@
         <KnockoutBracket
           v-if="knockoutMatches.length > 0 || qualifiedPlayers.length >= 2"
           :matches="knockoutMatches"
+          :league-id="league.id"
           :current-round="league.current_knockout_round"
           :knockout-size="league.knockout_size || league.total_qualifying_spots"
           :qualified-players="qualifiedPlayers"
           :is-preview="knockoutMatches.length === 0"
-          @match-click="openMatchModal"
+          @match-click="navigateToMatch"
         />
 
         <!-- Not enough qualified players yet -->
@@ -559,32 +674,22 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import MatchCard from '../components/MatchCard.vue'
 import KnockoutBracket from '../components/KnockoutBracket.vue'
+import { ARMY_FACTIONS } from '../constants/armies'
+import { MISSION_MAPS } from '../constants/maps'
+
+const armyFactions = ARMY_FACTIONS
+const missionMaps = MISSION_MAPS
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
-
-// GHB 2025/2026 missions
-const missionMaps = [
-  "Passing Seasons",
-  "Paths of the Fey",
-  "Roiling Roots",
-  "Cyclic Shifts",
-  "Surge of Slaughter",
-  "Linked Ley Lines",
-  "Noxious Nexus",
-  "The Liferoots",
-  "Bountiful Equinox",
-  "Lifecycle",
-  "Creeping Corruption",
-  "Grasp of Thorns",
-]
 
 const loading = ref(true)
 const error = ref('')
@@ -617,6 +722,11 @@ const scoreForm = ref({
 
 // Track which groups are expanded in matches view
 const expandedGroups = ref({})
+
+// Army list submission
+const armyFactionForm = ref('')
+const armyListForm = ref('')
+const submittingList = ref(false)
 
 const showActionError = (message) => {
   actionError.value = message
@@ -658,6 +768,54 @@ const currentUserPlayerId = computed(() => {
   if (!authStore.user) return null
   const player = players.value.find(p => p.user_id === authStore.user.id)
   return player?.id || null
+})
+
+// Get current user's player object
+const currentPlayer = computed(() => {
+  if (!authStore.user) return null
+  return players.value.find(p => p.user_id === authStore.user.id)
+})
+
+// Determine which phase allows list submission
+const listSubmissionPhase = computed(() => {
+  if (!league.value) return null
+  // During registration: group lists
+  if (league.value.status === 'registration' && league.value.has_group_phase_lists) {
+    return 'group'
+  }
+  // After group phase ended, before/during knockout: knockout lists
+  if (league.value.has_knockout_phase_lists &&
+      (league.value.group_phase_ended || league.value.status === 'knockout_phase')) {
+    return 'knockout'
+  }
+  return null
+})
+
+// Can current user submit a list?
+const canSubmitList = computed(() => {
+  if (!league.value || !listSubmissionPhase.value) return false
+  if (listSubmissionPhase.value === 'group') {
+    return !league.value.group_lists_frozen
+  }
+  return !league.value.knockout_lists_frozen
+})
+
+// Is the current list frozen?
+const listIsFrozen = computed(() => {
+  if (!league.value || !listSubmissionPhase.value) return true
+  if (listSubmissionPhase.value === 'group') {
+    return league.value.group_lists_frozen
+  }
+  return league.value.knockout_lists_frozen
+})
+
+// Has current player submitted their list for current phase?
+const currentPlayerListSubmitted = computed(() => {
+  if (!currentPlayer.value || !listSubmissionPhase.value) return false
+  if (listSubmissionPhase.value === 'group') {
+    return currentPlayer.value.group_list_submitted
+  }
+  return currentPlayer.value.knockout_list_submitted
 })
 
 // Check if match involves current user
@@ -810,6 +968,27 @@ const sortedPlayers = computed(() => {
   return allPlayers
 })
 
+// Show knockout placement column when league is in knockout or finished
+const showKnockoutPlacement = computed(() => {
+  if (!league.value?.has_knockout_phase) return false
+  return league.value.status === 'knockout_phase' || league.value.status === 'finished'
+})
+
+// Format placement for display
+const formatPlacement = (placement) => {
+  if (placement === '1') return '1st'
+  if (placement === '2') return '2nd'
+  return placement.replace('top_', 'Top ')
+}
+
+// Class for placement badge
+const placementClass = (placement) => {
+  if (placement === '1') return 'text-yellow-400 font-bold'
+  if (placement === '2') return 'text-gray-300 font-bold'
+  if (placement === 'top_4') return 'text-orange-400'
+  return 'text-gray-400'
+}
+
 // Can org/admin confirm/unlock matches
 const canConfirmMatch = computed(() => {
   if (!authStore.user || !league.value) return false
@@ -902,6 +1081,13 @@ const openMatchModal = (match) => {
     custom_map: isStandardMap ? '' : existingMap,
   }
   showMatchModal.value = true
+}
+
+// Navigate to match detail page (for bracket clicks)
+const navigateToMatch = (match) => {
+  if (match.status !== 'preview') {
+    router.push(`/league/${league.value.id}/match/${match.id}`)
+  }
 }
 
 const getMapNameForSubmit = () => {
@@ -1059,6 +1245,66 @@ const revealLists = async () => {
     showActionError(err.response?.data?.detail || 'Failed to reveal lists')
   } finally {
     actionLoading.value = false
+  }
+}
+
+const freezeGroupLists = async () => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/freeze-group-lists`)
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to freeze group lists')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const revealGroupLists = async () => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/reveal-group-lists`)
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to reveal group lists')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const freezeKnockoutLists = async () => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/freeze-lists`)
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to freeze knockout lists')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const submitArmyList = async () => {
+  submittingList.value = true
+  actionError.value = ''
+  try {
+    const endpoint = listSubmissionPhase.value === 'group'
+      ? `${API_URL}/league/${league.value.id}/group-list`
+      : `${API_URL}/league/${league.value.id}/knockout-list`
+    await axios.post(endpoint, {
+      army_faction: armyFactionForm.value,
+      army_list: armyListForm.value
+    })
+    // Refresh players to update submitted status
+    const playersRes = await axios.get(`${API_URL}/league/${league.value.id}/players`)
+    players.value = playersRes.data
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to submit army list')
+  } finally {
+    submittingList.value = false
   }
 }
 

@@ -62,8 +62,29 @@ class League(SQLModel, table=True):
     # knockout_size: 2, 4, 8, 16, 32 or None for auto
     knockout_size: Optional[int] = Field(default=None)
 
+    # Army lists configuration
+    has_group_phase_lists: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
+    has_knockout_phase_lists: bool = Field(
+        default=True, sa_column_kwargs={"server_default": "true"}
+    )
+
+    # Group phase lists - frozen (no edits by players) and visible
+    group_lists_frozen: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
+    group_lists_visible: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
+
     # Knockout phase - are army lists visible?
     knockout_lists_visible: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
+
+    # Knockout phase - are army lists frozen (no more edits)?
+    knockout_lists_frozen: bool = Field(
         default=False, sa_column_kwargs={"server_default": "false"}
     )
 
@@ -112,7 +133,13 @@ class LeaguePlayer(SQLModel, table=True):
     # Group assignment (null before draw)
     group_id: Optional[int] = Field(default=None, foreign_key="groups.id", index=True)
 
+    # Army list for group phase
+    group_army_faction: Optional[str] = Field(default=None, max_length=50)
+    group_army_list: Optional[str] = None
+    group_list_submitted_at: Optional[datetime] = None
+
     # Army list for knockout phase
+    knockout_army_faction: Optional[str] = Field(default=None, max_length=50)
     knockout_army_list: Optional[str] = None
     knockout_list_submitted_at: Optional[datetime] = None
 
@@ -128,6 +155,9 @@ class LeaguePlayer(SQLModel, table=True):
         default=False, sa_column_kwargs={"server_default": "false"}
     )
     discord_username: Optional[str] = Field(default=None, max_length=100)
+
+    # Knockout placement: "1", "2", "top_4", "top_8", "top_16", "top_32"
+    knockout_placement: Optional[str] = Field(default=None, max_length=20)
 
     joined_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -185,6 +215,12 @@ class Match(SQLModel, table=True):
 
     # Map
     map_name: Optional[str] = Field(default=None, max_length=100)
+
+    # ELO changes (set on confirmation)
+    player1_elo_before: Optional[int] = None
+    player1_elo_after: Optional[int] = None
+    player2_elo_before: Optional[int] = None
+    player2_elo_after: Optional[int] = None
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

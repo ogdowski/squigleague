@@ -5,7 +5,7 @@ import random
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.league.elo import update_elo_after_match
+from app.league.elo import get_or_create_player_elo, update_elo_after_match
 from app.league.models import Group, League, LeaguePlayer, Match, PlayerElo
 from app.league.scoring import calculate_match_points
 from sqlmodel import Session, select
@@ -435,6 +435,12 @@ def confirm_match_result(
     player2 = session.scalars(statement).first()
 
     if player1 and player2 and player1.user_id and player2.user_id:
+        # Get ELO before update
+        p1_elo = get_or_create_player_elo(session, player1.user_id)
+        p2_elo = get_or_create_player_elo(session, player2.user_id)
+        match.player1_elo_before = p1_elo.elo
+        match.player2_elo_before = p2_elo.elo
+
         update_elo_after_match(
             session,
             player1.user_id,
@@ -442,6 +448,37 @@ def confirm_match_result(
             match.player1_score,
             match.player2_score,
         )
+
+        # Get ELO after update
+        session.refresh(p1_elo)
+        session.refresh(p2_elo)
+        match.player1_elo_after = p1_elo.elo
+        match.player2_elo_after = p2_elo.elo
+
+    # Set knockout placement for loser (and winner if final)
+    if match.phase == "knockout" and player1 and player2:
+        # Determine winner and loser
+        if match.player1_score > match.player2_score:
+            winner, loser = player1, player2
+        else:
+            winner, loser = player2, player1
+
+        # Map knockout round to placement
+        placement_map = {
+            "final": "2",
+            "semi": "top_4",
+            "quarter": "top_8",
+            "round_of_16": "top_16",
+            "round_of_32": "top_32",
+        }
+        loser_placement = placement_map.get(match.knockout_round, "top_32")
+        loser.knockout_placement = loser_placement
+        session.add(loser)
+
+        # If final, also set winner placement
+        if match.knockout_round == "final":
+            winner.knockout_placement = "1"
+            session.add(winner)
 
     session.add(match)
     session.commit()
@@ -507,21 +544,64 @@ def get_qualified_players(session: Session, league: League) -> list[LeaguePlayer
     """
     Gets players who qualified for the knockout phase.
 
-    Uses league.knockout_size to determine the number of qualifiers.
-    If knockout_size is not set, calculates automatically.
+    Takes top X players from each group + best runners-up if needed.
+
+    Examples:
+    - 2 groups, top 4: 2 per group (evenly divides)
+    - 3 groups, top 4: 1st places (3) + best 2nd place (1)
+    - 5 groups, top 8: 1st places (5) + 3 best 2nd places
+    - 6 groups, top 8: 1st places (6) + 2 best 2nd places
 
     Returns:
-        List of players sorted by results (best first), trimmed to knockout_size
+        List of qualified players sorted by results (best first for seeding)
     """
+    # Get groups
+    groups = session.scalars(select(Group).where(Group.league_id == league.id)).all()
+    num_groups = len(groups)
+
+    if num_groups == 0:
+        return []
+
+    # Calculate knockout size
     player_count = get_league_player_count(session, league.id)
-    knockout_size = calculate_knockout_size(player_count, league.knockout_size)
+    knockout_size = league.knockout_size
+    if knockout_size is None:
+        knockout_size = calculate_knockout_size(player_count)
+    knockout_size = min(knockout_size, player_count)
 
-    statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league.id)
-    all_players = list(session.scalars(statement).all())
+    # Calculate guaranteed spots per group and extra spots for best runners-up
+    guaranteed_per_group = knockout_size // num_groups
+    extra_spots = knockout_size % num_groups
 
-    all_players.sort(key=lambda p: (-p.total_points, p.games_played, -p.average_points))
+    if guaranteed_per_group == 0:
+        # Edge case: more groups than knockout spots - just take best players globally
+        guaranteed_per_group = 0
+        extra_spots = knockout_size
 
-    return all_players[:knockout_size]
+    qualified = []
+    runners_up = []
+
+    for group in groups:
+        group_players = get_group_standings(session, group.id)
+
+        # Take guaranteed qualifiers from each group
+        qualified.extend(group_players[:guaranteed_per_group])
+
+        # Collect potential runners-up (next position after guaranteed spots)
+        if extra_spots > 0 and len(group_players) > guaranteed_per_group:
+            runners_up.append(group_players[guaranteed_per_group])
+
+    # Sort runners-up by points and take the best ones
+    if extra_spots > 0 and runners_up:
+        runners_up.sort(
+            key=lambda p: (-p.total_points, p.games_played, -p.average_points)
+        )
+        qualified.extend(runners_up[:extra_spots])
+
+    # Sort all qualified players for seeding (best first)
+    qualified.sort(key=lambda p: (-p.total_points, p.games_played, -p.average_points))
+
+    return qualified
 
 
 def get_knockout_round_names(knockout_size: int) -> list[str]:
