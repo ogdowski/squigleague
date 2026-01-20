@@ -10,7 +10,7 @@ from app.matchup.schemas import (
     MatchupStatus,
     MatchupSubmit,
 )
-from app.matchup.service import get_map_image, get_battle_plan_data, submit_list
+from app.matchup.service import get_battle_plan_data, get_map_image, submit_list
 from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, func, select
