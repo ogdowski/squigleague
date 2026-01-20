@@ -8,6 +8,10 @@ class MatchupCreate(BaseModel):
     """Schema for creating a new matchup with Player 1's list."""
 
     army_list: str = Field(min_length=10, max_length=10000)
+    is_public: bool = Field(default=True)
+    player2_username: Optional[str] = Field(
+        default=None, description="Username of player 2 to assign"
+    )
 
 
 class MatchupSubmit(BaseModel):
@@ -23,6 +27,7 @@ class MatchupStatus(BaseModel):
     player1_submitted: bool
     player2_submitted: bool
     is_revealed: bool
+    is_public: bool = True
     created_at: datetime
     expires_at: datetime
     player1_username: Optional[str] = None
@@ -32,6 +37,12 @@ class MatchupStatus(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MatchupPublicToggle(BaseModel):
+    """Schema for toggling matchup public visibility."""
+
+    is_public: bool
 
 
 class MatchupReveal(BaseModel):

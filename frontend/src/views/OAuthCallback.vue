@@ -54,9 +54,13 @@ onMounted(async () => {
     // Initialize auth (sets axios headers)
     authStore.initAuth()
 
-    // Redirect to home
+    // Check for stored redirect URL
+    const redirectUrl = sessionStorage.getItem('auth_redirect') || '/'
+    sessionStorage.removeItem('auth_redirect')
+
+    // Redirect to stored URL or home
     setTimeout(() => {
-      router.push('/')
+      router.push(redirectUrl)
     }, 500)
   } catch (err) {
     loading.value = false

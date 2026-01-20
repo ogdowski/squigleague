@@ -281,8 +281,8 @@
       <div v-if="league.status === 'registration'" class="card mb-6">
         <h2 class="text-xl font-bold mb-4">{{ t('leagueDetail.registeredPlayers', { count: players.length }) }}</h2>
         <div v-if="players.length === 0" class="text-gray-500">{{ t('leagueDetail.noPlayersRegistered') }}</div>
-        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-3 py-2 flex items-center gap-2">
+        <div v-else class="space-y-2">
+          <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-4 py-3 flex items-center gap-3">
             <!-- Avatar thumbnail -->
             <div v-if="player.avatar_url" class="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
               <img :src="player.avatar_url" :alt="player.username" class="w-full h-full object-cover" />
@@ -741,6 +741,27 @@
       @cancel="showRemovePlayerModal = false"
     />
 
+    <!-- Login Prompt Modal -->
+    <div v-if="showLoginPromptModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold mb-4">{{ t('leagueDetail.loginRequired') }}</h3>
+        <p class="text-gray-300 mb-6">
+          {{ t('leagueDetail.loginRequiredMessage') }}
+        </p>
+        <div class="flex gap-3">
+          <button @click="showLoginPromptModal = false" class="flex-1 btn-secondary">
+            {{ t('leagueDetail.cancel') }}
+          </button>
+          <router-link :to="`/login?redirect=${encodeURIComponent($route.fullPath)}`" class="flex-1 btn-primary text-center">
+            {{ t('auth.login') }}
+          </router-link>
+          <router-link :to="`/register?redirect=${encodeURIComponent($route.fullPath)}`" class="flex-1 btn-secondary text-center">
+            {{ t('auth.register') }}
+          </router-link>
+        </div>
+      </div>
+    </div>
+
     <!-- Change Group Modal -->
     <div v-if="showChangeGroupModal && selectedPlayerForAction" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
@@ -1022,6 +1043,9 @@ const submittingScore = ref(false)
 
 // Leave league modal
 const showLeaveLeagueModal = ref(false)
+
+// Login prompt modal (for unauthenticated users trying to join)
+const showLoginPromptModal = ref(false)
 
 // Player management modals
 const showRemovePlayerModal = ref(false)
@@ -1711,13 +1735,24 @@ const fetchLeague = async () => {
 }
 
 const joinLeague = async () => {
+  // Check if user is authenticated first
+  if (!authStore.isAuthenticated) {
+    showLoginPromptModal.value = true
+    return
+  }
+
   joining.value = true
   actionError.value = ''
   try {
     await axios.post(`${API_URL}/league/${league.value.id}/join`)
     await fetchLeague()
   } catch (err) {
-    showActionError(err.response?.data?.detail || 'Failed to join')
+    // Handle 401 error with login prompt
+    if (err.response?.status === 401) {
+      showLoginPromptModal.value = true
+    } else {
+      showActionError(err.response?.data?.detail || 'Failed to join')
+    }
   } finally {
     joining.value = false
   }
@@ -2121,10 +2156,10 @@ const statusClass = (status) => {
 
 const statusText = (status) => {
   switch (status) {
-    case 'registration': return 'Registration'
-    case 'group_phase': return 'Group Phase'
-    case 'knockout_phase': return 'Knockout'
-    case 'finished': return 'Finished'
+    case 'registration': return t('leagueDetail.statusRegistration')
+    case 'group_phase': return t('leagueDetail.statusGroupPhase')
+    case 'knockout_phase': return t('leagueDetail.statusKnockout')
+    case 'finished': return t('leagueDetail.statusFinished')
     default: return status
   }
 }

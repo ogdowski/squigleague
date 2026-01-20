@@ -167,6 +167,22 @@
               </div>
             </div>
           </div>
+
+          <!-- Public visibility toggle (only for participants) -->
+          <div v-if="isParticipant" class="mt-6 pt-6 border-t border-gray-700">
+            <div class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isPublicToggle"
+                :checked="matchup.is_public"
+                @change="togglePublic"
+                class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
+              />
+              <label for="isPublicToggle" class="text-sm text-gray-300">
+                {{ t('matchups.showInPublicList') }}
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -177,10 +193,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
 import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
 
@@ -193,6 +211,15 @@ const armyList = ref('')
 const submitting = ref(false)
 const submitError = ref('')
 const submitSuccess = ref(false)
+
+// Check if current user is a participant
+const isParticipant = computed(() => {
+  if (!authStore.isAuthenticated || !authStore.user || !matchup.value) {
+    return false
+  }
+  const username = authStore.user.username
+  return matchup.value.player1_username === username || matchup.value.player2_username === username
+})
 
 // Build battle plan object from reveal data (comes from API)
 const revealBattlePlan = computed(() => {
@@ -263,6 +290,19 @@ const submitList = async () => {
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleString()
+}
+
+const togglePublic = async () => {
+  if (!matchup.value) return
+  try {
+    const newValue = !matchup.value.is_public
+    await axios.patch(`${API_URL}/matchup/${route.params.name}/public`, {
+      is_public: newValue
+    })
+    matchup.value.is_public = newValue
+  } catch (err) {
+    console.error('Failed to toggle public:', err)
+  }
 }
 
 onMounted(() => {
