@@ -15,7 +15,10 @@
       <div class="flex justify-between items-start mb-6">
         <div>
           <h1 class="text-3xl font-bold text-squig-yellow mb-2">{{ league.name }}</h1>
-          <p v-if="league.description" class="text-gray-400">{{ league.description }}</p>
+          <p v-if="league.description" class="text-gray-400 mb-1">{{ league.description }}</p>
+          <p v-if="league.organizer_name" class="text-sm text-gray-500">
+            {{ t('leagueDetail.organizer') }}: <span class="text-gray-300">{{ league.organizer_name }}</span>
+          </p>
         </div>
         <div class="flex items-center gap-3">
           <!-- Join League Button (prominent) -->
@@ -1543,19 +1546,20 @@ const canConfirmMatchInList = (match) => {
   if (isOrgOrAdmin) return true
 
   // Check if user is the opponent (not the one who submitted)
-  const userPlayer = players.value.find(p => p.user_id === authStore.user.id)
-  if (!userPlayer) return false
+  const currentUserId = authStore.user.id
 
-  const isPlayer1 = userPlayer.id === match.player1_id
-  const isPlayer2 = userPlayer.id === match.player2_id
+  // Check if current user is player1 or player2 (using user_id, not league_player_id)
+  const isPlayer1 = match.player1_user_id === currentUserId
+  const isPlayer2 = match.player2_user_id === currentUserId
 
   if (!isPlayer1 && !isPlayer2) return false
 
   // Can confirm if they are the opponent of whoever submitted
-  // submitted_by_id is the player who submitted the score
+  // submitted_by_id is the USER ID of whoever submitted
   if (match.submitted_by_id) {
-    return (isPlayer1 && match.submitted_by_id === match.player2_id) ||
-           (isPlayer2 && match.submitted_by_id === match.player1_id)
+    // If player1 submitted, only player2 can confirm (and vice versa)
+    return (isPlayer1 && match.submitted_by_id === match.player2_user_id) ||
+           (isPlayer2 && match.submitted_by_id === match.player1_user_id)
   }
 
   return false

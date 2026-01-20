@@ -5,7 +5,8 @@
     "loading": "Loading...",
     "saving": "Saving...",
     "comingSoon": "Coming Soon",
-    "stayTuned": "Stay Tuned"
+    "stayTuned": "Stay Tuned",
+    "close": "Close"
   },
   "home": {
     "subtitle": "A toolset for Age of Sigmar players and tournament organizers. Manage leagues, exchange army lists safely, and more.",
@@ -22,6 +23,7 @@
   "nav": {
     "leagues": "Leagues",
     "matchups": "Matchups",
+    "ranking": "Players",
     "admin": "Admin",
     "profile": "Profile",
     "settings": "Settings",
@@ -164,10 +166,28 @@
     "vs": "vs",
     "failedToLoad": "Failed to load profile"
   },
+  "ranking": {
+    "title": "Players",
+    "activePlayers": "Active Players",
+    "totalPlayers": "Players",
+    "totalGames": "League Games",
+    "topArmies": "Most Popular Armies",
+    "searchPlaceholder": "Search by username...",
+    "leaderboard": "Leaderboard (League Games)",
+    "noPlayers": "No players found",
+    "newPlayers": "New Players",
+    "games": "league games",
+    "loadMore": "Load More",
+    "failedToLoad": "Failed to load ranking"
+  },
   "footer": {
     "copyright": "All Rights Reserved.",
     "leagues": "leagues",
-    "exchanges": "exchanges"
+    "exchanges": "exchanges",
+    "feedback": "Share feedback",
+    "feedbackInfo": "Have suggestions or found a bug? Get in touch!",
+    "or": "or",
+    "onDiscord": "on Discord"
   },
   "auth": {
     "login": "Login",
@@ -210,6 +230,7 @@
     "leaveLeague": "Leave League",
     "loginRequired": "Login Required",
     "loginRequiredMessage": "Only registered users can join leagues. Would you like to login or create an account?",
+    "organizer": "Tournament Organizer",
     "statusRegistration": "Registration",
     "statusGroupPhase": "Group Phase",
     "statusKnockout": "Knockout",

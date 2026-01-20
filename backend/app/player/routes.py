@@ -1,8 +1,10 @@
 """API endpoints for player profiles."""
 
+from collections import Counter
+
 from app.core.deps import get_current_user_optional
 from app.db import get_session
-from app.league.models import League, LeaguePlayer, Match, PlayerElo
+from app.league.models import ArmyStats, League, LeaguePlayer, Match, PlayerElo
 from app.league.schemas import (
     ArmyStatEntry,
     PlayerProfileResponse,
@@ -10,10 +12,166 @@ from app.league.schemas import (
     ProfileMatchResponse,
 )
 from app.users.models import User
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlmodel import Session, func, select
 
 router = APIRouter()
+
+
+@router.get("/ranking")
+async def get_player_ranking(
+    session: Session = Depends(get_session),
+    search: str = Query(default=None, min_length=1),
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    """Get player ranking by ELO with optional search and global stats."""
+    # Get all league players for W/D/L stats and army info
+    all_league_players = session.scalars(select(LeaguePlayer)).all()
+
+    # Build user stats map
+    user_stats = {}  # user_id -> {wins, draws, losses, armies: Counter}
+    for lp in all_league_players:
+        if not lp.user_id:
+            continue
+        if lp.user_id not in user_stats:
+            user_stats[lp.user_id] = {
+                "wins": 0,
+                "draws": 0,
+                "losses": 0,
+                "armies": Counter(),
+            }
+        user_stats[lp.user_id]["wins"] += lp.games_won or 0
+        user_stats[lp.user_id]["draws"] += lp.games_drawn or 0
+        user_stats[lp.user_id]["losses"] += lp.games_lost or 0
+        if lp.group_army_faction:
+            user_stats[lp.user_id]["armies"][lp.group_army_faction] += 1
+        if lp.knockout_army_faction:
+            user_stats[lp.user_id]["armies"][lp.knockout_army_faction] += 1
+
+    # Build query for ranking (players with games)
+    query = (
+        select(PlayerElo, User)
+        .join(User, PlayerElo.user_id == User.id)
+        .where(PlayerElo.games_played > 0)
+        .order_by(PlayerElo.elo.desc(), PlayerElo.games_played.desc())
+    )
+
+    # Apply search filter if provided
+    if search:
+        query = query.where(User.username.ilike(f"%{search}%"))
+
+    # Get total count before pagination
+    count_query = select(func.count(PlayerElo.id)).where(PlayerElo.games_played > 0)
+    if search:
+        count_query = count_query.join(User, PlayerElo.user_id == User.id).where(
+            User.username.ilike(f"%{search}%")
+        )
+    total_count = session.execute(count_query).scalar_one()
+
+    # Apply pagination
+    query = query.offset(offset).limit(limit)
+    results = session.execute(query).all()
+
+    # Build ranking list
+    ranking = []
+    for idx, (elo_record, user) in enumerate(results):
+        stats_data = user_stats.get(
+            user.id, {"wins": 0, "draws": 0, "losses": 0, "armies": Counter()}
+        )
+        main_army = (
+            stats_data["armies"].most_common(1)[0][0] if stats_data["armies"] else None
+        )
+        ranking.append(
+            {
+                "rank": offset + idx + 1,
+                "user_id": user.id,
+                "username": user.username,
+                "avatar_url": user.avatar_url,
+                "elo": elo_record.elo,
+                "games_played": elo_record.games_played,
+                "wins": stats_data["wins"],
+                "draws": stats_data["draws"],
+                "losses": stats_data["losses"],
+                "main_army": main_army,
+            }
+        )
+
+    # Get players without games
+    new_players = []
+    if not search or offset == 0:
+        # Get users without ELO record or with 0 games
+        users_with_elo = session.scalars(
+            select(PlayerElo.user_id).where(PlayerElo.games_played > 0)
+        ).all()
+
+        new_players_query = select(User).where(User.id.not_in(users_with_elo))
+        if search:
+            new_players_query = new_players_query.where(
+                User.username.ilike(f"%{search}%")
+            )
+        new_players_query = new_players_query.order_by(User.username).limit(50)
+
+        new_users = session.scalars(new_players_query).all()
+        for user in new_users:
+            new_players.append(
+                {
+                    "user_id": user.id,
+                    "username": user.username,
+                    "avatar_url": user.avatar_url,
+                }
+            )
+
+    # Get global stats (only when not searching, for efficiency)
+    stats = None
+    if not search:
+        # Total registered users
+        total_users = session.execute(select(func.count(User.id))).scalar_one()
+
+        # Total players with games
+        total_active = session.execute(
+            select(func.count(PlayerElo.id)).where(PlayerElo.games_played > 0)
+        ).scalar_one()
+
+        # Total games from all players
+        total_games = (
+            session.execute(select(func.sum(PlayerElo.games_played))).scalar_one() or 0
+        )
+        # Divide by 2 because each game is counted for both players
+        total_games = total_games // 2
+
+        # Most popular armies - get from cached ArmyStats
+        army_stats_records = session.scalars(
+            select(ArmyStats).order_by(ArmyStats.games_played.desc()).limit(5)
+        ).all()
+
+        top_armies = [
+            {
+                "faction": s.faction,
+                "count": s.games_played,
+                "wins": s.wins,
+                "draws": s.draws,
+                "losses": s.losses,
+                "win_rate": (
+                    round(s.wins / s.games_played * 100, 1) if s.games_played > 0 else 0
+                ),
+            }
+            for s in army_stats_records
+        ]
+
+        stats = {
+            "total_players": total_active,
+            "total_users": total_users,
+            "total_games": total_games,
+            "top_armies": top_armies,
+        }
+
+    return {
+        "ranking": ranking,
+        "new_players": new_players,
+        "total_count": total_count,
+        "stats": stats,
+    }
 
 
 @router.get("/{user_id}/profile", response_model=PlayerProfileResponse)

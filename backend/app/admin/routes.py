@@ -19,6 +19,7 @@ from app.league.elo import (
     set_setting,
 )
 from app.league.models import LeaguePlayer
+from app.league.service import recalculate_all_army_stats
 from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
@@ -181,3 +182,16 @@ async def update_elo_settings(
         new_player_k=get_new_player_k_factor(session),
         new_player_games=get_new_player_games_threshold(session),
     )
+
+
+@router.post("/recalculate-army-stats")
+async def recalculate_army_stats(
+    session: Session = Depends(get_session),
+    _: User = Depends(get_admin),
+):
+    """Recalculates all army statistics from confirmed matches. Admin only."""
+    result = recalculate_all_army_stats(session)
+    return {
+        "message": "Army stats recalculated successfully",
+        **result,
+    }

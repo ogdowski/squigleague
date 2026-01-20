@@ -33,6 +33,8 @@ def create_db_and_tables():
     # Import all models here to ensure they're registered
     from app.league.models import (  # noqa: F401
         AppSettings,
+        ArmyMatchupStats,
+        ArmyStats,
         Group,
         League,
         LeaguePlayer,

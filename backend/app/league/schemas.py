@@ -76,6 +76,7 @@ class LeagueResponse(BaseModel):
     finished_at: Optional[datetime] = None
     player_count: Optional[int] = None
     is_registration_open: bool = False
+    organizer_name: Optional[str] = None
     # Computed fields for display
     qualifying_spots_per_group: Optional[int] = None
     total_qualifying_spots: Optional[int] = None
@@ -217,6 +218,8 @@ class MatchResponse(BaseModel):
     league_id: int
     player1_id: int
     player2_id: int
+    player1_user_id: Optional[int] = None
+    player2_user_id: Optional[int] = None
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
     player1_avatar: Optional[str] = None

@@ -6,14 +6,6 @@ const routes = [
     path: '/',
     name: 'Home',
     component: () => import('../views/Home.vue'),
-    beforeEnter: (to, from, next) => {
-      const authStore = useAuthStore()
-      if (authStore.isAuthenticated) {
-        next('/leagues')
-      } else {
-        next()
-      }
-    },
   },
   {
     path: '/login',
@@ -77,6 +69,11 @@ const routes = [
     component: () => import('../views/MatchDetail.vue'),
   },
   // Player routes
+  {
+    path: '/ranking',
+    name: 'PlayerRanking',
+    component: () => import('../views/PlayerRanking.vue'),
+  },
   {
     path: '/player/:userId',
     name: 'PlayerProfile',

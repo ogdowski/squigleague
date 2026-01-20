@@ -192,12 +192,18 @@ async def get_league(
     player_count = get_league_player_count(session, league_id)
     spots_per_group, total_spots = get_qualifying_info(session, league)
 
+    # Get organizer name
+    organizer = session.scalars(
+        select(User).where(User.id == league.organizer_id)
+    ).first()
+
     return LeagueResponse(
         **league.__dict__,
         player_count=player_count,
         is_registration_open=league.is_registration_open,
         qualifying_spots_per_group=spots_per_group if spots_per_group > 0 else None,
         total_qualifying_spots=total_spots if total_spots > 0 else None,
+        organizer_name=organizer.username if organizer else None,
     )
 
 
@@ -1140,6 +1146,8 @@ async def list_matches(
                 league_id=match.league_id,
                 player1_id=match.player1_id,
                 player2_id=match.player2_id,
+                player1_user_id=p1.user_id if p1 else None,
+                player2_user_id=p2.user_id if p2 else None,
                 player1_username=p1_username,
                 player2_username=p2_username,
                 player1_avatar=p1_avatar,

@@ -269,3 +269,36 @@ class AppSettings(SQLModel, table=True):
     key: str = Field(unique=True, index=True, max_length=50)
     value: str = Field(max_length=500)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ArmyStats(SQLModel, table=True):
+    """Cached army faction statistics updated after each match."""
+
+    __tablename__ = "army_stats"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    faction: str = Field(unique=True, index=True, max_length=100)
+
+    games_played: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    wins: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    draws: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    losses: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ArmyMatchupStats(SQLModel, table=True):
+    """Cached faction vs faction statistics (excludes mirror matches)."""
+
+    __tablename__ = "army_matchup_stats"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    faction: str = Field(index=True, max_length=100)
+    opponent_faction: str = Field(index=True, max_length=100)
+
+    games_played: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    wins: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    draws: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+    losses: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
+
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
