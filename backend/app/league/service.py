@@ -491,17 +491,37 @@ def confirm_match_result(
 
 def get_group_standings(session: Session, group_id: int) -> list[LeaguePlayer]:
     """
-    Gets group standings sorted by points.
+    Gets group standings sorted by points with minimum games requirement.
+
+    In a group of N players, each player can play max N-1 games.
+    Minimum required games = max_games - 1 (you can skip one match).
+    E.g. in 4-player group: max=3, min required=2
 
     Sorting:
-    1. Total points (descending)
-    2. Games played (ascending - fewer unplayed = better)
-    3. Average points (descending)
+    1. Players who met minimum games requirement ranked above those who didn't
+    2. Total points (descending)
+    3. Games played (descending - more games played = better tiebreaker)
+    4. Average points (descending)
     """
     statement = select(LeaguePlayer).where(LeaguePlayer.group_id == group_id)
     players = list(session.scalars(statement).all())
 
-    players.sort(key=lambda p: (-p.total_points, p.games_played, -p.average_points))
+    group_size = len(players)
+    max_games = group_size - 1  # In 4-player group, max 3 games
+    min_required_games = max(
+        1, max_games - 1
+    )  # Can skip 1 match, so min = 2 for 4-player group
+
+    def sorting_key(player):
+        meets_minimum = player.games_played >= min_required_games
+        return (
+            not meets_minimum,  # Those who meet minimum first
+            -player.total_points,
+            -player.games_played,  # More games = better (descending)
+            -player.average_points,
+        )
+
+    players.sort(key=sorting_key)
 
     return players
 

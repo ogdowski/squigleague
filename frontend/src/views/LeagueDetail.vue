@@ -1275,12 +1275,13 @@ const knockoutMatches = computed(() => {
   return matches.value.filter(m => m.phase === 'knockout')
 })
 
-// Qualified players list (for knockout tab)
+// Qualified players list (for knockout tab bracket preview)
+// Shows current top players in qualifying positions - actual qualification check happens when starting knockout
 const qualifiedPlayers = computed(() => {
   const spots = league.value?.qualifying_spots_per_group || 0
   if (!spots || !league.value?.has_knockout_phase) return []
 
-  // Get qualifying players from each group
+  // Get qualifying players from each group (based on standings which already use min games rule)
   const qualified = []
   for (const group of standings.value) {
     const groupQualified = group.standings
@@ -1295,6 +1296,7 @@ const qualifiedPlayers = computed(() => {
   // Sort by total points (best seed first)
   qualified.sort((a, b) => {
     if (b.total_points !== a.total_points) return b.total_points - a.total_points
+    if (b.games_played !== a.games_played) return b.games_played - a.games_played
     return b.average_points - a.average_points
   })
 
@@ -1367,11 +1369,24 @@ const sortedPlayers = computed(() => {
   for (const groupKey of Object.keys(groups)) {
     if (groupKey === 'ungrouped') continue
     const groupPlayers = groups[groupKey]
+    const groupSize = groupPlayers.length
+    const maxGames = groupSize - 1
+    const minRequiredGames = Math.max(1, maxGames - 1)
+
+    // Sort: players with min required games first, then by points, games played, avg points
     groupPlayers.sort((a, b) => {
+      const aMeetsMin = a.games_played >= minRequiredGames
+      const bMeetsMin = b.games_played >= minRequiredGames
+      // Players who meet minimum ranked above those who don't
+      if (aMeetsMin !== bMeetsMin) return bMeetsMin - aMeetsMin
+      // Then by total points
       if (b.total_points !== a.total_points) return b.total_points - a.total_points
+      // Then by games played (more = better)
+      if (b.games_played !== a.games_played) return b.games_played - a.games_played
+      // Then by average points
       return b.average_points - a.average_points
     })
-    // Mark top N as qualifying (only if they have played games)
+    // Mark top N as qualifying (must have at least 1 game played)
     groupPlayers.forEach((p, idx) => {
       if (hasKnockout && qualifyingSpots > 0 && idx < qualifyingSpots && p.games_played > 0) {
         qualifyingPlayerIds.add(p.id)
