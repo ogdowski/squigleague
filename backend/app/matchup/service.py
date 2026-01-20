@@ -1,9 +1,19 @@
 import random
 from datetime import datetime
 
-from app.league.constants import MISSION_MAPS
+from app.league.constants import BATTLE_PLAN_DATA, MAP_IMAGES, MISSION_MAPS
 from app.matchup.models import Matchup
 from sqlmodel import Session
+
+
+def get_map_image(map_name: str) -> str | None:
+    """Get battle plan image filename for a map name."""
+    return MAP_IMAGES.get(map_name)
+
+
+def get_battle_plan_data(map_name: str) -> dict | None:
+    """Get full battle plan data for a map name."""
+    return BATTLE_PLAN_DATA.get(map_name)
 
 
 def draw_random_map() -> str:

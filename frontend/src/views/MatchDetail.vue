@@ -79,13 +79,14 @@
       <!-- Map Section -->
       <div class="card mb-6">
         <h2 class="text-xl font-bold mb-4">Map</h2>
-        <div v-if="match.map_name" class="bg-gray-900 p-6 rounded text-center mb-4">
-          <p class="text-2xl font-bold text-squig-yellow">{{ match.map_name }}</p>
-        </div>
-        <div v-else class="text-gray-500 mb-4">No map selected</div>
+        <BattlePlanDisplay
+          :map-name="match.map_name"
+          :map-image="mapImage"
+          :battle-plan="battlePlan"
+        />
 
         <!-- Map controls (when can edit and not confirmed) -->
-        <div v-if="match.can_set_map && match.status !== 'confirmed'" class="space-y-3">
+        <div v-if="match.can_set_map && match.status !== 'confirmed'" class="space-y-3 mt-4">
           <p class="text-sm text-gray-400">{{ match.map_name ? 'Change map:' : 'Select map:' }}</p>
           <div class="flex gap-3">
             <button @click="randomizeMap" :disabled="settingMap" class="btn-primary">
@@ -93,7 +94,7 @@
             </button>
             <select v-model="selectedMap" class="flex-1 bg-gray-700 border border-gray-600 rounded px-4 py-2">
               <option value="">Select map...</option>
-              <option v-for="m in AOS_MAPS" :key="m" :value="m">{{ m }}</option>
+              <option v-for="m in availableMaps" :key="m" :value="m">{{ m }}</option>
             </select>
             <button @click="setMap" :disabled="!selectedMap || settingMap" class="btn-secondary">Set</button>
           </div>
@@ -172,7 +173,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
-import { MISSION_MAPS } from '@/constants/maps'
+import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
+import { fetchMapsData } from '@/constants/maps'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
@@ -188,7 +190,17 @@ const resultForm = ref({ player1_score: 0, player2_score: 0 })
 const submitting = ref(false)
 const submitError = ref('')
 
-const AOS_MAPS = MISSION_MAPS
+// Maps data from API
+const mapsData = ref(null)
+const availableMaps = computed(() => mapsData.value?.maps || [])
+const mapImage = computed(() => {
+  if (!match.value?.map_name || !mapsData.value?.images) return null
+  return mapsData.value.images[match.value.map_name]
+})
+const battlePlan = computed(() => {
+  if (!match.value?.map_name || !mapsData.value?.battle_plans) return null
+  return mapsData.value.battle_plans[match.value.map_name]
+})
 
 const fetchMatch = async () => {
   loading.value = true
@@ -291,5 +303,8 @@ const submitResult = async () => {
   }
 }
 
-onMounted(fetchMatch)
+onMounted(async () => {
+  mapsData.value = await fetchMapsData()
+  await fetchMatch()
+})
 </script>

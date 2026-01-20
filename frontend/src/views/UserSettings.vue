@@ -174,7 +174,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const authStore = useAuthStore()
 
 const loading = ref(true)

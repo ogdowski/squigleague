@@ -983,10 +983,13 @@ import ConfirmModal from '../components/ConfirmModal.vue'
 import MatchCard from '../components/MatchCard.vue'
 import KnockoutBracket from '../components/KnockoutBracket.vue'
 import { ARMY_FACTIONS } from '../constants/armies'
-import { MISSION_MAPS } from '../constants/maps'
+import { fetchMapsData } from '../constants/maps'
 
 const armyFactions = ARMY_FACTIONS
-const missionMaps = MISSION_MAPS
+
+// Maps data from API
+const mapsData = ref(null)
+const missionMaps = computed(() => mapsData.value?.maps || [])
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
@@ -2136,7 +2139,8 @@ const knockoutRoundText = (round) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  mapsData.value = await fetchMapsData()
   fetchLeague()
 })
 </script>

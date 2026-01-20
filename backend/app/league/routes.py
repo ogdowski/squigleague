@@ -1240,14 +1240,15 @@ async def get_match_detail(
                 p2_army_list = player2.group_army_list
 
     # Determine permissions
-    is_participant = (
+    is_participant = bool(
         current_user
         and player1
         and player2
         and (current_user.id == player1.user_id or current_user.id == player2.user_id)
     )
-    is_org_or_admin = current_user and (
-        current_user.id == league.organizer_id or current_user.role == "admin"
+    is_org_or_admin = bool(
+        current_user
+        and (current_user.id == league.organizer_id or current_user.role == "admin")
     )
     can_edit = (is_participant or is_org_or_admin) and match.status != "confirmed"
     can_set_map = is_participant or is_org_or_admin

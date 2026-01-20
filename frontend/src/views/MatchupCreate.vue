@@ -113,7 +113,7 @@ Created with Sigdex: sigdex.io"
 import { ref } from 'vue'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const armyList = ref('')
 const loading = ref(false)

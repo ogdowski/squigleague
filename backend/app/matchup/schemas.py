@@ -27,6 +27,8 @@ class MatchupStatus(BaseModel):
     expires_at: datetime
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    player1_avatar: Optional[str] = None
+    player2_avatar: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -39,9 +41,17 @@ class MatchupReveal(BaseModel):
     player1_list: str
     player2_list: str
     map_name: str
+    map_image: Optional[str] = None
+    deployment: Optional[str] = None
+    objectives: Optional[str] = None
+    scoring: Optional[str] = None
+    underdog_ability: Optional[str] = None
+    objective_types: Optional[list[str]] = None
     revealed_at: datetime
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    player1_avatar: Optional[str] = None
+    player2_avatar: Optional[str] = None
 
     class Config:
         from_attributes = True
