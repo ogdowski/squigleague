@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-4xl mx-auto">
-    <div v-if="loading" class="text-center py-12">Loading match...</div>
+    <div v-if="loading" class="text-center py-12">{{ t('matchDetail.loadingMatch') }}</div>
     <div v-else-if="error" class="card bg-red-900/30 border border-red-500 text-red-200">{{ error }}</div>
     <div v-else-if="match">
       <!-- Header -->
@@ -55,7 +55,7 @@
               </span>
             </div>
             <div v-if="match.player1_league_points !== null && match.status === 'confirmed'" class="text-sm mt-1">
-              <span class="text-gray-400">League Points:</span>
+              <span class="text-gray-400">{{ t('matchDetail.leaguePoints') }}:</span>
               <span class="ml-1 text-squig-yellow font-semibold">+{{ match.player1_league_points }}</span>
             </div>
           </div>
@@ -95,7 +95,7 @@
               </span>
             </div>
             <div v-if="match.player2_league_points !== null && match.status === 'confirmed'" class="text-sm mt-1">
-              <span class="text-gray-400">League Points:</span>
+              <span class="text-gray-400">{{ t('matchDetail.leaguePoints') }}:</span>
               <span class="ml-1 text-squig-yellow font-semibold">+{{ match.player2_league_points }}</span>
             </div>
           </div>
@@ -104,7 +104,7 @@
 
       <!-- Map Section -->
       <div class="card mb-6">
-        <h2 class="text-xl font-bold mb-4">Map</h2>
+        <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.map') }}</h2>
         <BattlePlanDisplay
           :map-name="match.map_name"
           :map-image="mapImage"
@@ -113,23 +113,23 @@
 
         <!-- Map controls (when can edit and not confirmed) -->
         <div v-if="match.can_set_map && match.status !== 'confirmed'" class="space-y-3 mt-4">
-          <p class="text-sm text-gray-400">{{ match.map_name ? 'Change map:' : 'Select map:' }}</p>
+          <p class="text-sm text-gray-400">{{ match.map_name ? t('matchDetail.changeMap') : t('matchDetail.selectMap') }}</p>
           <div class="flex gap-3">
             <button @click="randomizeMap" :disabled="settingMap" class="btn-primary">
-              {{ settingMap ? 'Rolling...' : 'Random Map' }}
+              {{ settingMap ? t('matchDetail.rolling') : t('matchDetail.randomMap') }}
             </button>
             <select v-model="selectedMap" class="flex-1 bg-gray-700 border border-gray-600 rounded px-4 py-2">
-              <option value="">Select map...</option>
+              <option value="">{{ t('matchDetail.selectMapPlaceholder') }}</option>
               <option v-for="m in availableMaps" :key="m" :value="m">{{ m }}</option>
             </select>
-            <button @click="setMap" :disabled="!selectedMap || settingMap" class="btn-secondary">Set</button>
+            <button @click="setMap" :disabled="!selectedMap || settingMap" class="btn-secondary">{{ t('matchDetail.set') }}</button>
           </div>
         </div>
       </div>
 
       <!-- Army Lists -->
       <div v-if="match.player1_army_list || match.player2_army_list" class="card mb-6">
-        <h2 class="text-xl font-bold mb-4">Army Lists</h2>
+        <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.armyLists') }}</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div v-if="match.player1_army_list">
             <h3 class="font-semibold mb-2">{{ match.player1_username }}</h3>
@@ -148,45 +148,45 @@
 
       <!-- Submit Result (if can edit) -->
       <div v-if="match.can_edit && match.status !== 'confirmed'" class="card mb-6">
-        <h2 class="text-xl font-bold mb-4">Submit Result</h2>
+        <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.submitResult') }}</h2>
         <form @submit.prevent="submitResult" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm text-gray-400 mb-1">{{ match.player1_username }} Score</label>
+              <label class="block text-sm text-gray-400 mb-1">{{ match.player1_username }} {{ t('matchDetail.score') }}</label>
               <input v-model.number="resultForm.player1_score" type="number" min="0" required
                      class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" />
             </div>
             <div>
-              <label class="block text-sm text-gray-400 mb-1">{{ match.player2_username }} Score</label>
+              <label class="block text-sm text-gray-400 mb-1">{{ match.player2_username }} {{ t('matchDetail.score') }}</label>
               <input v-model.number="resultForm.player2_score" type="number" min="0" required
                      class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" />
             </div>
           </div>
           <div v-if="submitError" class="text-red-400 text-sm">{{ submitError }}</div>
           <button type="submit" :disabled="submitting" class="btn-primary w-full">
-            {{ submitting ? 'Submitting...' : 'Submit Result' }}
+            {{ submitting ? t('matchDetail.submitting') : t('matchDetail.submitResult') }}
           </button>
         </form>
       </div>
 
       <!-- Match Info -->
       <div class="card">
-        <h2 class="text-xl font-bold mb-4">Match Info</h2>
+        <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.matchInfo') }}</h2>
         <div class="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span class="text-gray-400">Phase:</span>
-            <span class="ml-2">{{ match.phase === 'knockout' ? 'Knockout' : 'Group' }}</span>
+            <span class="text-gray-400">{{ t('matchDetail.phase') }}:</span>
+            <span class="ml-2">{{ match.phase === 'knockout' ? t('matchDetail.knockout') : t('matchDetail.group') }}</span>
           </div>
           <div v-if="match.deadline">
-            <span class="text-gray-400">Deadline:</span>
+            <span class="text-gray-400">{{ t('matchDetail.deadline') }}:</span>
             <span class="ml-2">{{ formatDate(match.deadline) }}</span>
           </div>
           <div v-if="match.submitted_at">
-            <span class="text-gray-400">Result submitted:</span>
+            <span class="text-gray-400">{{ t('matchDetail.resultSubmitted') }}:</span>
             <span class="ml-2">{{ formatDate(match.submitted_at) }}</span>
           </div>
           <div v-if="match.confirmed_at">
-            <span class="text-gray-400">Confirmed:</span>
+            <span class="text-gray-400">{{ t('matchDetail.confirmed') }}:</span>
             <span class="ml-2">{{ formatDate(match.confirmed_at) }}</span>
           </div>
         </div>
@@ -198,10 +198,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
 import { fetchMapsData } from '@/constants/maps'
 
+const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
 
@@ -235,7 +237,7 @@ const fetchMatch = async () => {
     const res = await axios.get(`${API_URL}/league/${route.params.leagueId}/matches/${route.params.matchId}`)
     match.value = res.data
   } catch (err) {
-    error.value = err.response?.data?.detail || 'Failed to load match'
+    error.value = err.response?.data?.detail || t('matchDetail.failedToLoad')
   } finally {
     loading.value = false
   }
@@ -252,10 +254,10 @@ const statusClass = computed(() => {
 const statusLabel = computed(() => {
   if (!match.value) return ''
   const labels = {
-    scheduled: 'Scheduled',
-    pending_confirmation: 'Pending Confirmation',
-    confirmed: 'Confirmed',
-    disputed: 'Disputed',
+    scheduled: t('matchDetail.statusScheduled'),
+    pending_confirmation: t('matchDetail.statusPendingConfirmation'),
+    confirmed: t('matchDetail.statusConfirmed'),
+    disputed: t('matchDetail.statusDisputed'),
   }
   return labels[match.value.status] || match.value.status
 })
@@ -276,11 +278,11 @@ const p2ScoreClass = computed(() => {
 
 const formatKnockoutRound = (round) => {
   const labels = {
-    final: 'Final',
-    semi: 'Semi-Final',
-    quarter: 'Quarter-Final',
-    round_of_16: 'Round of 16',
-    round_of_32: 'Round of 32',
+    final: t('matchDetail.final'),
+    semi: t('matchDetail.semiFinal'),
+    quarter: t('matchDetail.quarterFinal'),
+    round_of_16: t('matchDetail.roundOf16'),
+    round_of_32: t('matchDetail.roundOf32'),
   }
   return labels[round] || round
 }
@@ -323,7 +325,7 @@ const submitResult = async () => {
     await axios.post(`${API_URL}/league/${route.params.leagueId}/matches/${route.params.matchId}/result`, resultForm.value)
     await fetchMatch()
   } catch (err) {
-    submitError.value = err.response?.data?.detail || 'Failed to submit result'
+    submitError.value = err.response?.data?.detail || t('matchDetail.failedToSubmit')
   } finally {
     submitting.value = false
   }

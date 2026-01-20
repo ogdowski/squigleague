@@ -1,26 +1,26 @@
 <template>
   <div class="max-w-2xl mx-auto">
     <div v-if="loading" class="text-center py-12">
-      <p class="text-xl text-gray-300">Loading...</p>
+      <p class="text-xl text-gray-300">{{ t('common.loading') }}</p>
     </div>
 
     <div v-else-if="!canEdit" class="card">
       <div class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
-        You don't have permission to edit this league.
+        {{ t('leagueSettings.noPermission') }}
       </div>
     </div>
 
     <div v-else>
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold">League Settings</h1>
+        <h1 class="text-3xl font-bold">{{ t('leagueSettings.title') }}</h1>
         <router-link :to="`/league/${leagueId}`" class="text-gray-400 hover:text-white">
-          Back to League
+          {{ t('leagueSettings.backToLeague') }}
         </router-link>
       </div>
 
       <form @submit.prevent="saveSettings" class="card space-y-6">
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">League Name</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.leagueName') }}</label>
           <input
             v-model="form.name"
             type="text"
@@ -30,7 +30,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.description') }}</label>
           <textarea
             v-model="form.description"
             rows="3"
@@ -39,7 +39,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Days per Match</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.daysPerMatch') }}</label>
           <input
             v-model.number="form.days_per_match"
             type="number"
@@ -47,24 +47,24 @@
             max="60"
             class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
           />
-          <p class="text-xs text-gray-500 mt-1">Time allowed for each match round</p>
+          <p class="text-xs text-gray-500 mt-1">{{ t('leagueSettings.daysPerMatchNote') }}</p>
         </div>
 
         <div v-if="league?.has_knockout_phase">
           <div class="flex items-center gap-2 mb-2">
-            <label class="block text-sm font-medium text-gray-300">Knockout Size</label>
+            <label class="block text-sm font-medium text-gray-300">{{ t('leagueSettings.knockoutSize') }}</label>
             <div class="relative group">
               <svg class="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" stroke-width="2"/>
                 <path stroke-width="2" d="M12 16v-4m0-4h.01"/>
               </svg>
               <div class="absolute left-6 top-0 w-64 p-3 bg-gray-800 border border-gray-600 rounded shadow-lg text-xs text-gray-300 hidden group-hover:block z-10">
-                <p class="font-semibold mb-2">Knockout size limits:</p>
+                <p class="font-semibold mb-2">{{ t('leagueSettings.knockoutSizeLimits') }}</p>
                 <ul class="space-y-1">
-                  <li>4-7 players: Top 2 only</li>
-                  <li>8-15 players: max Top 8</li>
-                  <li>16-47 players: max Top 16</li>
-                  <li>48+ players: max Top 32</li>
+                  <li>{{ t('leagueSettings.players4to7') }}</li>
+                  <li>{{ t('leagueSettings.players8to15') }}</li>
+                  <li>{{ t('leagueSettings.players16to47') }}</li>
+                  <li>{{ t('leagueSettings.players48plus') }}</li>
                 </ul>
               </div>
             </div>
@@ -73,40 +73,40 @@
             v-model="form.knockout_size"
             class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
           >
-            <option :value="null">Auto (based on player count)</option>
-            <option :value="2">Top 2 (Final only)</option>
-            <option :value="4">Top 4</option>
-            <option :value="8">Top 8</option>
-            <option :value="16">Top 16</option>
-            <option :value="32">Top 32</option>
+            <option :value="null">{{ t('leagueSettings.autoBasedOnPlayers') }}</option>
+            <option :value="2">{{ t('leagueSettings.top2FinalOnly') }}</option>
+            <option :value="4">{{ t('leagueSettings.top4') }}</option>
+            <option :value="8">{{ t('leagueSettings.top8') }}</option>
+            <option :value="16">{{ t('leagueSettings.top16') }}</option>
+            <option :value="32">{{ t('leagueSettings.top32') }}</option>
           </select>
         </div>
 
         <!-- Status (for finishing league) -->
         <div v-if="league?.status !== 'registration'">
-          <label class="block text-sm font-medium text-gray-300 mb-2">League Status</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.leagueStatus') }}</label>
           <select
             v-model="form.status"
             class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
           >
-            <option value="group_phase">Group Phase</option>
-            <option value="knockout_phase">Knockout Phase</option>
-            <option value="finished">Finished</option>
+            <option value="group_phase">{{ t('leagues.groupPhase') }}</option>
+            <option value="knockout_phase">{{ t('leagues.knockoutPhase') }}</option>
+            <option value="finished">{{ t('leagues.finished') }}</option>
           </select>
         </div>
 
         <!-- Phase Dates (editable) -->
         <div v-if="league?.status !== 'registration'" class="border-t border-gray-700 pt-6">
-          <h3 class="text-lg font-semibold mb-3">Phase Dates</h3>
-          <p class="text-xs text-gray-500 mb-4">These dates are informational only. Phase transitions are manual.</p>
+          <h3 class="text-lg font-semibold mb-3">{{ t('leagueSettings.phaseDates') }}</h3>
+          <p class="text-xs text-gray-500 mb-4">{{ t('leagueSettings.phaseDatesNote') }}</p>
 
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Group Phase Ends</label>
+              <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.groupPhaseEnds') }}</label>
               <DateHourPicker v-model="form.group_phase_end" />
             </div>
             <div v-if="league?.has_knockout_phase">
-              <label class="block text-sm font-medium text-gray-300 mb-2">Knockout Ends</label>
+              <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.knockoutEnds') }}</label>
               <DateHourPicker v-model="form.knockout_phase_end" />
             </div>
           </div>
@@ -117,7 +117,7 @@
             :disabled="recalculating"
             class="btn-secondary text-sm"
           >
-            {{ recalculating ? 'Recalculating...' : 'Auto-calculate from settings' }}
+            {{ recalculating ? t('leagueSettings.recalculating') : t('leagueSettings.autoCalculate') }}
           </button>
         </div>
 
@@ -134,50 +134,50 @@
           :disabled="saving"
           class="w-full btn-primary py-3"
         >
-          {{ saving ? 'Saving...' : 'Save Settings' }}
+          {{ saving ? t('leagueSettings.saving') : t('leagueSettings.saveSettings') }}
         </button>
       </form>
 
       <!-- Danger Zone -->
       <div v-if="league?.status !== 'cancelled'" class="card mt-6 border-red-500/50">
-        <h3 class="text-lg font-bold text-red-400 mb-4">Danger Zone</h3>
+        <h3 class="text-lg font-bold text-red-400 mb-4">{{ t('leagueSettings.dangerZone') }}</h3>
         <p class="text-sm text-gray-400 mb-4">
-          Cancelling a league will hide it from the leagues list. This action cannot be undone.
+          {{ t('leagueSettings.cancelLeagueWarning') }}
         </p>
         <button
           @click="showCancelModal = true"
           class="btn-secondary border-red-500 text-red-400 hover:bg-red-900/30"
         >
-          Cancel League
+          {{ t('leagueSettings.cancelLeague') }}
         </button>
       </div>
 
       <div v-else class="card mt-6 bg-red-900/20 border-red-500/50">
-        <p class="text-red-400">This league has been cancelled.</p>
+        <p class="text-red-400">{{ t('leagueSettings.leagueCancelled') }}</p>
       </div>
     </div>
 
     <!-- Cancel Confirmation Modal -->
     <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-xl font-bold text-red-400 mb-4">Cancel League</h3>
+        <h3 class="text-xl font-bold text-red-400 mb-4">{{ t('leagueSettings.cancelLeague') }}</h3>
         <p class="text-gray-300 mb-6">
-          Are you sure you want to cancel <strong>{{ league?.name }}</strong>?
-          This will remove it from the public leagues list.
+          {{ t('leagueSettings.cancelLeagueConfirm') }} <strong>{{ league?.name }}</strong>?
+          {{ t('leagueSettings.cancelLeagueNote') }}
         </p>
         <div class="flex gap-3">
           <button
             @click="showCancelModal = false"
             class="flex-1 btn-secondary"
           >
-            Keep League
+            {{ t('leagueSettings.keepLeague') }}
           </button>
           <button
             @click="cancelLeague"
             :disabled="cancelling"
             class="flex-1 btn-primary bg-red-600 hover:bg-red-700"
           >
-            {{ cancelling ? 'Cancelling...' : 'Cancel League' }}
+            {{ cancelling ? t('leagueSettings.cancelling') : t('leagueSettings.cancelLeague') }}
           </button>
         </div>
       </div>
@@ -188,10 +188,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
 import DateHourPicker from '@/components/DateHourPicker.vue'
 
+const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
 const router = useRouter()
@@ -242,7 +244,7 @@ const fetchLeague = async () => {
       knockout_phase_end: toLocalDatetime(response.data.knockout_phase_end),
     }
   } catch (err) {
-    error.value = 'Failed to load league'
+    error.value = t('leagueSettings.failedToLoad')
   } finally {
     loading.value = false
   }
@@ -266,9 +268,9 @@ const saveSettings = async () => {
 
     const response = await axios.patch(`${API_URL}/league/${leagueId.value}`, payload)
     league.value = response.data
-    success.value = 'Settings saved successfully'
+    success.value = t('leagueSettings.settingsSaved')
   } catch (err) {
-    error.value = err.response?.data?.detail || 'Failed to save settings'
+    error.value = err.response?.data?.detail || t('leagueSettings.failedToSave')
   } finally {
     saving.value = false
   }
@@ -282,9 +284,9 @@ const recalculateDates = async () => {
   try {
     await axios.post(`${API_URL}/league/${leagueId.value}/recalculate-dates`)
     await fetchLeague()
-    success.value = 'Dates recalculated successfully'
+    success.value = t('leagueSettings.datesRecalculated')
   } catch (err) {
-    error.value = err.response?.data?.detail || 'Failed to recalculate dates'
+    error.value = err.response?.data?.detail || t('leagueSettings.failedToRecalculate')
   } finally {
     recalculating.value = false
   }
@@ -304,7 +306,7 @@ const cancelLeague = async () => {
     showCancelModal.value = false
     router.push('/leagues')
   } catch (err) {
-    error.value = err.response?.data?.detail || 'Failed to cancel league'
+    error.value = err.response?.data?.detail || t('leagueSettings.failedToCancel')
     showCancelModal.value = false
   } finally {
     cancelling.value = false
