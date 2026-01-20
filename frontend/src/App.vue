@@ -73,7 +73,7 @@ import packageJson from '../package.json'
 const authStore = useAuthStore()
 const stats = ref(null)
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const fetchStats = async () => {
   try {

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Battle Plan Diagrams - Matplotlib vs Wahapedia</title>
+    <style>
+        body { 
+            background: #1a1a1a; 
+            color: #ecf0f1; 
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { text-align: center; color: #3498db; }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));
+            gap: 30px;
+            margin: 20px auto;
+            max-width: 1800px;
+        }
+        .battle-plan {
+            background: #2b2b2b;
+            border: 2px solid #404040;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .battle-plan h2 {
+            color: #f39c12;
+            margin-top: 0;
+            text-align: center;
+        }
+        .image-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .image-box {
+            text-align: center;
+        }
+        .image-box h3 {
+            color: #95a5a6;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .image-box img {
+            width: 100%;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+        .validation-notes {
+            background: #34495e;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .check { color: #2ecc71; }
+        .warn { color: #e74c3c; }
+        .info { color: #3498db; }
+    </style>
+</head>
+<body>
+    <h1>Battle Plan Diagrams Comparison</h1>
+    <p style="text-align: center; max-width: 900px; margin: 0 auto 30px;">
+        <strong>Validation Process:</strong> Each matplotlib diagram is compared against Wahapedia original to ensure:
+        (1) Deployment zone positions match, (2) Objective count is correct, (3) Objective positions approximate the original layout,
+        (4) Special features (rotation arrows, connections) are represented
+    </p>
+
+    <div class="comparison-grid">
+        <!-- Passing Seasons -->
+        <div class="battle-plan">
+            <h2>1. Passing Seasons</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-passing-seasons.png" alt="Passing Seasons - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-passing-seasons.png" alt="Passing Seasons - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Long edge deployment zones (9" deep)<br>
+                <span class="check">✓</span> 4 objectives in 2×2 pattern<br>
+                <span class="info">→</span> Seasonal rotation indicated in footer text
+            </div>
+        </div>
+
+        <!-- Paths of the Fey -->
+        <div class="battle-plan">
+            <h2>2. Paths of the Fey</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-paths-of-the-fey.png" alt="Paths of the Fey - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-paths-of-the-fey.png" alt="Paths of the Fey - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Long edge deployment zones<br>
+                <span class="check">✓</span> 5 objectives (center + 4 cardinal)<br>
+                <span class="info">→</span> Fey paths shown as dashed purple lines
+            </div>
+        </div>
+
+        <!-- Roiling Roots -->
+        <div class="battle-plan">
+            <h2>3. Roiling Roots</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-roiling-roots.png" alt="Roiling Roots - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-roiling-roots.png" alt="Roiling Roots - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Diagonal corner deployment (12×12")<br>
+                <span class="check">✓</span> 6 objectives in diagonal line<br>
+                <span class="info">→</span> Root network implied by objective positioning
+            </div>
+        </div>
+
+        <!-- Cyclic Shifts -->
+        <div class="battle-plan">
+            <h2>4. Cyclic Shifts</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-cyclic-shifts.png" alt="Cyclic Shifts - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-cyclic-shifts.png" alt="Cyclic Shifts - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Diagonal corner deployment<br>
+                <span class="check">✓</span> 6 objectives in diagonal rows (3 per side)<br>
+                <span class="info">→</span> Cyclic shift pattern shown by positioning
+            </div>
+        </div>
+
+        <!-- Surge of Slaughter -->
+        <div class="battle-plan">
+            <h2>5. Surge of Slaughter</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-surge-of-slaughter.png" alt="Surge of Slaughter - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-surge-of-slaughter.png" alt="Surge of Slaughter - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Long edge deployment<br>
+                <span class="check">✓</span> 5 objectives (center + 4 near corners)<br>
+                <span class="info">→</span> Paired objective bonuses implied by layout
+            </div>
+        </div>
+
+        <!-- Linked Ley Lines -->
+        <div class="battle-plan">
+            <h2>6. Linked Ley Lines</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-linked-ley-lines.png" alt="Linked Ley Lines - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-linked-ley-lines.png" alt="Linked Ley Lines - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Long edge deployment<br>
+                <span class="check">✓</span> 5 objectives in diamond formation<br>
+                <span class="check">✓</span> Ley lines shown as blue dashed connections
+            </div>
+        </div>
+
+        <!-- Noxious Nexus -->
+        <div class="battle-plan">
+            <h2>7. Noxious Nexus</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-noxious-nexus.png" alt="Noxious Nexus - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-noxious-nexus.png" alt="Noxious Nexus - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Quadrant deployment zones<br>
+                <span class="check">✓</span> 3 nexus objectives with varying sizes<br>
+                <span class="info">→</span> Size represents value (Oakenbrow > Gnarlroot > Heartwood)
+            </div>
+        </div>
+
+        <!-- The Liferoots -->
+        <div class="battle-plan">
+            <h2>8. The Liferoots</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-the-liferoots.png" alt="The Liferoots - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-the-liferoots.png" alt="The Liferoots - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Diagonal corner deployment<br>
+                <span class="check">✓</span> 2 large liferoot markers (24" apart)<br>
+                <span class="check">✓</span> Terrain features shown as dashed green circles
+            </div>
+        </div>
+
+        <!-- Bountiful Equinox -->
+        <div class="battle-plan">
+            <h2>9. Bountiful Equinox</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-bountiful-equinox.png" alt="Bountiful Equinox - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-bountiful-equinox.png" alt="Bountiful Equinox - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Long edge deployment<br>
+                <span class="check">✓</span> 5 objectives distributed across battlefield<br>
+                <span class="info">→</span> Mixed Oakenbrow/Gnarlroot/Heartwood objectives
+            </div>
+        </div>
+
+        <!-- Lifecycle -->
+        <div class="battle-plan">
+            <h2>10. Lifecycle</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-lifecycle.png" alt="Lifecycle - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-lifecycle.png" alt="Lifecycle - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Long edge deployment<br>
+                <span class="check">✓</span> 4 objectives in symmetrical 2×2 pattern<br>
+                <span class="check">✓</span> Primary rotation arrow shown
+            </div>
+        </div>
+
+        <!-- Creeping Corruption -->
+        <div class="battle-plan">
+            <h2>11. Creeping Corruption</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-creeping-corruption.png" alt="Creeping Corruption - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-creeping-corruption.png" alt="Creeping Corruption - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Long edge deployment<br>
+                <span class="check">✓</span> 6 objectives in 3×2 grid pattern<br>
+                <span class="check">✓</span> Corruption spreading lines shown in green
+            </div>
+        </div>
+
+        <!-- Grasp of Thorns -->
+        <div class="battle-plan">
+            <h2>12. Grasp of Thorns</h2>
+            <div class="image-comparison">
+                <div class="image-box">
+                    <h3>Wahapedia Reference</h3>
+                    <img src="../battle-plans/aos-grasp-of-thorns.png" alt="Grasp of Thorns - Wahapedia">
+                </div>
+                <div class="image-box">
+                    <h3>Matplotlib Diagram</h3>
+                    <img src="aos-grasp-of-thorns.png" alt="Grasp of Thorns - Matplotlib">
+                </div>
+            </div>
+            <div class="validation-notes">
+                <span class="check">✓</span> Quadrant deployment zones<br>
+                <span class="check">✓</span> 4 objectives (one per table quarter)<br>
+                <span class="check">✓</span> Thorn markers shown as red triangle symbols
+            </div>
+        </div>
+    </div>
+
+    <div style="max-width: 1200px; margin: 40px auto; background: #2c3e50; padding: 20px; border-radius: 8px;">
+        <h2 style="color: #3498db;">Validation Process Explanation</h2>
+        <p><strong>Step 1: Reference Analysis</strong></p>
+        <ul>
+            <li>Open Wahapedia image for each battle plan</li>
+            <li>Identify: deployment zone type (long edge/corner/quadrant), position, size</li>
+            <li>Count objectives and note their approximate positions</li>
+            <li>Identify special features (ley lines, rotation arrows, terrain markers)</li>
+        </ul>
+
+        <p><strong>Step 2: Battle Plan Data Cross-Reference</strong></p>
+        <ul>
+            <li>Read battle plan data from <code>squire/battle_plans.py</code> AOS_BATTLE_PLANS</li>
+            <li>Verify deployment type matches image</li>
+            <li>Count objectives from data structure</li>
+            <li>Extract special rules (seasonal rotation, ley lines, corruption spreading)</li>
+        </ul>
+
+        <p><strong>Step 3: Matplotlib Generation</strong></p>
+        <ul>
+            <li>Create 60"×44" battlefield grid (standard AoS table)</li>
+            <li>Draw deployment zones matching reference positions</li>
+            <li>Place objectives at positions approximating Wahapedia layout</li>
+            <li>Add special features (arrows, connection lines, markers) where applicable</li>
+            <li>Use consistent color scheme: Blue/Red zones, Orange objectives, Green terrain</li>
+        </ul>
+
+        <p><strong>Step 4: Visual Validation</strong></p>
+        <ul>
+            <li>Side-by-side comparison (this gallery)</li>
+            <li>Verify deployment zones are in correct positions</li>
+            <li>Count objectives in matplotlib matches count in reference</li>
+            <li>Check objective spacing is proportionally similar</li>
+            <li>Confirm special features are represented</li>
+        </ul>
+
+        <p><strong>Step 5: Functional Testing</strong></p>
+        <ul>
+            <li>Test API endpoint with <code>image_version=matplotlib</code></li>
+            <li>Verify images serve correctly in gallery</li>
+            <li>Check filenames match exactly (aos-battle-plan-name.png)</li>
+            <li>Confirm file sizes reasonable (50-70KB per image)</li>
+        </ul>
+
+        <p style="margin-top: 20px; padding: 15px; background: #34495e; border-radius: 4px;">
+            <strong>IP Safety:</strong> Matplotlib diagrams are 100% programmatically generated with no Games Workshop assets.
+            They represent tactical information only (zones, objectives, measurements) which cannot be copyrighted.
+            The visual style is generic military tactical map aesthetic, not GW's specific artwork.
+        </p>
+    </div>
+</body>
+</html>

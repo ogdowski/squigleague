@@ -1,16 +1,37 @@
 # SESSION REVIVAL LOG
 
 **Active Persona**: BACKEND_CORE (Boris)  
-**Current Branch**: feature/battle-plan-randomizer  
-**Last Updated**: 2025-11-20
+**Current Branch**: feature/display-player-names  
+**Last Updated**: 2026-01-19
+
+---
+
+## CRITICAL: Testing Protocol
+
+**MANDATORY:** All testing MUST use the comprehensive test suite from `testing/comprehensive-test-suite` branch (now merged).
+
+**Universal Test Commands:**
+- Run all tests: `./scripts/run_all_tests.sh` (PowerShell: `.\scripts\run_all_tests.sh`)
+- Integration tests: `python -m pytest tests/integration/ -v`
+- E2E tests: `python -m pytest tests/e2e/ -v`
+- Specific test: `python -m pytest tests/integration/test_matchup.py::TestMatchupCreation::test_authenticated_user_creates_matchup -v`
+
+**Test Structure:**
+- `tests/integration/test_auth.py` - 10 authentication tests
+- `tests/integration/test_matchup.py` - 20 matchup API tests
+- `tests/e2e/test_workflows.py` - 4 end-to-end workflow tests
+- `tests/conftest.py` - Pytest fixtures
+- `tests/README.md` - Comprehensive testing documentation
+
+**FORBIDDEN:** Using ad-hoc test scripts or `backend/tests/` (old location). Always use universal test infrastructure.
 
 ---
 
 ## Current Session Actions
 
-### 2025-11-20: AoS Battle Plan Data Replacement
+### 2026-01-19: Battle Plan Display with Objective Legends
 
-**Task**: Replace fabricated AoS Spearhead data with official General's Handbook 2025-2026 Matched Play missions
+**Task**: Display complete battleplan information on matchup reveal page
 
 **Actions Taken**:
 1. ✅ User clarified: No such thing as Spearhead battle plans
