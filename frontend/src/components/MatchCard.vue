@@ -11,12 +11,38 @@
         class="flex-1 cursor-pointer"
       >
         <div class="flex items-center gap-4">
-          <span class="font-bold">{{ displayLeftPlayer }}</span>
+          <div class="flex items-center gap-2">
+            <img
+              v-if="displayLeftAvatar"
+              :src="displayLeftAvatar"
+              class="w-6 h-6 rounded-full"
+              :alt="displayLeftPlayer"
+            />
+            <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+            <span class="font-bold">{{ displayLeftPlayer }}</span>
+          </div>
           <span v-if="match.player1_score !== null" class="text-2xl font-bold text-squig-yellow">
             {{ displayLeftScore }} - {{ displayRightScore }}
           </span>
           <span v-else class="text-gray-500">vs</span>
-          <span class="font-bold">{{ displayRightPlayer }}</span>
+          <div class="flex items-center gap-2">
+            <span class="font-bold">{{ displayRightPlayer }}</span>
+            <img
+              v-if="displayRightAvatar"
+              :src="displayRightAvatar"
+              class="w-6 h-6 rounded-full"
+              :alt="displayRightPlayer"
+            />
+            <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+          </div>
         </div>
         <div class="text-sm text-gray-400 mt-1">
           <span v-if="showRound && match.knockout_round">{{ knockoutRoundText(match.knockout_round) }}</span>
@@ -112,6 +138,14 @@ const displayLeftPoints = computed(() => {
 
 const displayRightPoints = computed(() => {
   return shouldSwap.value ? props.match.player1_league_points : props.match.player2_league_points
+})
+
+const displayLeftAvatar = computed(() => {
+  return shouldSwap.value ? props.match.player2_avatar : props.match.player1_avatar
+})
+
+const displayRightAvatar = computed(() => {
+  return shouldSwap.value ? props.match.player1_avatar : props.match.player2_avatar
 })
 
 const resultClass = computed(() => {

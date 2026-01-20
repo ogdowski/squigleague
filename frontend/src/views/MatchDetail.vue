@@ -12,7 +12,7 @@
             </router-link>
             <span class="mx-2 text-gray-500">/</span>
             <span class="text-gray-300">
-              {{ match.phase === 'knockout' ? formatKnockoutRound(match.knockout_round) : `Group ${match.group_name}` }}
+              {{ match.phase === 'knockout' ? formatKnockoutRound(match.knockout_round) : match.group_name }}
             </span>
           </div>
           <span :class="statusClass" class="px-3 py-1 rounded text-sm">{{ statusLabel }}</span>
@@ -23,10 +23,23 @@
           <!-- Player 1 -->
           <div class="bg-gray-900 p-4 rounded">
             <div class="flex items-center justify-between mb-2">
-              <router-link v-if="match.player1_user_id" :to="`/player/${match.player1_user_id}`" class="font-bold text-lg hover:text-squig-yellow">
-                {{ match.player1_username }}
-              </router-link>
-              <span v-else class="font-bold text-lg">{{ match.player1_username }}</span>
+              <div class="flex items-center gap-3">
+                <img
+                  v-if="match.player1_avatar"
+                  :src="match.player1_avatar"
+                  class="w-10 h-10 rounded-full"
+                  :alt="match.player1_username"
+                />
+                <div v-else class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                  <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <router-link v-if="match.player1_user_id" :to="`/player/${match.player1_user_id}`" class="font-bold text-lg hover:text-squig-yellow">
+                  {{ match.player1_username }}
+                </router-link>
+                <span v-else class="font-bold text-lg">{{ match.player1_username }}</span>
+              </div>
               <span v-if="match.player1_army_faction" class="text-sm text-gray-400">{{ match.player1_army_faction }}</span>
             </div>
             <div v-if="match.status === 'confirmed'" class="text-3xl font-bold" :class="p1ScoreClass">
@@ -50,10 +63,23 @@
           <!-- Player 2 -->
           <div class="bg-gray-900 p-4 rounded">
             <div class="flex items-center justify-between mb-2">
-              <router-link v-if="match.player2_user_id" :to="`/player/${match.player2_user_id}`" class="font-bold text-lg hover:text-squig-yellow">
-                {{ match.player2_username }}
-              </router-link>
-              <span v-else class="font-bold text-lg">{{ match.player2_username }}</span>
+              <div class="flex items-center gap-3">
+                <img
+                  v-if="match.player2_avatar"
+                  :src="match.player2_avatar"
+                  class="w-10 h-10 rounded-full"
+                  :alt="match.player2_username"
+                />
+                <div v-else class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                  <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <router-link v-if="match.player2_user_id" :to="`/player/${match.player2_user_id}`" class="font-bold text-lg hover:text-squig-yellow">
+                  {{ match.player2_username }}
+                </router-link>
+                <span v-else class="font-bold text-lg">{{ match.player2_username }}</span>
+              </div>
               <span v-if="match.player2_army_faction" class="text-sm text-gray-400">{{ match.player2_army_faction }}</span>
             </div>
             <div v-if="match.status === 'confirmed'" class="text-3xl font-bold" :class="p2ScoreClass">

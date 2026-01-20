@@ -219,6 +219,8 @@ class MatchResponse(BaseModel):
     player2_id: int
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    player1_avatar: Optional[str] = None
+    player2_avatar: Optional[str] = None
     player1_army_faction: Optional[str] = None
     player2_army_faction: Optional[str] = None
     group_id: Optional[int] = None
@@ -256,6 +258,8 @@ class MatchDetailResponse(BaseModel):
     player2_user_id: Optional[int] = None
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    player1_avatar: Optional[str] = None
+    player2_avatar: Optional[str] = None
     player1_army_faction: Optional[str] = None
     player2_army_faction: Optional[str] = None
     player1_army_list: Optional[str] = None

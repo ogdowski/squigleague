@@ -1072,6 +1072,8 @@ async def list_matches(
     for match in matches:
         p1_username = None
         p2_username = None
+        p1_avatar = None
+        p2_avatar = None
         p1_army_faction = None
         p2_army_faction = None
         p1_army_list = None
@@ -1082,8 +1084,12 @@ async def list_matches(
         if p1:
             if p1.user_id:
                 stmt = select(User).where(User.id == p1.user_id)
-                user = session.scalars(stmt).first()
-                p1_username = user.username if user else p1.discord_username
+                user1 = session.scalars(stmt).first()
+                if user1:
+                    p1_username = user1.username
+                    p1_avatar = user1.avatar_url
+                else:
+                    p1_username = p1.discord_username
             else:
                 p1_username = p1.discord_username
 
@@ -1092,8 +1098,12 @@ async def list_matches(
         if p2:
             if p2.user_id:
                 stmt = select(User).where(User.id == p2.user_id)
-                user = session.scalars(stmt).first()
-                p2_username = user.username if user else p2.discord_username
+                user2 = session.scalars(stmt).first()
+                if user2:
+                    p2_username = user2.username
+                    p2_avatar = user2.avatar_url
+                else:
+                    p2_username = p2.discord_username
             else:
                 p2_username = p2.discord_username
 
@@ -1132,6 +1142,8 @@ async def list_matches(
                 player2_id=match.player2_id,
                 player1_username=p1_username,
                 player2_username=p2_username,
+                player1_avatar=p1_avatar,
+                player2_avatar=p2_avatar,
                 player1_army_faction=p1_army_faction,
                 player2_army_faction=p2_army_faction,
                 group_id=group_id,
@@ -1180,17 +1192,29 @@ async def get_match_detail(
         select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
     ).first()
 
-    # Get usernames
+    # Get usernames and avatars
     p1_username = None
     p2_username = None
+    p1_avatar = None
+    p2_avatar = None
+    u1 = None
+    u2 = None
     if player1 and player1.user_id:
         u1 = session.scalars(select(User).where(User.id == player1.user_id)).first()
-        p1_username = u1.username if u1 else player1.discord_username
+        if u1:
+            p1_username = u1.username
+            p1_avatar = u1.avatar_url
+        else:
+            p1_username = player1.discord_username
     elif player1:
         p1_username = player1.discord_username
     if player2 and player2.user_id:
         u2 = session.scalars(select(User).where(User.id == player2.user_id)).first()
-        p2_username = u2.username if u2 else player2.discord_username
+        if u2:
+            p2_username = u2.username
+            p2_avatar = u2.avatar_url
+        else:
+            p2_username = player2.discord_username
     elif player2:
         p2_username = player2.discord_username
 
@@ -1263,6 +1287,8 @@ async def get_match_detail(
         player2_user_id=player2.user_id if player2 else None,
         player1_username=p1_username,
         player2_username=p2_username,
+        player1_avatar=p1_avatar,
+        player2_avatar=p2_avatar,
         player1_army_faction=p1_army_faction,
         player2_army_faction=p2_army_faction,
         player1_army_list=p1_army_list,
