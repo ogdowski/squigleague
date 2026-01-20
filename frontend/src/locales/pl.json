@@ -6,7 +6,8 @@
     "saving": "Zapisywanie...",
     "comingSoon": "Wkrótce",
     "stayTuned": "Czekaj na więcej",
-    "close": "Zamknij"
+    "close": "Zamknij",
+    "cancel": "Anuluj"
   },
   "home": {
     "subtitle": "Zestaw narzędzi dla graczy Age of Sigmar i organizatorów turniejów. Zarządzaj ligami, wymieniaj listy armii bezpiecznie i więcej.",
@@ -79,6 +80,8 @@
     "player2": "Gracz 2",
     "revealed": "Odkryto",
     "pending": "Oczekuje",
+    "resultConfirmed": "Wynik potwierdzony",
+    "awaitingConfirmation": "oczekuje potwierdzenia",
     "expired": "Wygasło",
     "submitted": "Wysłano",
     "waiting": "Oczekuje",
@@ -114,12 +117,28 @@
     "pasteListHere": "Wklej swoją listę armii tutaj",
     "listSubmittedSuccess": "Lista wysłana pomyślnie!",
     "waitingForReveal": "Oczekiwanie na odkrycie...",
+    "yourListSubmitted": "Twoja lista armii została wysłana!",
+    "waitingForOpponent": "Oczekiwanie na listę przeciwnika...",
     "submitting": "Wysyłanie...",
     "bothListsSubmitted": "Obie listy zostały wysłane! Mecz jest odkryty.",
     "mapAssignment": "Przydzielona mapa",
     "matchupNotFound": "Mecz nie znaleziony",
     "matchupExpired": "Ten mecz wygasł",
-    "failedToSubmitList": "Nie udało się wysłać listy"
+    "failedToSubmitList": "Nie udało się wysłać listy",
+    "matchupTitlePlaceholder": "np. Sparing, Runda turniejowa 1...",
+    "armyFaction": "Frakcja armii",
+    "autoDetected": "wykrywana automatycznie",
+    "selectOrAutoDetect": "Wybierz lub zostaw puste (auto-wykrywanie)",
+    "matchResult": "Wynik meczu",
+    "submitResult": "Podaj wynik",
+    "score": "Wynik",
+    "pendingConfirmation": "Wynik oczekuje potwierdzenia",
+    "resultAwaitingConfirmation": "Wynik został podany i oczekuje na potwierdzenie przez przeciwnika.",
+    "autoConfirmAt": "Auto-potwierdzenie o",
+    "confirmResult": "Potwierdź wynik",
+    "editResult": "Edytuj",
+    "submitEditedResult": "Wyślij poprawiony wynik",
+    "failedToSubmitResult": "Nie udało się podać wyniku"
   },
   "leagues": {
     "title": "Ligi",

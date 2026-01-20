@@ -6,7 +6,8 @@
     "saving": "Saving...",
     "comingSoon": "Coming Soon",
     "stayTuned": "Stay Tuned",
-    "close": "Close"
+    "close": "Close",
+    "cancel": "Cancel"
   },
   "home": {
     "subtitle": "A toolset for Age of Sigmar players and tournament organizers. Manage leagues, exchange army lists safely, and more.",
@@ -79,6 +80,8 @@
     "player2": "Player 2",
     "revealed": "Revealed",
     "pending": "Pending",
+    "resultConfirmed": "Result confirmed",
+    "awaitingConfirmation": "awaiting confirmation",
     "expired": "Expired",
     "submitted": "Submitted",
     "waiting": "Waiting",
@@ -114,12 +117,28 @@
     "pasteListHere": "Paste your army list here",
     "listSubmittedSuccess": "List submitted successfully!",
     "waitingForReveal": "Waiting for reveal...",
+    "yourListSubmitted": "Your army list has been submitted!",
+    "waitingForOpponent": "Waiting for your opponent to submit their list...",
     "submitting": "Submitting...",
     "bothListsSubmitted": "Both lists have been submitted! The matchup is revealed.",
     "mapAssignment": "Map Assignment",
     "matchupNotFound": "Matchup not found",
     "matchupExpired": "This matchup has expired",
-    "failedToSubmitList": "Failed to submit list"
+    "failedToSubmitList": "Failed to submit list",
+    "matchupTitlePlaceholder": "e.g., Practice match, Tournament round 1...",
+    "armyFaction": "Army Faction",
+    "autoDetected": "auto-detected from list",
+    "selectOrAutoDetect": "Select or leave empty to auto-detect",
+    "matchResult": "Match Result",
+    "submitResult": "Submit Result",
+    "score": "Score",
+    "pendingConfirmation": "Result Pending Confirmation",
+    "resultAwaitingConfirmation": "The result has been submitted and is awaiting confirmation from the opponent.",
+    "autoConfirmAt": "Auto-confirms at",
+    "confirmResult": "Confirm Result",
+    "editResult": "Edit",
+    "submitEditedResult": "Submit Edited Result",
+    "failedToSubmitResult": "Failed to submit result"
   },
   "leagues": {
     "title": "Leagues",
