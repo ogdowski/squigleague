@@ -27,6 +27,8 @@ class MatchupStatus(BaseModel):
     expires_at: datetime
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    player1_avatar: Optional[str] = None
+    player2_avatar: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -48,6 +50,8 @@ class MatchupReveal(BaseModel):
     revealed_at: datetime
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
+    player1_avatar: Optional[str] = None
+    player2_avatar: Optional[str] = None
 
     class Config:
         from_attributes = True

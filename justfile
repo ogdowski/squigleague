@@ -560,6 +560,61 @@ vps-sync-all:
     @echo "✅ All configs synced!"
 
 # ═══════════════════════════════════════════════
+# DATABASE MIGRATIONS (Alembic)
+# ═══════════════════════════════════════════════
+
+# Generate a new migration (autogenerate from model changes)
+migrate-generate MESSAGE:
+    @echo "📝 Generating migration: {{MESSAGE}}..."
+    docker exec -w /app squig-backend alembic revision --autogenerate -m "{{MESSAGE}}"
+    docker cp squig-backend:/app/migrations/versions/. backend/migrations/versions/
+    @echo "✅ Migration generated! Check backend/migrations/versions/"
+
+# Apply all pending migrations
+migrate:
+    @echo "🔄 Applying pending migrations..."
+    docker exec -w /app squig-backend alembic upgrade head
+    @echo "✅ Migrations applied!"
+
+# Show migration history
+migrate-history:
+    @echo "📋 Migration history:"
+    docker exec -w /app squig-backend alembic history
+
+# Show current migration revision
+migrate-current:
+    @echo "📍 Current migration revision:"
+    docker exec -w /app squig-backend alembic current
+
+# Rollback last migration
+migrate-rollback:
+    @echo "⏪ Rolling back last migration..."
+    docker exec -w /app squig-backend alembic downgrade -1
+    @echo "✅ Rolled back!"
+
+# Stamp database with current revision (use when DB is up-to-date but alembic thinks otherwise)
+migrate-stamp REVISION="head":
+    @echo "🔖 Stamping database with revision: {{REVISION}}..."
+    docker exec -w /app squig-backend alembic stamp {{REVISION}}
+    @echo "✅ Database stamped!"
+
+# Apply migrations on VPS
+vps-migrate:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$VPS_IP" ]; then
+        echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
+        exit 1
+    fi
+    echo "🔄 Applying migrations on ${VPS_USER}@${VPS_IP}..."
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker exec -w /app squig-backend alembic upgrade head"
+    echo "✅ Migrations applied on VPS!"
+
+# ═══════════════════════════════════════════════
 # DATABASE
 # ═══════════════════════════════════════════════
 
@@ -618,6 +673,70 @@ db-reset:
     docker exec -i squig-postgres psql -U squig -c "CREATE DATABASE squigleague;"
     docker exec -i squig-postgres psql -U squig squigleague < database/init.sql
     @echo "✅ Database reset complete"
+
+# List all users (local)
+db-users:
+    @echo "👥 Users in database:"
+    docker exec squig-postgres psql -U squig -d squigleague -c "SELECT id, email, username, role FROM users;"
+
+# Make user admin by email (local)
+make-admin EMAIL:
+    @echo "🔑 Making {{EMAIL}} an admin..."
+    docker exec squig-postgres psql -U squig -d squigleague -c "UPDATE users SET role='admin' WHERE email='{{EMAIL}}';"
+    @echo "✅ Done! User needs to refresh/re-login."
+
+# Make user organizer by email (local)
+make-organizer EMAIL:
+    @echo "🔑 Making {{EMAIL}} an organizer..."
+    docker exec squig-postgres psql -U squig -d squigleague -c "UPDATE users SET role='organizer' WHERE email='{{EMAIL}}';"
+    @echo "✅ Done! User needs to refresh/re-login."
+
+# List all users on VPS
+vps-db-users:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$VPS_IP" ]; then
+        echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
+        exit 1
+    fi
+    echo "👥 Users on production:"
+    ssh ${VPS_USER}@${VPS_IP} "docker exec squig-postgres psql -U squig -d squigleague -c \"SELECT id, email, username, role FROM users;\""
+
+# Make user admin on VPS by email
+vps-make-admin EMAIL:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$VPS_IP" ]; then
+        echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
+        exit 1
+    fi
+    echo "🔑 Making {{EMAIL}} an admin on production..."
+    ssh ${VPS_USER}@${VPS_IP} "docker exec squig-postgres psql -U squig -d squigleague -c \"UPDATE users SET role='admin' WHERE email='{{EMAIL}}';\""
+    echo "✅ Done! User needs to refresh/re-login."
+
+# Make user organizer on VPS by email
+vps-make-organizer EMAIL:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$VPS_IP" ]; then
+        echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
+        exit 1
+    fi
+    echo "🔑 Making {{EMAIL}} an organizer on production..."
+    ssh ${VPS_USER}@${VPS_IP} "docker exec squig-postgres psql -U squig -d squigleague -c \"UPDATE users SET role='organizer' WHERE email='{{EMAIL}}';\""
+    echo "✅ Done! User needs to refresh/re-login."
 
 # ═══════════════════════════════════════════════
 # SSL CERTIFICATES

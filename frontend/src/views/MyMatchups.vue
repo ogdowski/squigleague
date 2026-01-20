@@ -1,8 +1,20 @@
 <template>
   <div class="max-w-6xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">My Matchups</h1>
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-3xl font-bold">Matchups</h1>
+      <router-link v-if="authStore.isAuthenticated" to="/matchup/create" class="btn-primary">
+        Create Matchup
+      </router-link>
+    </div>
 
-    <div v-if="loading" class="text-center py-12">
+    <div v-if="!authStore.isAuthenticated" class="card text-center py-12">
+      <p class="text-xl text-gray-400 mb-4">Create a matchup to exchange army lists</p>
+      <router-link to="/matchup/create" class="btn-primary inline-block">
+        Create Matchup
+      </router-link>
+    </div>
+
+    <div v-else-if="loading" class="text-center py-12">
       <p class="text-xl text-gray-300">Loading matchups...</p>
     </div>
 
@@ -14,9 +26,6 @@
 
     <div v-else-if="matchups.length === 0" class="card text-center py-12">
       <p class="text-xl text-gray-400 mb-4">No matchups yet</p>
-      <router-link to="/matchup/create" class="btn-primary inline-block">
-        Create Your First Matchup
-      </router-link>
     </div>
 
     <div v-else class="space-y-4">
@@ -88,25 +97,28 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const router = useRouter()
+const authStore = useAuthStore()
 
 const loading = ref(true)
 const error = ref('')
 const matchups = ref([])
 
 const fetchMatchups = async () => {
+  if (!authStore.isAuthenticated) {
+    loading.value = false
+    return
+  }
   try {
     const response = await axios.get(`${API_URL}/matchup/my-matchups`)
     matchups.value = response.data
   } catch (err) {
     if (err.response?.status === 401) {
       error.value = 'Please log in to view your matchups'
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
     } else {
       error.value = 'Failed to load matchups'
     }

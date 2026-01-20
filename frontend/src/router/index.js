@@ -6,6 +6,14 @@ const routes = [
     path: '/',
     name: 'Home',
     component: () => import('../views/Home.vue'),
+    beforeEnter: (to, from, next) => {
+      const authStore = useAuthStore()
+      if (authStore.isAuthenticated) {
+        next('/leagues')
+      } else {
+        next()
+      }
+    },
   },
   {
     path: '/login',
@@ -41,6 +49,49 @@ const routes = [
     path: '/matchup/:name',
     name: 'Matchup',
     component: () => import('../views/Matchup.vue'),
+  },
+  // League routes
+  {
+    path: '/leagues',
+    name: 'LeagueList',
+    component: () => import('../views/LeagueList.vue'),
+  },
+  {
+    path: '/league/create',
+    name: 'LeagueCreate',
+    component: () => import('../views/LeagueCreate.vue'),
+  },
+  {
+    path: '/league/:id',
+    name: 'LeagueDetail',
+    component: () => import('../views/LeagueDetail.vue'),
+  },
+  {
+    path: '/league/:id/settings',
+    name: 'LeagueSettings',
+    component: () => import('../views/LeagueSettings.vue'),
+  },
+  {
+    path: '/league/:leagueId/match/:matchId',
+    name: 'MatchDetail',
+    component: () => import('../views/MatchDetail.vue'),
+  },
+  // Player routes
+  {
+    path: '/player/:userId',
+    name: 'PlayerProfile',
+    component: () => import('../views/PlayerProfile.vue'),
+  },
+  // Admin routes
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('../views/AdminUsers.vue'),
+  },
+  {
+    path: '/admin/settings',
+    name: 'AdminSettings',
+    component: () => import('../views/AdminSettings.vue'),
   },
 ]
 

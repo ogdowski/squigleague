@@ -4,46 +4,20 @@
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: squig-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: squigleague
-      POSTGRES_USER: squig
-      POSTGRES_PASSWORD: changeme
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - squig-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U squig -d squigleague"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
     # Build locally for development
     build:
       context: ./backend
       dockerfile: Dockerfile
 
+    # Hot reload: mount source code and enable uvicorn reload
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./backend/migrations:/app/migrations
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
     # Development-specific settings
     restart: unless-stopped
-    
-    depends_on:
-      postgres:
-        condition: service_healthy
-    
-    environment:
-      - DATABASE_URL=postgresql://squig:changeme@postgres:5432/squigleague
-      - SECRET_KEY=dev-secret-key-for-local-testing
-      - ENVIRONMENT=development
-      - SQUIG_VERSION=0.3.0-dev
-      - BASE_URL=http://localhost
-    
-    networks:
-      - squig-network
 
     # Verbose logging for development
     logging:
@@ -53,16 +27,18 @@ services:
         max-file: "5"
 
   frontend:
-    # Build locally for development
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    # Use node image directly for Vite dev server with HMR
+    image: node:20-alpine
+    working_dir: /app
+
+    # Hot reload: mount source code and run Vite dev server
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
     # Development-specific settings
     restart: unless-stopped
-    
-    networks:
-      - squig-network
 
     # Verbose logging for development
     logging:
@@ -77,23 +53,9 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
 
-    # Override prod config with http-only for local development
+    # Override with dev config (Vite HMR support)
     volumes:
-      - ./nginx/nginx.http-only.conf:/etc/nginx/nginx.conf:ro
-    
-    ports:
-      - "80:80"
-    
-    depends_on:
-      - backend
-      - frontend
-    
-    networks:
-      - squig-network
-
-networks:
-  squig-network:
-    driver: bridge
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
 
 volumes:
-  postgres-data:
+  frontend_node_modules:

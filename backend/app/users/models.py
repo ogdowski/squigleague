@@ -33,5 +33,12 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     is_verified: bool = Field(default=False)
 
+    # Contact info
+    discord_username: Optional[str] = Field(default=None, max_length=100)
+    show_email: bool = Field(default=False)  # Whether to show email on profile
+
+    # Avatar
+    avatar_url: Optional[str] = Field(default=None, max_length=500)
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -29,8 +29,9 @@ from app.users.models import OAuthAccount, User
 def session_fixture():
     """Create an in-memory SQLite database for testing"""
     from datetime import datetime, timedelta
+
     from app.core.security import get_password_hash
-    
+
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -47,12 +48,12 @@ def session_fixture():
             is_active=True,
             is_verified=True,
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
         session.add(test_user)
         session.commit()
         session.refresh(test_user)
-        
+
         # Seed test matchup
         test_matchup = Matchup(
             name="test-matchup",
@@ -67,7 +68,7 @@ def session_fixture():
         )
         session.add(test_matchup)
         session.commit()
-        
+
         yield session
 
 

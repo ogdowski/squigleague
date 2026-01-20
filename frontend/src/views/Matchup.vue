@@ -21,23 +21,43 @@
 
         <div class="grid md:grid-cols-2 gap-4 mb-6">
           <div class="bg-gray-900 p-4 rounded">
-            <h3 class="font-bold mb-2">
-              Player 1
-              <span v-if="matchup.player1_username" class="text-squig-yellow ml-2">
-                ({{ matchup.player1_username }})
-              </span>
-            </h3>
+            <div class="flex items-center gap-3 mb-2">
+              <img
+                v-if="matchup.player1_avatar"
+                :src="matchup.player1_avatar"
+                class="w-10 h-10 rounded-full"
+                :alt="matchup.player1_username"
+              />
+              <div v-else class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              </div>
+              <h3 class="font-bold">
+                {{ matchup.player1_username || 'Player 1' }}
+              </h3>
+            </div>
             <p :class="matchup.player1_submitted ? 'text-green-400' : 'text-gray-400'">
               {{ matchup.player1_submitted ? '✓ List submitted' : '○ Waiting for list' }}
             </p>
           </div>
           <div class="bg-gray-900 p-4 rounded">
-            <h3 class="font-bold mb-2">
-              Player 2
-              <span v-if="matchup.player2_username" class="text-squig-yellow ml-2">
-                ({{ matchup.player2_username }})
-              </span>
-            </h3>
+            <div class="flex items-center gap-3 mb-2">
+              <img
+                v-if="matchup.player2_avatar"
+                :src="matchup.player2_avatar"
+                class="w-10 h-10 rounded-full"
+                :alt="matchup.player2_username"
+              />
+              <div v-else class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              </div>
+              <h3 class="font-bold">
+                {{ matchup.player2_username || 'Player 2' }}
+              </h3>
+            </div>
             <p :class="matchup.player2_submitted ? 'text-green-400' : 'text-gray-400'">
               {{ matchup.player2_submitted ? '✓ List submitted' : '○ Waiting for list' }}
             </p>
@@ -95,72 +115,53 @@
 
           <div class="mb-8">
             <h2 class="text-2xl font-bold mb-4 text-squig-yellow">Map Assignment</h2>
-            <div class="bg-gray-900 p-6 rounded">
-              <p class="text-3xl font-bold text-center mb-4">{{ reveal.map_name }}</p>
-              <div v-if="reveal.map_image" class="flex justify-center mb-6">
-                <img 
-                  :src="`/assets/battle-plans/${reveal.map_image}`" 
-                  :alt="reveal.map_name"
-                  class="max-w-full h-auto rounded border-2 border-squig-yellow"
-                />
-              </div>
-
-              <!-- Battle Plan Details -->
-              <div class="mt-6 space-y-4">
-                <div v-if="reveal.objectives" class="border-t border-gray-700 pt-4">
-                  <h3 class="text-lg font-semibold text-squig-yellow mb-2">Objectives</h3>
-                  <div v-if="reveal.objective_types && reveal.objective_types.length > 0" class="mb-3 flex flex-wrap gap-2">
-                    <span v-for="type in reveal.objective_types" :key="type" 
-                      :class="getObjectiveClass(type)"
-                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium">
-                      <span :class="getObjectiveDotClass(type)" class="w-3 h-3 rounded-full mr-2"></span>
-                      {{ type }}
-                    </span>
-                  </div>
-                  <p class="text-gray-300">{{ reveal.objectives }}</p>
-                </div>
-
-                <div v-if="reveal.scoring" class="border-t border-gray-700 pt-4">
-                  <h3 class="text-lg font-semibold text-squig-yellow mb-2">Scoring</h3>
-                  <div v-if="reveal.objective_types && reveal.objective_types.length > 0" class="mb-3 flex flex-wrap gap-2">
-                    <span v-for="type in reveal.objective_types" :key="type" 
-                      :class="getObjectiveClass(type)"
-                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium">
-                      <span :class="getObjectiveDotClass(type)" class="w-3 h-3 rounded-full mr-2"></span>
-                      {{ type }}
-                    </span>
-                  </div>
-                  <p class="text-gray-300 whitespace-pre-wrap">{{ reveal.scoring }}</p>
-                </div>
-
-                <div v-if="reveal.underdog_ability" class="border-t border-gray-700 pt-4">
-                  <h3 class="text-lg font-semibold text-squig-yellow mb-2">Underdog Ability</h3>
-                  <p class="text-gray-300">{{ reveal.underdog_ability }}</p>
-                </div>
-              </div>
-            </div>
+            <BattlePlanDisplay
+              :map-name="reveal.map_name"
+              :map-image="reveal.map_image"
+              :battle-plan="revealBattlePlan"
+            />
           </div>
 
           <div class="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 class="text-xl font-bold mb-3">
-                Player 1 List
-                <span v-if="reveal.player1_username" class="text-squig-yellow text-base ml-2">
-                  ({{ reveal.player1_username }})
-                </span>
-              </h3>
+              <div class="flex items-center gap-3 mb-3">
+                <img
+                  v-if="reveal.player1_avatar"
+                  :src="reveal.player1_avatar"
+                  class="w-8 h-8 rounded-full"
+                  :alt="reveal.player1_username"
+                />
+                <div v-else class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <h3 class="text-xl font-bold">
+                  {{ reveal.player1_username || 'Player 1' }}
+                </h3>
+              </div>
               <div class="bg-gray-900 p-4 rounded">
                 <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player1_list }}</pre>
               </div>
             </div>
 
             <div>
-              <h3 class="text-xl font-bold mb-3">
-                Player 2 List
-                <span v-if="reveal.player2_username" class="text-squig-yellow text-base ml-2">
-                  ({{ reveal.player2_username }})
-                </span>
-              </h3>
+              <div class="flex items-center gap-3 mb-3">
+                <img
+                  v-if="reveal.player2_avatar"
+                  :src="reveal.player2_avatar"
+                  class="w-8 h-8 rounded-full"
+                  :alt="reveal.player2_username"
+                />
+                <div v-else class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <h3 class="text-xl font-bold">
+                  {{ reveal.player2_username || 'Player 2' }}
+                </h3>
+              </div>
               <div class="bg-gray-900 p-4 rounded">
                 <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player2_list }}</pre>
               </div>
@@ -173,9 +174,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
@@ -189,6 +191,17 @@ const armyList = ref('')
 const submitting = ref(false)
 const submitError = ref('')
 const submitSuccess = ref(false)
+
+// Build battle plan object from reveal data (comes from API)
+const revealBattlePlan = computed(() => {
+  if (!reveal.value) return null
+  return {
+    objectives: reveal.value.objectives,
+    scoring: reveal.value.scoring,
+    underdog_ability: reveal.value.underdog_ability,
+    objective_types: reveal.value.objective_types,
+  }
+})
 
 const fetchMatchup = async () => {
   try {
@@ -248,26 +261,6 @@ const submitList = async () => {
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleString()
-}
-
-const getObjectiveClass = (type) => {
-  const colors = {
-    'Gnarlroot': 'bg-red-900/50 text-red-200 border border-red-700',
-    'Oakenbrow': 'bg-green-900/50 text-green-200 border border-green-700',
-    'Heartwood': 'bg-blue-900/50 text-blue-200 border border-blue-700',
-    'Winterleaf': 'bg-purple-900/50 text-purple-200 border border-purple-700'
-  }
-  return colors[type] || 'bg-gray-900/50 text-gray-200 border border-gray-700'
-}
-
-const getObjectiveDotClass = (type) => {
-  const colors = {
-    'Gnarlroot': 'bg-red-500',
-    'Oakenbrow': 'bg-green-500',
-    'Heartwood': 'bg-blue-500',
-    'Winterleaf': 'bg-purple-500'
-  }
-  return colors[type] || 'bg-gray-500'
 }
 
 onMounted(() => {

@@ -2,6 +2,8 @@ from datetime import datetime
 
 from app.core.deps import get_current_user, get_current_user_optional
 from app.db import get_session
+from app.league.constants import BATTLE_PLAN_DATA, MAP_IMAGES, MISSION_MAPS
+from app.league.models import League
 from app.matchup.models import Matchup
 from app.matchup.schemas import (
     MatchupCreate,
@@ -66,14 +68,12 @@ async def get_my_matchups(
 
     results = session.exec(statement).all()
 
-    # Fetch player2 usernames separately
+    # Fetch player2 info separately
     matchup_list = []
     for matchup, player1 in results:
-        player2_username = None
+        player2 = None
         if matchup.player2_id:
             player2 = session.get(User, matchup.player2_id)
-            if player2:
-                player2_username = player2.username
 
         matchup_list.append(
             MatchupStatus(
@@ -84,11 +84,38 @@ async def get_my_matchups(
                 created_at=matchup.created_at,
                 expires_at=matchup.expires_at,
                 player1_username=player1.username if player1 else None,
-                player2_username=player2_username,
+                player2_username=player2.username if player2 else None,
+                player1_avatar=player1.avatar_url if player1 else None,
+                player2_avatar=player2.avatar_url if player2 else None,
             )
         )
 
     return matchup_list
+
+
+@router.get("/maps")
+async def get_maps():
+    """Get available mission maps with their battle plan data."""
+    return {
+        "maps": MISSION_MAPS,
+        "battle_plans": BATTLE_PLAN_DATA,
+        "images": MAP_IMAGES,
+    }
+
+
+@router.get("/maps/{map_name}")
+async def get_map_details(map_name: str):
+    """Get battle plan details for a specific map."""
+    if map_name not in MISSION_MAPS:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Map not found",
+        )
+    return {
+        "name": map_name,
+        "image": MAP_IMAGES.get(map_name),
+        "battle_plan": BATTLE_PLAN_DATA.get(map_name),
+    }
 
 
 @router.get("/stats")
@@ -106,9 +133,14 @@ async def get_stats(session: Session = Depends(get_session)):
     expired_statement = select(func.count(Matchup.id)).where(Matchup.expires_at < now)
     expired_count = session.execute(expired_statement).scalar_one()
 
+    # Count leagues created
+    leagues_statement = select(func.count(League.id))
+    leagues_count = session.execute(leagues_statement).scalar_one()
+
     return {
         "exchanges_completed": completed_count,
         "exchanges_expired": expired_count,
+        "leagues_created": leagues_count,
         "version": "0.3.2",
     }
 
@@ -134,19 +166,9 @@ async def get_matchup_status(
             detail="Matchup has expired",
         )
 
-    # Fetch player usernames if they exist
-    player1_username = None
-    player2_username = None
-
-    if matchup.player1_id:
-        player1 = session.get(User, matchup.player1_id)
-        if player1:
-            player1_username = player1.username
-
-    if matchup.player2_id:
-        player2 = session.get(User, matchup.player2_id)
-        if player2:
-            player2_username = player2.username
+    # Fetch player info if they exist
+    player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
+    player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
 
     return MatchupStatus(
         name=matchup.name,
@@ -155,8 +177,10 @@ async def get_matchup_status(
         is_revealed=matchup.is_revealed,
         created_at=matchup.created_at,
         expires_at=matchup.expires_at,
-        player1_username=player1_username,
-        player2_username=player2_username,
+        player1_username=player1.username if player1 else None,
+        player2_username=player2.username if player2 else None,
+        player1_avatar=player1.avatar_url if player1 else None,
+        player2_avatar=player2.avatar_url if player2 else None,
     )
 
 
@@ -231,19 +255,9 @@ async def reveal_matchup(
             detail="Both players must submit their lists before revealing",
         )
 
-    # Fetch player usernames if they exist
-    player1_username = None
-    player2_username = None
-
-    if matchup.player1_id:
-        player1 = session.get(User, matchup.player1_id)
-        if player1:
-            player1_username = player1.username
-
-    if matchup.player2_id:
-        player2 = session.get(User, matchup.player2_id)
-        if player2:
-            player2_username = player2.username
+    # Fetch player info if they exist
+    player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
+    player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
 
     # Get battle plan data
     battle_plan = get_battle_plan_data(matchup.map_name) if matchup.map_name else None
@@ -260,6 +274,8 @@ async def reveal_matchup(
         underdog_ability=battle_plan.get("underdog_ability") if battle_plan else None,
         objective_types=battle_plan.get("objective_types") if battle_plan else None,
         revealed_at=matchup.revealed_at,
-        player1_username=player1_username,
-        player2_username=player2_username,
+        player1_username=player1.username if player1 else None,
+        player2_username=player2.username if player2 else None,
+        player1_avatar=player1.avatar_url if player1 else None,
+        player2_avatar=player2.avatar_url if player2 else None,
     )
