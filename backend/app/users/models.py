@@ -40,5 +40,8 @@ class User(SQLModel, table=True):
     # Avatar
     avatar_url: Optional[str] = Field(default=None, max_length=500)
 
+    # Language preference (ISO 639-1 code: en, pl, etc.)
+    preferred_language: str = Field(default="en", max_length=5)
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

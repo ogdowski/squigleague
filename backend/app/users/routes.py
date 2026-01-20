@@ -128,6 +128,7 @@ async def get_current_user_info(
         show_email=current_user.show_email,
         avatar_url=current_user.avatar_url,
         has_discord_oauth=has_discord_oauth,
+        preferred_language=current_user.preferred_language,
         created_at=current_user.created_at,
     )
 
@@ -194,6 +195,10 @@ async def update_current_user(
         else:
             current_user.role = "player"
 
+    # Language preference
+    if user_update.preferred_language is not None:
+        current_user.preferred_language = user_update.preferred_language
+
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
@@ -218,6 +223,7 @@ async def update_current_user(
         show_email=current_user.show_email,
         avatar_url=current_user.avatar_url,
         has_discord_oauth=has_discord_oauth,
+        preferred_language=current_user.preferred_language,
         created_at=current_user.created_at,
     )
 

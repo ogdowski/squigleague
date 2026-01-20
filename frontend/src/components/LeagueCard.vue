@@ -7,27 +7,27 @@
             {{ league.name }}
           </h3>
           <span v-if="league.is_organizer" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
-            Organizer
+            {{ t('leagues.organizer') }}
           </span>
           <span v-else-if="league.is_player" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded">
-            Playing
+            {{ t('leagues.playing') }}
           </span>
         </div>
         <div class="flex gap-6 text-sm">
           <div>
-            <span class="text-gray-400">Organizer:</span>
+            <span class="text-gray-400">{{ t('leagues.organizer') }}:</span>
             <span class="text-white ml-2">{{ league.organizer_name || 'N/A' }}</span>
           </div>
           <div>
-            <span class="text-gray-400">Players:</span>
+            <span class="text-gray-400">{{ t('leagues.players') }}:</span>
             <span class="text-white ml-2">{{ league.player_count }}</span>
           </div>
           <div v-if="league.status === 'finished' && league.finished_at">
-            <span class="text-gray-400">Finished:</span>
+            <span class="text-gray-400">{{ t('leagues.finishedOn') }}:</span>
             <span class="text-white ml-2">{{ formatDate(league.finished_at) }}</span>
           </div>
           <div v-else>
-            <span class="text-gray-400">Registration ends:</span>
+            <span class="text-gray-400">{{ t('leagues.registrationEnds') }}:</span>
             <span class="text-white ml-2">{{ formatDate(league.registration_end) }}</span>
           </div>
         </div>
@@ -46,6 +46,10 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 defineProps({
   league: {
     type: Object,
@@ -76,13 +80,13 @@ const statusClass = (status) => {
 const statusText = (status) => {
   switch (status) {
     case 'registration':
-      return 'Registration'
+      return t('leagues.registration')
     case 'group_phase':
-      return 'Group Phase'
+      return t('leagues.groupPhase')
     case 'knockout_phase':
-      return 'Knockout'
+      return t('leagues.knockoutPhase')
     case 'finished':
-      return 'Finished'
+      return t('leagues.finished')
     default:
       return status
   }

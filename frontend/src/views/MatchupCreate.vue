@@ -1,18 +1,17 @@
 <template>
   <div class="max-w-2xl mx-auto">
     <div class="card">
-      <h1 class="text-3xl font-bold mb-6 text-center">Create New Matchup</h1>
+      <h1 class="text-3xl font-bold mb-6 text-center">{{ t('matchups.createNewMatchup') }}</h1>
 
       <div v-if="!created">
         <p class="text-gray-300 mb-6">
-          Submit your army list to create a matchup. You'll receive a shareable link
-          to send to your opponent.
+          {{ t('matchups.createMatchupInfo') }}
         </p>
 
         <form @submit.prevent="createMatchup" class="space-y-4">
           <div>
             <label class="block text-sm font-medium mb-2">
-              Your Army List
+              {{ t('matchups.yourArmyList') }}
             </label>
             <textarea
               v-model="armyList"
@@ -45,7 +44,7 @@ Created with Sigdex: sigdex.io"
             :disabled="loading"
             class="btn-primary w-full text-xl px-8 py-4"
           >
-            {{ loading ? 'Creating...' : 'Create Matchup' }}
+            {{ loading ? t('matchups.creating') : t('matchups.createMatchup') }}
           </button>
 
           <div v-if="error" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
@@ -56,18 +55,18 @@ Created with Sigdex: sigdex.io"
 
       <div v-else class="space-y-6">
         <div class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded">
-          Matchup created successfully!
+          {{ t('matchups.matchupCreated') }}
         </div>
 
         <div>
-          <h2 class="text-xl font-bold mb-3">Matchup ID</h2>
+          <h2 class="text-xl font-bold mb-3">{{ t('matchups.matchupId') }}</h2>
           <div class="bg-gray-900 px-4 py-3 rounded font-mono text-squig-yellow text-xl">
             {{ matchup.name }}
           </div>
         </div>
 
         <div>
-          <h2 class="text-xl font-bold mb-3">Share This Link</h2>
+          <h2 class="text-xl font-bold mb-3">{{ t('matchups.shareThisLink') }}</h2>
           <div class="flex gap-2">
             <input
               :value="matchupUrl"
@@ -78,13 +77,13 @@ Created with Sigdex: sigdex.io"
               @click="copyLink"
               class="btn-secondary whitespace-nowrap"
             >
-              {{ copied ? 'Copied!' : 'Copy' }}
+              {{ copied ? t('matchups.copied') : t('matchups.copy') }}
             </button>
           </div>
         </div>
 
         <div>
-          <h2 class="text-xl font-bold mb-3">Expires</h2>
+          <h2 class="text-xl font-bold mb-3">{{ t('matchups.expires') }}</h2>
           <p class="text-gray-300">
             {{ formatDate(matchup.expires_at) }}
           </p>
@@ -95,13 +94,13 @@ Created with Sigdex: sigdex.io"
             :to="`/matchup/${matchup.name}`"
             class="btn-primary flex-1 text-center"
           >
-            Go to Matchup
+            {{ t('matchups.goToMatchup') }}
           </router-link>
           <button
             @click="reset"
             class="btn-secondary flex-1"
           >
-            Create Another
+            {{ t('matchups.createAnother') }}
           </button>
         </div>
       </div>
@@ -111,8 +110,10 @@ Created with Sigdex: sigdex.io"
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 
+const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const armyList = ref('')
@@ -136,7 +137,7 @@ const createMatchup = async () => {
     matchupUrl.value = `${window.location.origin}/matchup/${response.data.name}`
     created.value = true
   } catch (err) {
-    error.value = 'Failed to create matchup. Please try again.'
+    error.value = t('matchups.failedToCreate')
   } finally {
     loading.value = false
   }

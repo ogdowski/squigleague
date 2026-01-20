@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-6xl mx-auto">
     <div v-if="loading" class="text-center py-12">
-      <p class="text-xl text-gray-300">Loading league...</p>
+      <p class="text-xl text-gray-300">{{ t('leagueDetail.loadingLeague') }}</p>
     </div>
 
     <div v-else-if="error" class="card">
@@ -25,7 +25,7 @@
             class="btn-primary"
             :disabled="joining"
           >
-            {{ joining ? 'Joining...' : 'Join League' }}
+            {{ joining ? t('leagueDetail.joining') : t('leagueDetail.joinLeague') }}
           </button>
           <div
             :class="statusClass(league.status)"
@@ -38,7 +38,7 @@
             <button
               @click="showActionsMenu = !showActionsMenu"
               class="p-2 rounded hover:bg-gray-700 transition-colors"
-              title="Actions"
+              :title="t('leagueDetail.actions')"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -57,7 +57,7 @@
                   class="w-full text-left px-4 py-2 hover:bg-gray-700 text-red-400"
                   :disabled="actionLoading"
                 >
-                  Leave League
+                  {{ t('leagueDetail.leaveLeague') }}
                 </button>
 
                 <!-- Divider -->
@@ -70,7 +70,7 @@
                     @click="showActionsMenu = false"
                     class="block px-4 py-2 hover:bg-gray-700"
                   >
-                    Settings
+                    {{ t('leagueDetail.settings') }}
                   </router-link>
 
                   <div class="border-t border-gray-700 my-1"></div>
@@ -82,7 +82,7 @@
                     class="w-full text-left px-4 py-2 hover:bg-gray-700 text-blue-400"
                     :disabled="actionLoading"
                   >
-                    Draw Groups
+                    {{ t('leagueDetail.drawGroups') }}
                   </button>
                   <button
                     v-if="league.status === 'group_phase' && !groupPhaseEnded"
@@ -90,7 +90,7 @@
                     class="w-full text-left px-4 py-2 hover:bg-gray-700 text-yellow-400"
                     :disabled="actionLoading"
                   >
-                    End Group Phase
+                    {{ t('leagueDetail.endGroupPhase') }}
                   </button>
                   <button
                     v-if="league.status === 'group_phase' && groupPhaseEnded && league.has_knockout_phase"
@@ -98,7 +98,7 @@
                     class="w-full text-left px-4 py-2 hover:bg-gray-700 text-orange-400"
                     :disabled="actionLoading"
                   >
-                    Start Knockout
+                    {{ t('leagueDetail.startKnockout') }}
                   </button>
                   <button
                     v-if="league.status === 'group_phase' && groupPhaseEnded && !league.has_knockout_phase"
@@ -106,20 +106,20 @@
                     class="w-full text-left px-4 py-2 hover:bg-gray-700 text-green-400"
                     :disabled="actionLoading"
                   >
-                    Finish League
+                    {{ t('leagueDetail.finishLeague') }}
                   </button>
 
                   <!-- List Actions -->
                   <template v-if="hasListActions">
                     <div class="border-t border-gray-700 my-1"></div>
-                    <div class="px-4 py-1 text-xs text-gray-500 uppercase">Army Lists</div>
+                    <div class="px-4 py-1 text-xs text-gray-500 uppercase">{{ t('leagueDetail.armyLists') }}</div>
                     <button
                       v-if="league.has_group_phase_lists && !league.group_lists_frozen && league.status === 'registration'"
                       @click="freezeGroupLists(); showActionsMenu = false"
                       class="w-full text-left px-4 py-2 hover:bg-gray-700"
                       :disabled="actionLoading"
                     >
-                      Freeze Group Lists
+                      {{ t('leagueDetail.freezeGroupLists') }}
                     </button>
                     <button
                       v-if="league.has_group_phase_lists && league.group_lists_frozen && !league.group_lists_visible"
@@ -127,7 +127,7 @@
                       class="w-full text-left px-4 py-2 hover:bg-gray-700"
                       :disabled="actionLoading"
                     >
-                      Reveal Group Lists
+                      {{ t('leagueDetail.revealGroupLists') }}
                     </button>
                     <button
                       v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_frozen"
@@ -135,7 +135,7 @@
                       class="w-full text-left px-4 py-2 hover:bg-gray-700"
                       :disabled="actionLoading"
                     >
-                      Freeze Knockout Lists
+                      {{ t('leagueDetail.freezeKnockoutLists') }}
                     </button>
                     <button
                       v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_visible"
@@ -143,7 +143,7 @@
                       class="w-full text-left px-4 py-2 hover:bg-gray-700"
                       :disabled="actionLoading"
                     >
-                      Reveal Knockout Lists
+                      {{ t('leagueDetail.revealKnockoutLists') }}
                     </button>
                   </template>
                 </template>
@@ -159,38 +159,38 @@
       <!-- Info Cards -->
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="card">
-          <h3 class="text-sm text-gray-400 mb-1">Players</h3>
+          <h3 class="text-sm text-gray-400 mb-1">{{ t('leagueDetail.players') }}</h3>
           <p class="text-2xl font-bold">{{ league.player_count }}</p>
           <p v-if="league.qualifying_spots_per_group" class="text-xs text-gray-500 mt-1">
-            Top {{ league.qualifying_spots_per_group }} per group advance
+            {{ t('leagueDetail.topPerGroupAdvance', { count: league.qualifying_spots_per_group }) }}
           </p>
         </div>
         <div class="card">
-          <h3 class="text-sm text-gray-400 mb-1">Format</h3>
+          <h3 class="text-sm text-gray-400 mb-1">{{ t('leagueDetail.format') }}</h3>
           <p class="text-lg font-bold">{{ leagueFormat }}</p>
         </div>
         <div class="card">
           <div class="flex items-center gap-2 mb-1">
-            <h3 class="text-sm text-gray-400">Scoring</h3>
+            <h3 class="text-sm text-gray-400">{{ t('leagueDetail.scoring') }}</h3>
             <div class="relative group">
               <svg class="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" stroke-width="2"/>
                 <path stroke-width="2" d="M12 16v-4m0-4h.01"/>
               </svg>
               <div class="absolute left-0 top-6 w-72 p-3 bg-gray-800 border border-gray-600 rounded shadow-lg text-xs text-gray-300 hidden group-hover:block z-20">
-                <p class="font-semibold mb-2">How scoring works:</p>
+                <p class="font-semibold mb-2">{{ t('leagueDetail.howScoringWorks') }}</p>
                 <ul class="space-y-1 mb-2">
-                  <li><span class="text-green-400">Win:</span> {{ league.points_per_win }} pts</li>
-                  <li><span class="text-yellow-400">Draw:</span> {{ league.points_per_draw }} pts</li>
-                  <li><span class="text-red-400">Loss:</span> {{ league.points_per_loss }} pts</li>
+                  <li><span class="text-green-400">{{ t('leagueDetail.win') }}:</span> {{ league.points_per_win }} {{ t('profile.pts') }}</li>
+                  <li><span class="text-yellow-400">{{ t('leagueDetail.draw') }}:</span> {{ league.points_per_draw }} {{ t('profile.pts') }}</li>
+                  <li><span class="text-red-400">{{ t('leagueDetail.loss') }}:</span> {{ league.points_per_loss }} {{ t('profile.pts') }}</li>
                 </ul>
-                <p class="mb-2">Plus bonus based on score difference:<br/>
+                <p class="mb-2">{{ t('leagueDetail.bonusExplanation') }}<br/>
                 <span class="text-gray-400">bonus = min(100, max(0, diff + 50))</span></p>
-                <p class="font-semibold mb-1">Examples:</p>
+                <p class="font-semibold mb-1">{{ t('leagueDetail.examples') }}</p>
                 <ul class="space-y-1 text-gray-400">
-                  <li>Win 72-68: {{ league.points_per_win }} + 54 = <span class="text-white">{{ league.points_per_win + 54 }}</span></li>
-                  <li>Lose 68-72: {{ league.points_per_loss }} + 46 = <span class="text-white">{{ league.points_per_loss + 46 }}</span></li>
-                  <li>Draw 70-70: {{ league.points_per_draw }} + 50 = <span class="text-white">{{ league.points_per_draw + 50 }}</span></li>
+                  <li>{{ t('leagueDetail.win') }} 72-68: {{ league.points_per_win }} + 54 = <span class="text-white">{{ league.points_per_win + 54 }}</span></li>
+                  <li>{{ t('leagueDetail.loss') }} 68-72: {{ league.points_per_loss }} + 46 = <span class="text-white">{{ league.points_per_loss + 46 }}</span></li>
+                  <li>{{ t('leagueDetail.draw') }} 70-70: {{ league.points_per_draw }} + 50 = <span class="text-white">{{ league.points_per_draw + 50 }}</span></li>
                 </ul>
               </div>
             </div>
@@ -211,53 +211,53 @@
       <!-- Army List Submission (for players) -->
       <div v-if="isJoined && canSubmitList" class="card mb-8">
         <h3 class="text-lg font-semibold mb-3">
-          {{ listSubmissionPhase === 'group' ? 'Group Phase Army List' : 'Knockout Phase Army List' }}
+          {{ listSubmissionPhase === 'group' ? t('leagueDetail.groupPhaseArmyList') : t('leagueDetail.knockoutPhaseArmyList') }}
         </h3>
         <p class="text-sm text-gray-400 mb-4">
           <template v-if="listSubmissionPhase === 'group'">
-            Submit your army list before the league starts. Lists will be revealed by the organizer.
+            {{ t('leagueDetail.submitListBeforeLeagueStarts') }}
           </template>
           <template v-else>
-            Submit your army list for the knockout phase.
+            {{ t('leagueDetail.submitListForKnockout') }}
           </template>
         </p>
 
         <div v-if="currentPlayerListSubmitted" class="mb-4 p-3 bg-green-900/20 border border-green-600 rounded">
-          <p class="text-green-300 text-sm">List submitted!</p>
+          <p class="text-green-300 text-sm">{{ t('leagueDetail.listSubmitted') }}</p>
         </div>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-300 mb-2">Army Faction</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueDetail.armyFaction') }}</label>
           <select
             v-model="armyFactionForm"
             class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
             :disabled="listIsFrozen"
           >
-            <option value="">Select your army...</option>
+            <option value="">{{ t('leagueDetail.selectYourArmy') }}</option>
             <option v-for="faction in armyFactions" :key="faction" :value="faction">{{ faction }}</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Army List</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('matchups.armyList') }}</label>
           <textarea
             v-model="armyListForm"
             rows="8"
             class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow font-mono text-sm"
-            placeholder="Paste your army list here..."
+            :placeholder="t('leagueDetail.pasteArmyListHere')"
             :disabled="listIsFrozen"
           ></textarea>
         </div>
 
         <div class="flex items-center justify-between mt-4">
-          <p v-if="listIsFrozen" class="text-sm text-yellow-400">Lists are frozen - no more changes allowed.</p>
+          <p v-if="listIsFrozen" class="text-sm text-yellow-400">{{ t('leagueDetail.listsFrozen') }}</p>
           <button
             v-if="!listIsFrozen"
             @click="submitArmyList"
             class="btn-primary"
             :disabled="submittingList || !armyListForm.trim() || !armyFactionForm"
           >
-            {{ submittingList ? 'Submitting...' : (currentPlayerListSubmitted ? 'Update List' : 'Submit List') }}
+            {{ submittingList ? t('leagueDetail.submitting') : (currentPlayerListSubmitted ? t('leagueDetail.updateList') : t('leagueDetail.submitList')) }}
           </button>
         </div>
       </div>
@@ -279,8 +279,8 @@
 
       <!-- Registration Phase - Show registered players -->
       <div v-if="league.status === 'registration'" class="card mb-6">
-        <h2 class="text-xl font-bold mb-4">Registered Players ({{ players.length }})</h2>
-        <div v-if="players.length === 0" class="text-gray-500">No players registered yet.</div>
+        <h2 class="text-xl font-bold mb-4">{{ t('leagueDetail.registeredPlayers', { count: players.length }) }}</h2>
+        <div v-if="players.length === 0" class="text-gray-500">{{ t('leagueDetail.noPlayersRegistered') }}</div>
         <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-3 py-2 flex items-center gap-2">
             <!-- Avatar thumbnail -->
@@ -312,7 +312,7 @@
               v-if="isOrganizer"
               @click="openRemovePlayerModal(player)"
               class="text-red-400 hover:text-red-300 flex-shrink-0"
-              title="Remove player"
+              :title="t('leagueDetail.removePlayer')"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -339,19 +339,19 @@
                 v-if="isOrganizer && editingGroupId !== group.group_id"
                 @click="startEditGroupName(group)"
                 class="text-gray-400 hover:text-white"
-                title="Edit group name"
+                :title="t('leagueDetail.editGroupName')"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </button>
               <template v-if="editingGroupId === group.group_id">
-                <button @click="saveGroupName(group.group_id)" class="text-green-400 hover:text-green-300" title="Save">
+                <button @click="saveGroupName(group.group_id)" class="text-green-400 hover:text-green-300" :title="t('leagueDetail.saveButton')">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </button>
-                <button @click="cancelEditGroupName" class="text-red-400 hover:text-red-300" title="Cancel">
+                <button @click="cancelEditGroupName" class="text-red-400 hover:text-red-300" :title="t('leagueDetail.cancel')">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -359,21 +359,21 @@
               </template>
             </div>
             <span v-if="group.qualifying_spots" class="text-sm text-gray-400">
-              Top {{ group.qualifying_spots }} advance
+              {{ t('leagueDetail.topAdvance', { count: group.qualifying_spots }) }}
             </span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-gray-400 border-b border-gray-700">
-                  <th class="text-left py-2 px-2">#</th>
-                  <th class="text-left py-2 px-2">Player</th>
-                  <th class="text-center py-2 px-2">P</th>
-                  <th class="text-center py-2 px-2">W</th>
-                  <th class="text-center py-2 px-2">D</th>
-                  <th class="text-center py-2 px-2">L</th>
-                  <th class="text-right py-2 px-2">Pts</th>
-                  <th class="text-right py-2 px-2">Avg</th>
+                  <th class="text-left py-2 px-2">{{ t('leagueDetail.position') }}</th>
+                  <th class="text-left py-2 px-2">{{ t('leagueDetail.player') }}</th>
+                  <th class="text-center py-2 px-2">{{ t('leagueDetail.played') }}</th>
+                  <th class="text-center py-2 px-2">{{ t('leagueDetail.won') }}</th>
+                  <th class="text-center py-2 px-2">{{ t('leagueDetail.drawn') }}</th>
+                  <th class="text-center py-2 px-2">{{ t('leagueDetail.lost') }}</th>
+                  <th class="text-right py-2 px-2">{{ t('leagueDetail.points') }}</th>
+                  <th class="text-right py-2 px-2">{{ t('leagueDetail.average') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -435,7 +435,7 @@
 
       <div v-if="activeTab === 'matches'" class="space-y-4">
         <div v-if="matches.length === 0" class="card text-center py-8">
-          <p class="text-gray-400">No matches yet</p>
+          <p class="text-gray-400">{{ t('leagueDetail.noMatchesYet') }}</p>
         </div>
 
         <!-- Knockout Matches (shown first when in knockout phase) -->
@@ -444,9 +444,9 @@
             @click="toggleGroup('knockout')"
             class="w-full flex items-center justify-between px-4 py-3 bg-orange-900/30 hover:bg-orange-900/40 transition-colors"
           >
-            <h3 class="text-lg font-bold text-orange-400">Knockout Phase</h3>
+            <h3 class="text-lg font-bold text-orange-400">{{ t('leagueDetail.knockoutPhase') }}</h3>
             <div class="flex items-center gap-3">
-              <span class="text-sm text-orange-300">{{ knockoutMatches.length }} matches</span>
+              <span class="text-sm text-orange-300">{{ t('leagueDetail.matchesCount', { count: knockoutMatches.length }) }}</span>
               <svg
                 :class="['w-5 h-5 text-orange-400 transition-transform', expandedGroups['knockout'] ? 'rotate-180' : '']"
                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -480,7 +480,7 @@
           >
             <h3 class="text-lg font-bold text-squig-yellow">{{ group.name }}</h3>
             <div class="flex items-center gap-3">
-              <span class="text-sm text-gray-400">{{ group.myMatches.length + group.otherMatches.length }} matches</span>
+              <span class="text-sm text-gray-400">{{ t('leagueDetail.matchesCount', { count: group.myMatches.length + group.otherMatches.length }) }}</span>
               <svg
                 :class="['w-5 h-5 text-gray-400 transition-transform', expandedGroups[group.name] ? 'rotate-180' : '']"
                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -493,7 +493,7 @@
           <div v-if="expandedGroups[group.name]" class="p-4 space-y-4">
             <!-- My matches in this group first -->
             <div v-if="group.myMatches.length > 0" class="space-y-2">
-              <p class="text-xs text-gray-500 uppercase tracking-wide">My Matches</p>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">{{ t('leagueDetail.myMatches') }}</p>
               <MatchCard
                 v-for="match in group.myMatches"
                 :key="match.id"
@@ -509,7 +509,7 @@
 
             <!-- Other matches in this group -->
             <div v-if="group.otherMatches.length > 0" class="space-y-2">
-              <p v-if="group.myMatches.length > 0" class="text-xs text-gray-500 uppercase tracking-wide">Other Matches</p>
+              <p v-if="group.myMatches.length > 0" class="text-xs text-gray-500 uppercase tracking-wide">{{ t('leagueDetail.otherMatches') }}</p>
               <MatchCard
                 v-for="match in group.otherMatches"
                 :key="match.id"
@@ -531,12 +531,12 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="text-gray-400 border-b border-gray-700">
-                <th class="text-left py-2 px-2">Player</th>
-                <th class="text-left py-2 px-2">Group</th>
-                <th class="text-center py-2 px-2">Games</th>
-                <th class="text-right py-2 px-2">Points</th>
-                <th v-if="showKnockoutPlacement" class="text-center py-2 px-2">Knockout</th>
-                <th v-if="isOrganizer && league.status !== 'finished'" class="text-center py-2 px-2">Actions</th>
+                <th class="text-left py-2 px-2">{{ t('leagueDetail.player') }}</th>
+                <th class="text-left py-2 px-2">{{ t('leagueDetail.group') }}</th>
+                <th class="text-center py-2 px-2">{{ t('leagueDetail.games') }}</th>
+                <th class="text-right py-2 px-2">{{ t('leagueDetail.points') }}</th>
+                <th v-if="showKnockoutPlacement" class="text-center py-2 px-2">{{ t('leagueDetail.knockout') }}</th>
+                <th v-if="isOrganizer && league.status !== 'finished'" class="text-center py-2 px-2">{{ t('leagueDetail.actionsColumn') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -566,7 +566,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </button>
-                    <span v-if="player.wouldQualify" class="text-xs text-green-400" title="Would advance to knockout">Q</span>
+                    <span v-if="player.wouldQualify" class="text-xs text-green-400" :title="t('leagueDetail.wouldAdvanceToKnockout')">Q</span>
                   </div>
                 </td>
                 <td class="py-2 px-2">{{ player.group_name || '-' }}</td>
@@ -584,7 +584,7 @@
                       v-if="league.status === 'group_phase' && player.group_id"
                       @click="openChangeGroupModal(player)"
                       class="text-blue-400 hover:text-blue-300"
-                      title="Change group"
+                      :title="t('leagueDetail.changeGroupTitle')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -593,7 +593,7 @@
                     <button
                       @click="openRemovePlayerModal(player)"
                       class="text-red-400 hover:text-red-300"
-                      title="Remove player"
+                      :title="t('leagueDetail.removePlayer')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -606,7 +606,7 @@
           </table>
         </div>
         <p v-if="league?.qualifying_spots_per_group && league?.has_knockout_phase" class="text-xs text-gray-500 mt-3">
-          <span class="text-green-400">Q</span> = Would qualify for knockout (top {{ league.qualifying_spots_per_group }} per group)
+          <span class="text-green-400">Q</span> = {{ t('leagueDetail.wouldQualify', { count: league.qualifying_spots_per_group }) }}
         </p>
       </div>
 
@@ -620,17 +620,17 @@
             class="btn-primary bg-orange-600 hover:bg-orange-700"
             :disabled="actionLoading"
           >
-            {{ league.current_knockout_round === 'final' ? 'Finish League' : 'Advance to Next Round' }}
+            {{ league.current_knockout_round === 'final' ? t('leagueDetail.finishLeague') : t('leagueDetail.advanceToNextRound') }}
           </button>
           <span v-else-if="pendingKnockoutMatches > 0" class="text-sm text-gray-400">
-            {{ pendingKnockoutMatches }} match{{ pendingKnockoutMatches > 1 ? 'es' : '' }} pending confirmation in {{ knockoutRoundText(league.current_knockout_round) }}
+            {{ t('leagueDetail.matchesPendingConfirmation', { count: pendingKnockoutMatches, round: knockoutRoundText(league.current_knockout_round) }, pendingKnockoutMatches) }}
           </span>
         </div>
 
         <!-- Preview notice when not in knockout yet -->
         <div v-if="league.status !== 'knockout_phase' && league.status !== 'finished'" class="mb-4 bg-blue-900/20 border border-blue-500 rounded p-3">
           <p class="text-blue-200 text-sm">
-            <span class="font-bold">Preview Mode:</span> This bracket shows projected matchups based on current standings. Final seeding will be determined when knockout phase starts.
+            <span class="font-bold">{{ t('leagueDetail.previewMode') }}</span> {{ t('leagueDetail.previewNotice') }}
           </p>
         </div>
 
@@ -648,16 +648,16 @@
 
         <!-- Not enough qualified players yet -->
         <div v-else class="card text-center py-8">
-          <p class="text-gray-400 mb-2">Not enough qualified players yet.</p>
+          <p class="text-gray-400 mb-2">{{ t('leagueDetail.notEnoughQualified') }}</p>
           <p class="text-sm text-gray-500">
-            Players need to play at least one match to appear in the bracket preview.
+            {{ t('leagueDetail.playersNeedMatch') }}
           </p>
         </div>
 
         <!-- League finished -->
         <div v-if="league.status === 'finished' && knockoutMatches.length > 0" class="card text-center py-6 bg-green-900/20 border border-green-500">
-          <h3 class="text-2xl font-bold text-green-400 mb-2">League Complete!</h3>
-          <p class="text-gray-300">The knockout phase has concluded.</p>
+          <h3 class="text-2xl font-bold text-green-400 mb-2">{{ t('leagueDetail.leagueComplete') }}</h3>
+          <p class="text-gray-300">{{ t('leagueDetail.knockoutConcluded') }}</p>
         </div>
       </div>
     </div>
@@ -665,9 +665,9 @@
     <!-- Confirm Modals -->
     <ConfirmModal
       :show="showDrawGroupsModal"
-      title="Draw Groups"
-      message="Are you sure you want to draw groups? This action cannot be undone."
-      confirmText="Draw Groups"
+      :title="t('leagueDetail.drawGroups')"
+      :message="t('leagueDetail.drawGroupsConfirm')"
+      :confirmText="t('leagueDetail.drawGroups')"
       :danger="true"
       @confirm="drawGroups"
       @cancel="showDrawGroupsModal = false"
@@ -675,9 +675,9 @@
 
     <ConfirmModal
       :show="showStartKnockoutModal"
-      title="Start Knockout Phase"
-      message="Are you sure you want to start the knockout phase? Make sure all group matches are completed."
-      confirmText="Start Knockout"
+      :title="t('leagueDetail.startKnockout')"
+      :message="t('leagueDetail.startKnockoutConfirm')"
+      :confirmText="t('leagueDetail.startKnockout')"
       :danger="true"
       @confirm="startKnockout"
       @cancel="showStartKnockoutModal = false"
@@ -685,18 +685,18 @@
 
     <ConfirmModal
       :show="showRevealListsModal"
-      title="Reveal Army Lists"
-      message="Are you sure you want to reveal all army lists? Players will be able to see each other's lists."
-      confirmText="Reveal Lists"
+      :title="t('leagueDetail.revealLists')"
+      :message="t('leagueDetail.revealListsConfirm')"
+      :confirmText="t('leagueDetail.revealLists')"
       @confirm="revealLists"
       @cancel="showRevealListsModal = false"
     />
 
     <ConfirmModal
       :show="showEndGroupPhaseModal"
-      title="End Group Phase"
-      message="Are you sure you want to end the group phase? Players will no longer be able to submit group match results."
-      confirmText="End Group Phase"
+      :title="t('leagueDetail.endGroupPhase')"
+      :message="t('leagueDetail.endGroupPhaseConfirm')"
+      :confirmText="t('leagueDetail.endGroupPhase')"
       :danger="true"
       @confirm="endGroupPhase"
       @cancel="showEndGroupPhaseModal = false"
@@ -704,9 +704,9 @@
 
     <ConfirmModal
       :show="showFinishLeagueModal"
-      title="Finish League"
-      message="Are you sure you want to finish this league? This will mark it as completed."
-      confirmText="Finish League"
+      :title="t('leagueDetail.finishLeague')"
+      :message="t('leagueDetail.finishLeagueConfirm')"
+      :confirmText="t('leagueDetail.finishLeague')"
       :danger="true"
       @confirm="finishLeague"
       @cancel="showFinishLeagueModal = false"
@@ -714,18 +714,18 @@
 
     <ConfirmModal
       :show="showAdvanceKnockoutModal"
-      title="Advance to Next Round"
-      :message="league?.current_knockout_round === 'final' ? 'The final is complete. This will finish the league.' : 'All matches in this round are confirmed. Advance to the next round?'"
-      :confirmText="league?.current_knockout_round === 'final' ? 'Finish League' : 'Advance'"
+      :title="t('leagueDetail.advanceToNextRound')"
+      :message="league?.current_knockout_round === 'final' ? t('leagueDetail.advanceKnockoutFinal') : t('leagueDetail.advanceKnockoutConfirm')"
+      :confirmText="league?.current_knockout_round === 'final' ? t('leagueDetail.finishLeague') : t('leagueDetail.advance')"
       @confirm="advanceKnockout"
       @cancel="showAdvanceKnockoutModal = false"
     />
 
     <ConfirmModal
       :show="showLeaveLeagueModal"
-      title="Leave League"
+      :title="t('leagueDetail.leaveLeague')"
       :message="leaveLeagueMessage"
-      confirmText="Leave League"
+      :confirmText="t('leagueDetail.leaveLeague')"
       :danger="true"
       @confirm="leaveLeague"
       @cancel="showLeaveLeagueModal = false"
@@ -733,9 +733,9 @@
 
     <ConfirmModal
       :show="showRemovePlayerModal"
-      title="Remove Player"
+      :title="t('leagueDetail.removePlayerTitle')"
       :message="removePlayerMessage"
-      confirmText="Remove Player"
+      :confirmText="t('leagueDetail.removePlayer')"
       :danger="true"
       @confirm="removePlayer"
       @cancel="showRemovePlayerModal = false"
@@ -744,9 +744,9 @@
     <!-- Change Group Modal -->
     <div v-if="showChangeGroupModal && selectedPlayerForAction" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-xl font-bold mb-4">Change Group</h3>
+        <h3 class="text-xl font-bold mb-4">{{ t('leagueDetail.changeGroup') }}</h3>
         <p class="text-gray-400 mb-4">
-          Move <span class="text-white font-semibold">{{ selectedPlayerForAction.username || selectedPlayerForAction.discord_username }}</span> to:
+          {{ t('leagueDetail.moveTo', { name: selectedPlayerForAction.username || selectedPlayerForAction.discord_username }) }}
         </p>
         <select v-model="newGroupId" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 mb-4">
           <option v-for="group in availableGroups" :key="group.group_id" :value="group.group_id">
@@ -757,9 +757,9 @@
           {{ changeGroupError }}
         </div>
         <div class="flex gap-3">
-          <button @click="showChangeGroupModal = false" class="flex-1 btn-secondary">Cancel</button>
+          <button @click="showChangeGroupModal = false" class="flex-1 btn-secondary">{{ t('leagueDetail.cancel') }}</button>
           <button @click="changePlayerGroup" :disabled="actionLoading" class="flex-1 btn-primary">
-            {{ actionLoading ? 'Moving...' : 'Move Player' }}
+            {{ actionLoading ? t('leagueDetail.moving') : t('leagueDetail.movePlayer') }}
           </button>
         </div>
       </div>
@@ -774,14 +774,14 @@
 
         <div v-if="selectedMatch.status === 'confirmed'" class="mb-4">
           <div class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded">
-            Match result confirmed and locked
+            {{ t('leagueDetail.matchResultConfirmed') }}
           </div>
           <div class="mt-4 text-center">
             <p class="text-2xl font-bold text-squig-yellow">
               {{ selectedMatch.player1_score }} - {{ selectedMatch.player2_score }}
             </p>
             <p class="text-sm text-gray-400 mt-2">
-              League points: {{ selectedMatch.player1_league_points }} - {{ selectedMatch.player2_league_points }}
+              {{ t('leagueDetail.leaguePoints') }} {{ selectedMatch.player1_league_points }} - {{ selectedMatch.player2_league_points }}
             </p>
           </div>
           <button
@@ -790,7 +790,7 @@
             :disabled="submittingScore"
             class="mt-4 w-full btn-secondary border-yellow-500 text-yellow-400 hover:bg-yellow-900/30"
           >
-            {{ submittingScore ? 'Unlocking...' : 'Unlock for Editing' }}
+            {{ submittingScore ? t('leagueDetail.unlocking') : t('leagueDetail.unlockForEditing') }}
           </button>
           <div v-if="matchError" class="mt-2 bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded text-sm">
             {{ matchError }}
@@ -828,20 +828,20 @@
           </div>
 
           <div class="mb-4">
-            <label class="block text-sm text-gray-400 mb-1">Map (optional)</label>
+            <label class="block text-sm text-gray-400 mb-1">{{ t('leagueDetail.mapOptional') }}</label>
             <select
               v-model="scoreForm.map_name"
               class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
             >
-              <option value="">-- Select map --</option>
+              <option value="">{{ t('leagueDetail.selectMap') }}</option>
               <option v-for="map in missionMaps" :key="map" :value="map">{{ map }}</option>
-              <option value="__custom__">Custom...</option>
+              <option value="__custom__">{{ t('leagueDetail.custom') }}</option>
             </select>
             <input
               v-if="scoreForm.map_name === '__custom__'"
               v-model="scoreForm.custom_map"
               type="text"
-              placeholder="Enter custom map name"
+              :placeholder="t('leagueDetail.enterCustomMapName')"
               class="w-full mt-2 bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
             />
           </div>
@@ -856,7 +856,7 @@
               :disabled="submittingScore"
               class="flex-1 btn-primary"
             >
-              {{ submittingScore ? 'Saving...' : 'Save Score' }}
+              {{ submittingScore ? t('leagueDetail.saving') : t('leagueDetail.saveScore') }}
             </button>
             <button
               v-if="canConfirmThisMatch && selectedMatch.player1_score !== null"
@@ -864,13 +864,13 @@
               :disabled="submittingScore"
               class="flex-1 btn-primary bg-green-600 hover:bg-green-700"
             >
-              {{ submittingScore ? 'Confirming...' : 'Confirm & Lock' }}
+              {{ submittingScore ? t('leagueDetail.confirming') : t('leagueDetail.confirmAndLock') }}
             </button>
           </div>
         </div>
 
         <div v-else class="text-center text-gray-400">
-          <p>You don't have permission to edit this match.</p>
+          <p>{{ t('leagueDetail.noPermissionToEdit') }}</p>
           <div v-if="selectedMatch.player1_score !== null" class="mt-4">
             <p class="text-2xl font-bold text-squig-yellow">
               {{ selectedMatch.player1_score }} - {{ selectedMatch.player2_score }}
@@ -882,7 +882,7 @@
           @click="showMatchModal = false"
           class="mt-4 w-full btn-secondary"
         >
-          Close
+          {{ t('leagueDetail.close') }}
         </button>
       </div>
     </div>
@@ -908,7 +908,7 @@
               v-if="isOrganizer && !editingList"
               @click="startEditingList"
               class="text-blue-400 hover:text-blue-300"
-              title="Edit list"
+              :title="t('leagueDetail.editList')"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -931,7 +931,7 @@
             @click="closeListModal"
             class="mt-4 w-full btn-secondary"
           >
-            Close
+            {{ t('leagueDetail.close') }}
           </button>
         </template>
 
@@ -939,19 +939,19 @@
         <template v-else>
           <div class="space-y-4 flex-1 overflow-y-auto">
             <div>
-              <label class="block text-sm text-gray-400 mb-1">Army Faction</label>
+              <label class="block text-sm text-gray-400 mb-1">{{ t('leagueDetail.armyFaction') }}</label>
               <select v-model="editListFaction" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2">
-                <option value="">Select faction...</option>
+                <option value="">{{ t('leagueDetail.selectFaction') }}</option>
                 <option v-for="faction in armyFactions" :key="faction" :value="faction">{{ faction }}</option>
               </select>
             </div>
             <div class="flex-1">
-              <label class="block text-sm text-gray-400 mb-1">Army List</label>
+              <label class="block text-sm text-gray-400 mb-1">{{ t('matchups.armyList') }}</label>
               <textarea
                 v-model="editListContent"
                 rows="12"
                 class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 font-mono text-sm"
-                placeholder="Paste army list here..."
+                :placeholder="t('leagueDetail.pasteArmyListHere')"
               ></textarea>
             </div>
             <div v-if="editListError" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-2 rounded text-sm">
@@ -959,13 +959,13 @@
             </div>
           </div>
           <div class="flex gap-3 mt-4">
-            <button @click="cancelEditingList" class="flex-1 btn-secondary">Cancel</button>
+            <button @click="cancelEditingList" class="flex-1 btn-secondary">{{ t('leagueDetail.cancel') }}</button>
             <button
               @click="saveEditedList"
               :disabled="savingList || !editListFaction || !editListContent.trim()"
               class="flex-1 btn-primary"
             >
-              {{ savingList ? 'Saving...' : 'Save Changes' }}
+              {{ savingList ? t('leagueDetail.saving') : t('leagueDetail.saveChanges') }}
             </button>
           </div>
         </template>
@@ -977,6 +977,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
 import ConfirmModal from '../components/ConfirmModal.vue'
@@ -986,6 +987,7 @@ import { ARMY_FACTIONS } from '../constants/armies'
 import { fetchMapsData } from '../constants/maps'
 
 const armyFactions = ARMY_FACTIONS
+const { t } = useI18n()
 
 // Maps data from API
 const mapsData = ref(null)
@@ -1071,13 +1073,13 @@ const showActionError = (message) => {
 
 const tabs = computed(() => {
   const baseTabs = [
-    { id: 'standings', name: 'Standings' },
-    { id: 'matches', name: 'Matches' },
-    { id: 'players', name: 'Players' },
+    { id: 'standings', name: t('leagueDetail.standings') },
+    { id: 'matches', name: t('leagueDetail.matches') },
+    { id: 'players', name: t('leagueDetail.players') },
   ]
   // Add Knockout tab if league has knockout phase
   if (league.value?.has_knockout_phase) {
-    baseTabs.push({ id: 'knockout', name: 'Knockout' })
+    baseTabs.push({ id: 'knockout', name: t('leagueDetail.knockout') })
   }
   return baseTabs
 })
@@ -1103,9 +1105,9 @@ const canLeaveLeague = computed(() => {
 const leaveLeagueMessage = computed(() => {
   if (!league.value) return ''
   if (league.value.status === 'registration') {
-    return 'Are you sure you want to leave this league? You can rejoin before registration closes.'
+    return t('leagueDetail.leaveLeagueRegistration')
   }
-  return 'Are you sure you want to leave? Your opponents will receive walkover wins (25:0, 1075 points) for unplayed matches.'
+  return t('leagueDetail.leaveLeagueActive')
 })
 
 // Message for remove player modal
@@ -1113,9 +1115,9 @@ const removePlayerMessage = computed(() => {
   if (!selectedPlayerForAction.value || !league.value) return ''
   const name = selectedPlayerForAction.value.username || selectedPlayerForAction.value.discord_username
   if (league.value.status === 'registration') {
-    return `Remove ${name} from the league?`
+    return t('leagueDetail.removePlayerRegistration', { name })
   }
-  return `Remove ${name}? Their opponents will receive walkover wins (25:0, 1075 points) for unplayed matches.`
+  return t('leagueDetail.removePlayerActive', { name })
 })
 
 // Available groups for change group modal
@@ -1155,20 +1157,22 @@ const groupPhaseEnded = computed(() => {
 const leagueFormat = computed(() => {
   if (!league.value) return ''
   if (league.value.has_knockout_phase) {
-    const knockoutInfo = league.value.knockout_size ? ` (Top ${league.value.knockout_size})` : ''
-    return `Groups + Knockout${knockoutInfo}`
+    if (league.value.knockout_size) {
+      return t('leagueDetail.groupsKnockoutTop', { count: league.value.knockout_size })
+    }
+    return t('leagueDetail.groupsKnockout')
   }
-  return 'Groups Only'
+  return t('leagueDetail.groupsOnly')
 })
 
 // Phase end label and date based on current status
 const phaseEndLabel = computed(() => {
-  if (!league.value) return 'Ends'
-  if (league.value.status === 'registration') return 'Registration Ends'
-  if (league.value.status === 'group_phase') return 'Group Phase Ends'
-  if (league.value.status === 'knockout_phase') return 'Round Deadline'
-  if (league.value.status === 'finished') return 'Finished'
-  return 'Ends'
+  if (!league.value) return t('leagueDetail.ends')
+  if (league.value.status === 'registration') return t('leagueDetail.registrationEnds')
+  if (league.value.status === 'group_phase') return t('leagueDetail.groupPhaseEnds')
+  if (league.value.status === 'knockout_phase') return t('leagueDetail.roundDeadline')
+  if (league.value.status === 'finished') return t('leagues.finished')
+  return t('leagueDetail.ends')
 })
 
 const phaseEndDate = computed(() => {

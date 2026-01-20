@@ -28,6 +28,7 @@ class UserUpdate(BaseModel):
     show_email: Optional[bool] = None
     avatar_url: Optional[str] = Field(None, max_length=500)
     wants_organizer: Optional[bool] = None  # Toggle between player/organizer role
+    preferred_language: Optional[str] = Field(None, max_length=5)  # ISO 639-1 code
 
 
 class UserResponse(BaseModel):
@@ -43,6 +44,7 @@ class UserResponse(BaseModel):
     show_email: bool = False
     avatar_url: Optional[str] = None
     has_discord_oauth: bool = False  # True if discord linked via OAuth
+    preferred_language: str = "en"  # ISO 639-1 code
     created_at: datetime
 
     class Config:

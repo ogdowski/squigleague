@@ -1,38 +1,38 @@
 <template>
   <div class="max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">New League</h1>
+    <h1 class="text-3xl font-bold mb-6">{{ t('leagueCreate.title') }}</h1>
 
     <form @submit.prevent="createLeague" class="card space-y-6">
       <div>
-        <label class="block text-sm font-medium text-gray-300 mb-2">League Name</label>
+        <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.leagueName') }}</label>
         <input
           v-model="form.name"
           type="text"
           required
           class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-          placeholder="e.g. AoS League Season 1"
+          :placeholder="t('leagueCreate.leagueNamePlaceholder')"
         />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
+        <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.descriptionOptional') }}</label>
         <textarea
           v-model="form.description"
           rows="3"
           class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-          placeholder="League description..."
+          :placeholder="t('leagueCreate.descriptionPlaceholder')"
         ></textarea>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-300 mb-2">Registration End</label>
+        <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.registrationEnd') }}</label>
         <DateHourPicker v-model="form.registration_end" required />
       </div>
 
       <!-- Player Limits -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Min Players</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.minPlayers') }}</label>
           <input
             v-model.number="form.min_players"
             type="number"
@@ -42,12 +42,12 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Max Players (optional)</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.maxPlayersOptional') }}</label>
           <input
             v-model.number="form.max_players"
             type="number"
             min="4"
-            :placeholder="'No limit'"
+            :placeholder="t('leagueCreate.noLimit')"
             class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
           />
         </div>
@@ -56,7 +56,7 @@
       <!-- Group Size -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Min Group Size</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.minGroupSize') }}</label>
           <input
             v-model.number="form.min_group_size"
             type="number"
@@ -66,7 +66,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Max Group Size</label>
+          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.maxGroupSize') }}</label>
           <input
             v-model.number="form.max_group_size"
             type="number"
@@ -79,7 +79,7 @@
 
       <!-- Scheduling -->
       <div>
-        <label class="block text-sm font-medium text-gray-300 mb-2">Days per Match</label>
+        <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.daysPerMatch') }}</label>
         <input
           v-model.number="form.days_per_match"
           type="number"
@@ -87,7 +87,7 @@
           max="60"
           class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
         />
-        <p class="text-xs text-gray-500 mt-1">Time allowed for each match round (group and knockout)</p>
+        <p class="text-xs text-gray-500 mt-1">{{ t('leagueCreate.daysPerMatchNote') }}</p>
       </div>
 
       <!-- Knockout Phase -->
@@ -98,24 +98,24 @@
           id="has_knockout"
           class="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-squig-yellow"
         />
-        <label for="has_knockout" class="text-sm font-medium text-gray-300">Enable Knockout Phase</label>
+        <label for="has_knockout" class="text-sm font-medium text-gray-300">{{ t('leagueCreate.enableKnockout') }}</label>
       </div>
 
       <div v-if="form.has_knockout_phase">
         <div class="flex items-center gap-2 mb-2">
-          <label class="block text-sm font-medium text-gray-300">Knockout Size</label>
+          <label class="block text-sm font-medium text-gray-300">{{ t('leagueCreate.knockoutSize') }}</label>
           <div class="relative group">
             <svg class="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" stroke-width="2"/>
               <path stroke-width="2" d="M12 16v-4m0-4h.01"/>
             </svg>
             <div class="absolute left-6 top-0 w-64 p-3 bg-gray-800 border border-gray-600 rounded shadow-lg text-xs text-gray-300 hidden group-hover:block z-10">
-              <p class="font-semibold mb-2">Knockout size limits by player count:</p>
+              <p class="font-semibold mb-2">{{ t('leagueCreate.knockoutSizeLimits') }}</p>
               <ul class="space-y-1">
-                <li>4-7 players: Top 2 only (final)</li>
-                <li>8-15 players: Default Top 4, max Top 8</li>
-                <li>16-47 players: Default Top 8, max Top 16</li>
-                <li>48+ players: Default Top 16, max Top 32</li>
+                <li>{{ t('leagueCreate.players4to7') }}</li>
+                <li>{{ t('leagueCreate.players8to15') }}</li>
+                <li>{{ t('leagueCreate.players16to47') }}</li>
+                <li>{{ t('leagueCreate.players48plus') }}</li>
               </ul>
             </div>
           </div>
@@ -124,19 +124,19 @@
           v-model="form.knockout_size"
           class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
         >
-          <option :value="null">Auto (based on player count)</option>
-          <option :value="2">Top 2 (Final only)</option>
-          <option :value="4">Top 4</option>
-          <option :value="8">Top 8</option>
-          <option :value="16">Top 16</option>
-          <option :value="32">Top 32</option>
+          <option :value="null">{{ t('leagueCreate.autoBasedOnPlayers') }}</option>
+          <option :value="2">{{ t('leagueCreate.top2FinalOnly') }}</option>
+          <option :value="4">{{ t('leagueCreate.top4') }}</option>
+          <option :value="8">{{ t('leagueCreate.top8') }}</option>
+          <option :value="16">{{ t('leagueCreate.top16') }}</option>
+          <option :value="32">{{ t('leagueCreate.top32') }}</option>
         </select>
       </div>
 
       <!-- Army Lists -->
       <div class="border-t border-gray-700 pt-6">
-        <h3 class="text-lg font-semibold mb-3">Army Lists</h3>
-        <p class="text-xs text-gray-500 mb-4">Choose when players need to submit army lists.</p>
+        <h3 class="text-lg font-semibold mb-3">{{ t('leagueCreate.armyLists') }}</h3>
+        <p class="text-xs text-gray-500 mb-4">{{ t('leagueCreate.armyListsNote') }}</p>
 
         <div class="space-y-3">
           <div class="flex items-center gap-3">
@@ -148,8 +148,8 @@
               class="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-squig-yellow"
             />
             <label for="has_group_lists" class="text-sm font-medium text-gray-300">
-              Group Phase Lists
-              <span class="text-xs text-gray-500 block">Players submit lists before league starts</span>
+              {{ t('leagueCreate.groupPhaseLists') }}
+              <span class="text-xs text-gray-500 block">{{ t('leagueCreate.groupPhaseListsNote') }}</span>
             </label>
           </div>
 
@@ -162,9 +162,9 @@
               class="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-squig-yellow disabled:opacity-50"
             />
             <label for="has_knockout_lists" class="text-sm font-medium text-gray-300">
-              Knockout Phase Lists
+              {{ t('leagueCreate.knockoutPhaseLists') }}
               <span class="text-xs text-gray-500 block">
-                {{ form.has_group_phase_lists ? 'Auto-enabled when group lists are on' : 'Players submit lists after group phase ends' }}
+                {{ form.has_group_phase_lists ? t('leagueCreate.knockoutPhaseListsAutoEnabled') : t('leagueCreate.knockoutPhaseListsNote') }}
               </span>
             </label>
           </div>
@@ -180,7 +180,7 @@
         :disabled="submitting"
         class="w-full btn-primary py-3"
       >
-        {{ submitting ? 'Creating...' : 'Create League' }}
+        {{ submitting ? t('leagueCreate.creating') : t('leagueCreate.createLeague') }}
       </button>
     </form>
   </div>
@@ -189,9 +189,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import DateHourPicker from '@/components/DateHourPicker.vue'
 
+const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const router = useRouter()
 
@@ -242,7 +244,7 @@ const createLeague = async () => {
     const response = await axios.post(`${API_URL}/league`, payload)
     router.push(`/league/${response.data.id}`)
   } catch (err) {
-    error.value = err.response?.data?.detail || 'Failed to create league'
+    error.value = err.response?.data?.detail || t('leagueCreate.failedToCreate')
   } finally {
     submitting.value = false
   }
