@@ -9,6 +9,36 @@
         </p>
 
         <form @submit.prevent="createMatchup" class="space-y-4">
+          <!-- Optional title -->
+          <div>
+            <label class="block text-sm font-medium mb-2">
+              {{ t('matchups.matchupTitle') }}
+              <span class="text-gray-400 font-normal ml-1">({{ t('matchups.optional') }})</span>
+            </label>
+            <input
+              v-model="matchupTitle"
+              type="text"
+              maxlength="100"
+              class="input-field w-full"
+              :placeholder="t('matchups.matchupTitlePlaceholder')"
+            />
+          </div>
+
+          <!-- Army faction dropdown -->
+          <div>
+            <label class="block text-sm font-medium mb-2">
+              {{ t('matchups.armyFaction') }}
+              <span class="text-gray-400 font-normal ml-1">({{ t('matchups.autoDetected') }})</span>
+            </label>
+            <select
+              v-model="armyFaction"
+              class="input-field w-full"
+            >
+              <option value="">{{ t('matchups.selectOrAutoDetect') }}</option>
+              <option v-for="army in armies" :key="army" :value="army">{{ army }}</option>
+            </select>
+          </div>
+
           <div>
             <label class="block text-sm font-medium mb-2">
               {{ t('matchups.yourArmyList') }}
@@ -178,9 +208,10 @@ Created with Sigdex: sigdex.io"
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
+import { ARMY_FACTIONS } from '../constants/armies'
 import axios from 'axios'
 
 const { t } = useI18n()
@@ -196,6 +227,9 @@ const copied = ref(false)
 const matchupUrl = ref('')
 
 // New fields
+const matchupTitle = ref('')
+const armyFaction = ref('')
+const armies = ref(ARMY_FACTIONS)
 const isPublic = ref(true)
 const player2Search = ref('')
 const searchResults = ref([])
@@ -249,6 +283,14 @@ const createMatchup = async () => {
       is_public: isPublic.value
     }
 
+    if (matchupTitle.value) {
+      payload.title = matchupTitle.value
+    }
+
+    if (armyFaction.value) {
+      payload.army_faction = armyFaction.value
+    }
+
     if (selectedPlayer2.value) {
       payload.player2_username = selectedPlayer2.value.username
     }
@@ -282,6 +324,8 @@ const reset = () => {
   matchupUrl.value = ''
   copied.value = false
   armyList.value = ''
+  matchupTitle.value = ''
+  armyFaction.value = ''
   isPublic.value = true
   player2Search.value = ''
   selectedPlayer2.value = null

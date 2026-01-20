@@ -13,13 +13,19 @@
     <div v-else-if="matchup">
       <div class="card mb-6">
         <div class="flex items-center justify-between mb-4">
-          <h1 class="text-3xl font-bold">{{ t('matchups.matchupTitle') }}: {{ matchup.name }}</h1>
+          <div>
+            <h1 class="text-3xl font-bold">
+              {{ matchup.title || t('matchups.matchupTitle') + ': ' + matchup.name }}
+            </h1>
+            <p v-if="matchup.title" class="text-sm text-gray-400">ID: {{ matchup.name }}</p>
+          </div>
           <span class="text-sm text-gray-400">
             {{ t('matchups.expires') }}: {{ formatDate(matchup.expires_at) }}
           </span>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-4 mb-6">
+        <!-- Player status tiles - only show when not revealed -->
+        <div v-if="!matchup.is_revealed" class="grid md:grid-cols-2 gap-4 mb-6">
           <div class="bg-gray-900 p-4 rounded">
             <div class="flex items-center gap-3 mb-2">
               <img
@@ -33,9 +39,19 @@
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
               </div>
-              <h3 class="font-bold">
-                {{ matchup.player1_username || t('matchups.player1') }}
-              </h3>
+              <div>
+                <h3 class="font-bold">
+                  <RouterLink
+                    v-if="matchup.player1_id"
+                    :to="{ name: 'PlayerProfile', params: { userId: matchup.player1_id } }"
+                    class="hover:text-squig-yellow hover:underline"
+                  >{{ matchup.player1_username }}</RouterLink>
+                  <span v-else>{{ matchup.player1_username || t('matchups.player1') }}</span>
+                </h3>
+                <p v-if="matchup.player1_army_faction" class="text-sm text-squig-yellow">
+                  {{ matchup.player1_army_faction }}
+                </p>
+              </div>
             </div>
             <p :class="matchup.player1_submitted ? 'text-green-400' : 'text-gray-400'">
               {{ matchup.player1_submitted ? '✓ ' + t('matchups.listSubmitted') : '○ ' + t('matchups.waitingForList') }}
@@ -54,9 +70,19 @@
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
               </div>
-              <h3 class="font-bold">
-                {{ matchup.player2_username || t('matchups.player2') }}
-              </h3>
+              <div>
+                <h3 class="font-bold">
+                  <RouterLink
+                    v-if="matchup.player2_id"
+                    :to="{ name: 'PlayerProfile', params: { userId: matchup.player2_id } }"
+                    class="hover:text-squig-yellow hover:underline"
+                  >{{ matchup.player2_username }}</RouterLink>
+                  <span v-else>{{ matchup.player2_username || t('matchups.player2') }}</span>
+                </h3>
+                <p v-if="matchup.player2_army_faction" class="text-sm text-squig-yellow">
+                  {{ matchup.player2_army_faction }}
+                </p>
+              </div>
             </div>
             <p :class="matchup.player2_submitted ? 'text-green-400' : 'text-gray-400'">
               {{ matchup.player2_submitted ? '✓ ' + t('matchups.listSubmitted') : '○ ' + t('matchups.waitingForList') }}
@@ -65,7 +91,16 @@
         </div>
       </div>
 
-      <div v-if="!matchup.is_revealed" class="card">
+      <!-- Waiting message for user who already submitted -->
+      <div v-if="!matchup.is_revealed && hasUserSubmitted" class="card">
+        <div class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded">
+          {{ t('matchups.yourListSubmitted') }}
+        </div>
+        <p class="text-gray-300 mt-4">{{ t('matchups.waitingForOpponent') }}</p>
+      </div>
+
+      <!-- Submit form for user who hasn't submitted yet -->
+      <div v-if="canSubmitList" class="card">
         <div class="mb-6">
           <div class="bg-blue-900/30 border border-blue-500 text-blue-200 px-4 py-3 rounded">
             {{ t('matchups.submitPrompt') }}
@@ -107,7 +142,8 @@
         </form>
       </div>
 
-      <div v-else class="space-y-6">
+      <!-- Revealed matchup section -->
+      <div v-if="matchup.is_revealed && reveal" class="space-y-6">
         <div class="card">
           <div class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded mb-6">
             {{ t('matchups.bothListsSubmitted') }}
@@ -136,9 +172,19 @@
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
                 </div>
-                <h3 class="text-xl font-bold">
-                  {{ reveal.player1_username || t('matchups.player1') }}
-                </h3>
+                <div>
+                  <h3 class="text-xl font-bold">
+                    <RouterLink
+                      v-if="reveal.player1_id"
+                      :to="{ name: 'PlayerProfile', params: { userId: reveal.player1_id } }"
+                      class="hover:text-squig-yellow hover:underline"
+                    >{{ reveal.player1_username }}</RouterLink>
+                    <span v-else>{{ reveal.player1_username || t('matchups.player1') }}</span>
+                  </h3>
+                  <p v-if="reveal.player1_army_faction" class="text-sm text-squig-yellow">
+                    {{ reveal.player1_army_faction }}
+                  </p>
+                </div>
               </div>
               <div class="bg-gray-900 p-4 rounded">
                 <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player1_list }}</pre>
@@ -158,12 +204,161 @@
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
                 </div>
-                <h3 class="text-xl font-bold">
-                  {{ reveal.player2_username || t('matchups.player2') }}
-                </h3>
+                <div>
+                  <h3 class="text-xl font-bold">
+                    <RouterLink
+                      v-if="reveal.player2_id"
+                      :to="{ name: 'PlayerProfile', params: { userId: reveal.player2_id } }"
+                      class="hover:text-squig-yellow hover:underline"
+                    >{{ reveal.player2_username }}</RouterLink>
+                    <span v-else>{{ reveal.player2_username || t('matchups.player2') }}</span>
+                  </h3>
+                  <p v-if="reveal.player2_army_faction" class="text-sm text-squig-yellow">
+                    {{ reveal.player2_army_faction }}
+                  </p>
+                </div>
               </div>
               <div class="bg-gray-900 p-4 rounded">
                 <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player2_list }}</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result section -->
+          <div class="mt-6 pt-6 border-t border-gray-700">
+            <!-- Confirmed result display -->
+            <div v-if="reveal?.result_status === 'confirmed'" class="mb-6">
+              <h3 class="text-xl font-bold mb-3 text-squig-yellow">{{ t('matchups.matchResult') }}</h3>
+              <div class="grid grid-cols-3 gap-4 bg-gray-900 p-4 rounded text-center">
+                <div>
+                  <p class="text-2xl font-bold" :class="reveal.player1_score > reveal.player2_score ? 'text-green-400' : ''">
+                    {{ reveal.player1_score }}
+                  </p>
+                  <p class="text-sm text-gray-400">{{ reveal.player1_username || t('matchups.player1') }}</p>
+                </div>
+                <div class="flex items-center justify-center text-gray-500">vs</div>
+                <div>
+                  <p class="text-2xl font-bold" :class="reveal.player2_score > reveal.player1_score ? 'text-green-400' : ''">
+                    {{ reveal.player2_score }}
+                  </p>
+                  <p class="text-sm text-gray-400">{{ reveal.player2_username || t('matchups.player2') }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pending confirmation -->
+            <div v-else-if="reveal?.result_status === 'pending_confirmation'" class="mb-6">
+              <h3 class="text-xl font-bold mb-3">{{ t('matchups.pendingConfirmation') }}</h3>
+              <div class="bg-yellow-900/30 border border-yellow-500 text-yellow-200 px-4 py-3 rounded mb-4">
+                {{ t('matchups.resultAwaitingConfirmation') }}
+                <span v-if="reveal.result_auto_confirm_at" class="block text-sm mt-1">
+                  {{ t('matchups.autoConfirmAt') }}: {{ formatDate(reveal.result_auto_confirm_at) }}
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-4 bg-gray-900 p-4 rounded text-center mb-4">
+                <div>
+                  <p class="text-2xl font-bold">{{ reveal.player1_score }}</p>
+                  <p class="text-sm text-gray-400">{{ reveal.player1_username || t('matchups.player1') }}</p>
+                </div>
+                <div class="flex items-center justify-center text-gray-500">vs</div>
+                <div>
+                  <p class="text-2xl font-bold">{{ reveal.player2_score }}</p>
+                  <p class="text-sm text-gray-400">{{ reveal.player2_username || t('matchups.player2') }}</p>
+                </div>
+              </div>
+              <!-- Confirm/Edit buttons for opponent -->
+              <div v-if="reveal.can_confirm_result && !showEditForm" class="flex gap-3">
+                <button @click="confirmResult" :disabled="resultSubmitting" class="btn-primary flex-1">
+                  {{ t('matchups.confirmResult') }}
+                </button>
+                <button @click="showEditForm = true; editPlayer1Score = reveal.player1_score; editPlayer2Score = reveal.player2_score" class="btn-secondary flex-1">
+                  {{ t('matchups.editResult') }}
+                </button>
+              </div>
+              <!-- Edit form -->
+              <div v-if="reveal.can_confirm_result && showEditForm" class="mt-4">
+                <form @submit.prevent="editResult" class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">
+                        {{ reveal.player1_username || t('matchups.player1') }} {{ t('matchups.score') }}
+                      </label>
+                      <input
+                        v-model.number="editPlayer1Score"
+                        type="number"
+                        min="0"
+                        class="input-field w-full"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">
+                        {{ reveal.player2_username || t('matchups.player2') }} {{ t('matchups.score') }}
+                      </label>
+                      <input
+                        v-model.number="editPlayer2Score"
+                        type="number"
+                        min="0"
+                        class="input-field w-full"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div class="flex gap-3">
+                    <button type="submit" :disabled="resultSubmitting" class="btn-primary flex-1">
+                      {{ t('matchups.submitEditedResult') }}
+                    </button>
+                    <button type="button" @click="showEditForm = false" class="btn-secondary flex-1">
+                      {{ t('common.cancel') }}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Submit result form -->
+            <div v-else-if="reveal?.can_submit_result" class="mb-6">
+              <h3 class="text-xl font-bold mb-3">{{ t('matchups.submitResult') }}</h3>
+              <form @submit.prevent="submitResult" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium mb-2">
+                      {{ reveal.player1_username || t('matchups.player1') }} {{ t('matchups.score') }}
+                    </label>
+                    <input
+                      v-model.number="player1Score"
+                      type="number"
+                      min="0"
+                      class="input-field w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2">
+                      {{ reveal.player2_username || t('matchups.player2') }} {{ t('matchups.score') }}
+                    </label>
+                    <input
+                      v-model.number="player2Score"
+                      type="number"
+                      min="0"
+                      class="input-field w-full"
+                      required
+                    />
+                  </div>
+                </div>
+                <div v-if="resultError" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
+                  {{ resultError }}
+                </div>
+                <button type="submit" :disabled="resultSubmitting" class="btn-primary w-full">
+                  {{ resultSubmitting ? t('matchups.submitting') : t('matchups.submitResult') }}
+                </button>
+              </form>
+            </div>
+
+            <!-- Info message for non-logged users -->
+            <div v-else-if="reveal?.result_info_message" class="mb-6">
+              <div class="bg-blue-900/30 border border-blue-500 text-blue-200 px-4 py-3 rounded">
+                {{ reveal.result_info_message }}
               </div>
             </div>
           </div>
@@ -191,7 +386,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
@@ -212,6 +407,17 @@ const submitting = ref(false)
 const submitError = ref('')
 const submitSuccess = ref(false)
 
+// Result submission
+const player1Score = ref(0)
+const player2Score = ref(0)
+const resultSubmitting = ref(false)
+const resultError = ref('')
+
+// Result editing
+const showEditForm = ref(false)
+const editPlayer1Score = ref(0)
+const editPlayer2Score = ref(0)
+
 // Check if current user is a participant
 const isParticipant = computed(() => {
   if (!authStore.isAuthenticated || !authStore.user || !matchup.value) {
@@ -219,6 +425,33 @@ const isParticipant = computed(() => {
   }
   const username = authStore.user.username
   return matchup.value.player1_username === username || matchup.value.player2_username === username
+})
+
+// Check if current user has already submitted their list
+const hasUserSubmitted = computed(() => {
+  if (!authStore.isAuthenticated || !authStore.user || !matchup.value) {
+    return false
+  }
+  const username = authStore.user.username
+  if (matchup.value.player1_username === username) {
+    return matchup.value.player1_submitted
+  }
+  if (matchup.value.player2_username === username) {
+    return matchup.value.player2_submitted
+  }
+  return false
+})
+
+// Check if user can submit a list (not revealed and hasn't submitted yet)
+const canSubmitList = computed(() => {
+  if (!matchup.value || matchup.value.is_revealed) {
+    return false
+  }
+  // If logged in and already submitted, can't submit again
+  if (hasUserSubmitted.value) {
+    return false
+  }
+  return true
 })
 
 // Build battle plan object from reveal data (comes from API)
@@ -302,6 +535,51 @@ const togglePublic = async () => {
     matchup.value.is_public = newValue
   } catch (err) {
     console.error('Failed to toggle public:', err)
+  }
+}
+
+const submitResult = async () => {
+  resultError.value = ''
+  resultSubmitting.value = true
+
+  try {
+    await axios.post(`${API_URL}/matchup/${route.params.name}/result`, {
+      player1_score: player1Score.value,
+      player2_score: player2Score.value
+    })
+    await fetchReveal()
+  } catch (err) {
+    resultError.value = err.response?.data?.detail || t('matchups.failedToSubmitResult')
+  } finally {
+    resultSubmitting.value = false
+  }
+}
+
+const confirmResult = async () => {
+  resultSubmitting.value = true
+  try {
+    await axios.post(`${API_URL}/matchup/${route.params.name}/result/confirm`)
+    await fetchReveal()
+  } catch (err) {
+    console.error('Failed to confirm result:', err)
+  } finally {
+    resultSubmitting.value = false
+  }
+}
+
+const editResult = async () => {
+  resultSubmitting.value = true
+  try {
+    await axios.post(`${API_URL}/matchup/${route.params.name}/result/edit`, {
+      player1_score: editPlayer1Score.value,
+      player2_score: editPlayer2Score.value
+    })
+    showEditForm.value = false
+    await fetchReveal()
+  } catch (err) {
+    console.error('Failed to edit result:', err)
+  } finally {
+    resultSubmitting.value = false
   }
 }
 
