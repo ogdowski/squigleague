@@ -6,12 +6,15 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+from PIL import Image
+from io import BytesIO
 
 # Setup Chrome headless
 options = Options()
 options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 options.add_argument('--window-size=512,512')
+options.add_argument('--force-device-scale-factor=1')
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
@@ -57,9 +60,24 @@ for category, svg_dir in categories.items():
         driver.get(f'file:///{temp_html.absolute()}')
         time.sleep(0.5)
         
-        # Screenshot
+        # Screenshot to bytes
+        png_bytes = driver.get_screenshot_as_png()
+        
+        # Convert white to transparent
+        img = Image.open(BytesIO(png_bytes)).convert('RGBA')
+        data = img.getdata()
+        new_data = []
+        for item in data:
+            # Change white (also shades of white) to transparent
+            if item[0] > 240 and item[1] > 240 and item[2] > 240:
+                new_data.append((255, 255, 255, 0))
+            else:
+                new_data.append(item)
+        img.putdata(new_data)
+        
+        # Save with transparency
         png_path = svg_dir / f'{svg_file.stem}.png'
-        driver.save_screenshot(str(png_path))
+        img.save(str(png_path), 'PNG')
         
         # Cleanup
         temp_html.unlink()
