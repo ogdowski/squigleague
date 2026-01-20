@@ -126,6 +126,19 @@
             </label>
           </div>
 
+          <div v-if="!isAdmin" class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="wants_organizer"
+              v-model="formData.wants_organizer"
+              class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
+            />
+            <label for="wants_organizer" class="text-sm">
+              I want to organize leagues
+              <span class="text-gray-500 text-xs ml-1">(enables league creation)</span>
+            </label>
+          </div>
+
           <div v-if="error" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
             {{ error }}
           </div>
@@ -181,6 +194,7 @@ const formData = ref({
   discord_username: '',
   show_email: false,
   avatar_url: '',
+  wants_organizer: false,
 })
 
 const originalData = ref({
@@ -189,7 +203,10 @@ const originalData = ref({
   discord_username: '',
   show_email: false,
   avatar_url: '',
+  wants_organizer: false,
 })
+
+const isAdmin = computed(() => authStore.user?.role === 'admin')
 
 const hasChanges = computed(() => {
   return formData.value.username !== originalData.value.username ||
@@ -197,6 +214,7 @@ const hasChanges = computed(() => {
          formData.value.discord_username !== originalData.value.discord_username ||
          formData.value.show_email !== originalData.value.show_email ||
          formData.value.avatar_url !== originalData.value.avatar_url ||
+         formData.value.wants_organizer !== originalData.value.wants_organizer ||
          avatarFile.value !== null
 })
 
@@ -257,6 +275,7 @@ const loadUserData = async () => {
     formData.value.discord_username = response.data.discord_username || ''
     formData.value.show_email = response.data.show_email || false
     formData.value.avatar_url = response.data.avatar_url || ''
+    formData.value.wants_organizer = response.data.role === 'organizer'
     hasDiscordOAuth.value = response.data.has_discord_oauth || false
     originalData.value = { ...formData.value }
   } catch (err) {
@@ -301,19 +320,27 @@ const updateSettings = async () => {
       updateData.avatar_url = formData.value.avatar_url || null
     }
 
+    // Add wants_organizer if changed
+    if (formData.value.wants_organizer !== originalData.value.wants_organizer) {
+      updateData.wants_organizer = formData.value.wants_organizer
+    }
+
     // Only make the PATCH request if there are other changes
     if (Object.keys(updateData).length > 0) {
       const response = await axios.patch(`${API_URL}/auth/me`, updateData)
       authStore.user.username = response.data.username
       authStore.user.email = response.data.email
+      authStore.user.role = response.data.role
       originalData.value.username = response.data.username
       originalData.value.email = response.data.email
       originalData.value.discord_username = response.data.discord_username || ''
       originalData.value.show_email = response.data.show_email
       originalData.value.avatar_url = response.data.avatar_url || ''
+      originalData.value.wants_organizer = response.data.role === 'organizer'
       formData.value.discord_username = response.data.discord_username || ''
       formData.value.show_email = response.data.show_email
       formData.value.avatar_url = response.data.avatar_url || ''
+      formData.value.wants_organizer = response.data.role === 'organizer'
     }
 
     success.value = true

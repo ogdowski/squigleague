@@ -107,7 +107,7 @@
       </div>
 
       <!-- Leagues -->
-      <div v-for="league in profile.leagues" :key="league.league_id" class="card mb-4">
+      <div v-for="league in sortedLeagues" :key="league.league_id" class="card mb-4">
         <div class="flex justify-between items-start mb-4">
           <div class="flex items-center gap-2">
             <span v-if="league.knockout_placement && placementIcon(league.knockout_placement)" class="text-2xl" :title="placementTitle(league.knockout_placement)">
@@ -172,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -182,6 +182,19 @@ const route = useRoute()
 const profile = ref(null)
 const loading = ref(true)
 const error = ref('')
+
+// Sort leagues - newest first (by league_id descending, active/knockout first)
+const sortedLeagues = computed(() => {
+  if (!profile.value?.leagues) return []
+  return [...profile.value.leagues].sort((a, b) => {
+    // Active leagues first
+    const statusOrder = { knockout_phase: 0, group_phase: 1, registration: 2, finished: 3 }
+    const statusDiff = (statusOrder[a.league_status] ?? 4) - (statusOrder[b.league_status] ?? 4)
+    if (statusDiff !== 0) return statusDiff
+    // Then by league_id descending (newer = higher id)
+    return b.league_id - a.league_id
+  })
+})
 
 const fetchProfile = async () => {
   loading.value = true

@@ -280,6 +280,10 @@ async def update_league(
     for key, value in update_data.items():
         setattr(league, key, value)
 
+    # Set finished_at when status changes to finished
+    if update_data.get("status") == "finished" and league.finished_at is None:
+        league.finished_at = datetime.utcnow()
+
     session.add(league)
     session.commit()
     session.refresh(league)
@@ -511,6 +515,10 @@ async def list_players(
     session: Session = Depends(get_session),
 ):
     """Lists players in a league."""
+    # Get league to check list visibility
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
     statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league_id)
     players = session.scalars(statement).all()
 
@@ -531,6 +539,15 @@ async def list_players(
             group = session.scalars(statement).first()
             group_name = group.name if group else None
 
+        # Include army lists only if visible
+        group_army_list = None
+        knockout_army_list = None
+        if league:
+            if league.group_lists_visible:
+                group_army_list = player.group_army_list
+            if league.knockout_lists_visible:
+                knockout_army_list = player.knockout_army_list
+
         result.append(
             LeaguePlayerResponse(
                 id=player.id,
@@ -550,8 +567,10 @@ async def list_players(
                 avatar_url=avatar_url,
                 joined_at=player.joined_at,
                 group_army_faction=player.group_army_faction,
+                group_army_list=group_army_list,
                 group_list_submitted=player.group_army_list is not None,
                 knockout_army_faction=player.knockout_army_faction,
+                knockout_army_list=knockout_army_list,
                 knockout_list_submitted=player.knockout_army_list is not None,
             )
         )
@@ -1627,6 +1646,7 @@ async def advance_knockout(
         # Final is complete, finish league
         league.status = "finished"
         league.knockout_phase_end = datetime.utcnow()
+        league.finished_at = datetime.utcnow()
         session.add(league)
         session.commit()
         return {
@@ -2082,6 +2102,50 @@ async def get_knockout_list(
         army_list=player.knockout_army_list,
         submitted_at=player.knockout_list_submitted_at,
     )
+
+
+@router.put("/{league_id}/knockout-list/{player_id}")
+async def edit_knockout_list_organizer(
+    league_id: int,
+    player_id: int,
+    data: ArmyListSubmit,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Edits player's knockout list (organizer only, even after freeze)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    player = session.scalars(
+        select(LeaguePlayer).where(
+            LeaguePlayer.id == player_id, LeaguePlayer.league_id == league_id
+        )
+    ).first()
+
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found",
+        )
+
+    player.knockout_army_faction = data.army_faction
+    player.knockout_army_list = data.army_list
+    player.knockout_list_submitted_at = datetime.utcnow()
+    session.add(player)
+    session.commit()
+
+    return {"message": "Knockout list updated"}
 
 
 # ============ ELO ============

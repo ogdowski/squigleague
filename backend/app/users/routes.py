@@ -187,6 +187,13 @@ async def update_current_user(
     if user_update.avatar_url is not None:
         current_user.avatar_url = user_update.avatar_url or None
 
+    # Toggle organizer role (only if not admin)
+    if user_update.wants_organizer is not None and current_user.role != "admin":
+        if user_update.wants_organizer:
+            current_user.role = "organizer"
+        else:
+            current_user.role = "player"
+
     session.add(current_user)
     session.commit()
     session.refresh(current_user)

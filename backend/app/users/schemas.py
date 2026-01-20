@@ -27,6 +27,7 @@ class UserUpdate(BaseModel):
     discord_username: Optional[str] = Field(None, max_length=100)
     show_email: Optional[bool] = None
     avatar_url: Optional[str] = Field(None, max_length=500)
+    wants_organizer: Optional[bool] = None  # Toggle between player/organizer role
 
 
 class UserResponse(BaseModel):

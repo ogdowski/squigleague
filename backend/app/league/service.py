@@ -829,7 +829,7 @@ def remove_player_from_league(
     # Walkover constants
     WALKOVER_WINNER_SCORE = 25
     WALKOVER_LOSER_SCORE = 0
-    WALKOVER_WINNER_POINTS = 1175
+    WALKOVER_WINNER_POINTS = 1075
     WALKOVER_LOSER_POINTS = 0
 
     statement = select(Match).where(

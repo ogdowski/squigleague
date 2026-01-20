@@ -22,7 +22,11 @@
             <span class="text-gray-400">Players:</span>
             <span class="text-white ml-2">{{ league.player_count }}</span>
           </div>
-          <div>
+          <div v-if="league.status === 'finished' && league.finished_at">
+            <span class="text-gray-400">Finished:</span>
+            <span class="text-white ml-2">{{ formatDate(league.finished_at) }}</span>
+          </div>
+          <div v-else>
             <span class="text-gray-400">Registration ends:</span>
             <span class="text-white ml-2">{{ formatDate(league.registration_end) }}</span>
           </div>

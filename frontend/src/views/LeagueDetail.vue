@@ -17,13 +17,144 @@
           <h1 class="text-3xl font-bold text-squig-yellow mb-2">{{ league.name }}</h1>
           <p v-if="league.description" class="text-gray-400">{{ league.description }}</p>
         </div>
-        <div
-          :class="statusClass(league.status)"
-          class="px-4 py-2 rounded text-sm font-bold"
-        >
-          {{ statusText(league.status) }}
+        <div class="flex items-center gap-3">
+          <!-- Join League Button (prominent) -->
+          <button
+            v-if="league.is_registration_open && !isJoined"
+            @click="joinLeague"
+            class="btn-primary"
+            :disabled="joining"
+          >
+            {{ joining ? 'Joining...' : 'Join League' }}
+          </button>
+          <div
+            :class="statusClass(league.status)"
+            class="px-4 py-2 rounded text-sm font-bold"
+          >
+            {{ statusText(league.status) }}
+          </div>
+          <!-- Hamburger Menu -->
+          <div v-if="hasAnyActions" class="relative">
+            <button
+              @click="showActionsMenu = !showActionsMenu"
+              class="p-2 rounded hover:bg-gray-700 transition-colors"
+              title="Actions"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <!-- Dropdown Menu -->
+            <div
+              v-if="showActionsMenu"
+              class="absolute right-0 top-full mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30"
+            >
+              <div class="py-1">
+                <!-- Leave League -->
+                <button
+                  v-if="isJoined && canLeaveLeague"
+                  @click="showLeaveLeagueModal = true; showActionsMenu = false"
+                  class="w-full text-left px-4 py-2 hover:bg-gray-700 text-red-400"
+                  :disabled="actionLoading"
+                >
+                  Leave League
+                </button>
+
+                <!-- Divider -->
+                <div v-if="isOrganizer && isJoined && canLeaveLeague" class="border-t border-gray-700 my-1"></div>
+
+                <!-- Organizer Actions -->
+                <template v-if="isOrganizer">
+                  <router-link
+                    :to="`/league/${league.id}/settings`"
+                    @click="showActionsMenu = false"
+                    class="block px-4 py-2 hover:bg-gray-700"
+                  >
+                    Settings
+                  </router-link>
+
+                  <div class="border-t border-gray-700 my-1"></div>
+
+                  <!-- Phase Actions -->
+                  <button
+                    v-if="league.status === 'registration'"
+                    @click="showDrawGroupsModal = true; showActionsMenu = false"
+                    class="w-full text-left px-4 py-2 hover:bg-gray-700 text-blue-400"
+                    :disabled="actionLoading"
+                  >
+                    Draw Groups
+                  </button>
+                  <button
+                    v-if="league.status === 'group_phase' && !groupPhaseEnded"
+                    @click="showEndGroupPhaseModal = true; showActionsMenu = false"
+                    class="w-full text-left px-4 py-2 hover:bg-gray-700 text-yellow-400"
+                    :disabled="actionLoading"
+                  >
+                    End Group Phase
+                  </button>
+                  <button
+                    v-if="league.status === 'group_phase' && groupPhaseEnded && league.has_knockout_phase"
+                    @click="showStartKnockoutModal = true; showActionsMenu = false"
+                    class="w-full text-left px-4 py-2 hover:bg-gray-700 text-orange-400"
+                    :disabled="actionLoading"
+                  >
+                    Start Knockout
+                  </button>
+                  <button
+                    v-if="league.status === 'group_phase' && groupPhaseEnded && !league.has_knockout_phase"
+                    @click="showFinishLeagueModal = true; showActionsMenu = false"
+                    class="w-full text-left px-4 py-2 hover:bg-gray-700 text-green-400"
+                    :disabled="actionLoading"
+                  >
+                    Finish League
+                  </button>
+
+                  <!-- List Actions -->
+                  <template v-if="hasListActions">
+                    <div class="border-t border-gray-700 my-1"></div>
+                    <div class="px-4 py-1 text-xs text-gray-500 uppercase">Army Lists</div>
+                    <button
+                      v-if="league.has_group_phase_lists && !league.group_lists_frozen && league.status === 'registration'"
+                      @click="freezeGroupLists(); showActionsMenu = false"
+                      class="w-full text-left px-4 py-2 hover:bg-gray-700"
+                      :disabled="actionLoading"
+                    >
+                      Freeze Group Lists
+                    </button>
+                    <button
+                      v-if="league.has_group_phase_lists && league.group_lists_frozen && !league.group_lists_visible"
+                      @click="revealGroupLists(); showActionsMenu = false"
+                      class="w-full text-left px-4 py-2 hover:bg-gray-700"
+                      :disabled="actionLoading"
+                    >
+                      Reveal Group Lists
+                    </button>
+                    <button
+                      v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_frozen"
+                      @click="freezeKnockoutLists(); showActionsMenu = false"
+                      class="w-full text-left px-4 py-2 hover:bg-gray-700"
+                      :disabled="actionLoading"
+                    >
+                      Freeze Knockout Lists
+                    </button>
+                    <button
+                      v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_visible"
+                      @click="showRevealListsModal = true; showActionsMenu = false"
+                      class="w-full text-left px-4 py-2 hover:bg-gray-700"
+                      :disabled="actionLoading"
+                    >
+                      Reveal Knockout Lists
+                    </button>
+                  </template>
+                </template>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- Click outside to close menu -->
+      <div v-if="showActionsMenu" @click="showActionsMenu = false" class="fixed inset-0 z-20"></div>
 
       <!-- Info Cards -->
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -33,6 +164,10 @@
           <p v-if="league.qualifying_spots_per_group" class="text-xs text-gray-500 mt-1">
             Top {{ league.qualifying_spots_per_group }} per group advance
           </p>
+        </div>
+        <div class="card">
+          <h3 class="text-sm text-gray-400 mb-1">Format</h3>
+          <p class="text-lg font-bold">{{ leagueFormat }}</p>
         </div>
         <div class="card">
           <div class="flex items-center gap-2 mb-1">
@@ -62,106 +197,15 @@
           </div>
           <p class="text-sm">W: {{ league.points_per_win }} / D: {{ league.points_per_draw }} / L: {{ league.points_per_loss }}</p>
         </div>
-        <div v-if="league.group_phase_end" class="card">
-          <h3 class="text-sm text-gray-400 mb-1">Group Phase Ends</h3>
-          <p class="text-lg font-bold">{{ formatDateTime(league.group_phase_end) }}</p>
-        </div>
-        <div v-if="league.knockout_phase_end && league.has_knockout_phase" class="card">
-          <h3 class="text-sm text-gray-400 mb-1">Knockout Ends</h3>
-          <p class="text-lg font-bold">{{ formatDateTime(league.knockout_phase_end) }}</p>
+        <div class="card">
+          <h3 class="text-sm text-gray-400 mb-1">{{ phaseEndLabel }}</h3>
+          <p class="text-lg font-bold">{{ phaseEndDate }}</p>
         </div>
       </div>
 
       <!-- Action Error -->
       <div v-if="actionError" class="mb-4 bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
         {{ actionError }}
-      </div>
-
-      <!-- Actions -->
-      <div class="flex gap-4 mb-8">
-        <button
-          v-if="league.is_registration_open && !isJoined"
-          @click="joinLeague"
-          class="btn-primary"
-          :disabled="joining"
-        >
-          {{ joining ? 'Joining...' : 'Join League' }}
-        </button>
-
-        <template v-if="isOrganizer">
-          <router-link
-            :to="`/league/${league.id}/settings`"
-            class="btn-secondary"
-          >
-            Settings
-          </router-link>
-          <button
-            v-if="league.status === 'registration'"
-            @click="showDrawGroupsModal = true"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            Draw Groups
-          </button>
-          <button
-            v-if="league.status === 'group_phase' && !groupPhaseEnded"
-            @click="showEndGroupPhaseModal = true"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            End Group Phase
-          </button>
-          <button
-            v-if="league.status === 'group_phase' && groupPhaseEnded && league.has_knockout_phase"
-            @click="showStartKnockoutModal = true"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            Start Knockout
-          </button>
-          <button
-            v-if="league.status === 'group_phase' && groupPhaseEnded && !league.has_knockout_phase"
-            @click="showFinishLeagueModal = true"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            Finish League
-          </button>
-          <!-- Group list actions -->
-          <button
-            v-if="league.has_group_phase_lists && !league.group_lists_frozen && league.status === 'registration'"
-            @click="freezeGroupLists"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            Freeze Group Lists
-          </button>
-          <button
-            v-if="league.has_group_phase_lists && league.group_lists_frozen && !league.group_lists_visible"
-            @click="revealGroupLists"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            Reveal Group Lists
-          </button>
-          <!-- Knockout list actions -->
-          <button
-            v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_frozen"
-            @click="freezeKnockoutLists"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            Freeze Knockout Lists
-          </button>
-          <button
-            v-if="league.has_knockout_phase_lists && league.status === 'knockout_phase' && !league.knockout_lists_visible"
-            @click="showRevealListsModal = true"
-            class="btn-secondary"
-            :disabled="actionLoading"
-          >
-            Reveal Knockout Lists
-          </button>
-        </template>
       </div>
 
       <!-- Army List Submission (for players) -->
@@ -250,15 +294,30 @@
               {{ player.username || player.discord_username }}
             </router-link>
             <span v-else class="flex-1 truncate">{{ player.username || player.discord_username }}</span>
-            <!-- List status icon (if group phase lists are required) -->
-            <span v-if="league.has_group_phase_lists" :title="player.group_list_submitted ? 'List submitted' : 'List not submitted'">
-              <svg v-if="player.group_list_submitted" class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <!-- Army list icon -->
+            <button
+              v-if="league.has_group_phase_lists"
+              @click="player.group_army_list ? showPlayerListModal(player) : null"
+              :class="getListIconClass(player, 'group')"
+              :title="getListIconTitle(player, 'group')"
+              class="flex-shrink-0"
+              :disabled="!player.group_army_list"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <svg v-else class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </button>
+            <!-- Remove button for organizer -->
+            <button
+              v-if="isOrganizer"
+              @click="openRemovePlayerModal(player)"
+              class="text-red-400 hover:text-red-300 flex-shrink-0"
+              title="Remove player"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </span>
+            </button>
           </div>
         </div>
       </div>
@@ -309,7 +368,6 @@
                 <tr class="text-gray-400 border-b border-gray-700">
                   <th class="text-left py-2 px-2">#</th>
                   <th class="text-left py-2 px-2">Player</th>
-                  <th class="text-center py-2 px-2" title="Army List">List</th>
                   <th class="text-center py-2 px-2">P</th>
                   <th class="text-center py-2 px-2">W</th>
                   <th class="text-center py-2 px-2">D</th>
@@ -341,36 +399,26 @@
                       <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
                         {{ (entry.username || entry.discord_username || '?').charAt(0).toUpperCase() }}
                       </div>
-                      <div>
+                      <div class="flex items-center gap-1">
                         <router-link v-if="entry.user_id" :to="`/player/${entry.user_id}`" class="hover:text-squig-yellow">
                           {{ entry.username || entry.discord_username }}
                         </router-link>
                         <span v-else>{{ entry.username || entry.discord_username }}</span>
-                        <span v-if="entry.army_faction" class="ml-2 text-xs text-gray-500">({{ entry.army_faction }})</span>
+                        <!-- Army list icon -->
+                        <button
+                          v-if="league.has_group_phase_lists"
+                          @click="entry.army_list ? showListModal(entry) : null"
+                          :class="getStandingsListIconClass(entry)"
+                          :title="getStandingsListIconTitle(entry)"
+                          :disabled="!entry.army_list"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
+                        <span v-if="entry.army_faction" class="text-xs text-gray-500">({{ entry.army_faction }})</span>
                       </div>
                     </div>
-                  </td>
-                  <td class="py-2 px-2 text-center">
-                    <button
-                      v-if="entry.list_submitted && entry.army_list"
-                      @click="showListModal(entry)"
-                      class="text-green-400 hover:text-green-300"
-                      title="View army list"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
-                    <span v-else-if="entry.list_submitted" class="text-green-400" title="List submitted (not visible yet)">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                    <span v-else class="text-gray-600" title="List not submitted">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </span>
                   </td>
                   <td class="py-2 px-2 text-center">{{ entry.games_played }}</td>
                   <td class="py-2 px-2 text-center text-green-400">{{ entry.games_won }}</td>
@@ -482,6 +530,7 @@
                 <th class="text-center py-2 px-2">Games</th>
                 <th class="text-right py-2 px-2">Points</th>
                 <th v-if="showKnockoutPlacement" class="text-center py-2 px-2">Knockout</th>
+                <th v-if="isOrganizer && league.status !== 'finished'" class="text-center py-2 px-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -494,11 +543,25 @@
                 ]"
               >
                 <td class="py-2 px-2">
-                  <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow">
-                    {{ player.username || player.discord_username }}
-                  </router-link>
-                  <span v-else>{{ player.username || player.discord_username }}</span>
-                  <span v-if="player.wouldQualify" class="ml-2 text-xs text-green-400" title="Would advance to knockout">Q</span>
+                  <div class="flex items-center gap-2">
+                    <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow">
+                      {{ player.username || player.discord_username }}
+                    </router-link>
+                    <span v-else>{{ player.username || player.discord_username }}</span>
+                    <!-- Army list icon -->
+                    <button
+                      v-if="hasAnyListsEnabled"
+                      @click="getPlayerArmyList(player) ? showPlayerListModal(player) : null"
+                      :class="getListIconClass(player, getCurrentListPhase)"
+                      :title="getListIconTitle(player, getCurrentListPhase)"
+                      :disabled="!getPlayerArmyList(player)"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </button>
+                    <span v-if="player.wouldQualify" class="text-xs text-green-400" title="Would advance to knockout">Q</span>
+                  </div>
                 </td>
                 <td class="py-2 px-2">{{ player.group_name || '-' }}</td>
                 <td class="py-2 px-2 text-center text-gray-400">{{ player.games_played }}</td>
@@ -508,6 +571,29 @@
                     {{ formatPlacement(player.knockout_placement) }}
                   </span>
                   <span v-else class="text-gray-600">-</span>
+                </td>
+                <td v-if="isOrganizer && league.status !== 'finished'" class="py-2 px-2 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button
+                      v-if="league.status === 'group_phase' && player.group_id"
+                      @click="openChangeGroupModal(player)"
+                      class="text-blue-400 hover:text-blue-300"
+                      title="Change group"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                    </button>
+                    <button
+                      @click="openRemovePlayerModal(player)"
+                      class="text-red-400 hover:text-red-300"
+                      title="Remove player"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -628,6 +714,50 @@
       @confirm="advanceKnockout"
       @cancel="showAdvanceKnockoutModal = false"
     />
+
+    <ConfirmModal
+      :show="showLeaveLeagueModal"
+      title="Leave League"
+      :message="leaveLeagueMessage"
+      confirmText="Leave League"
+      :danger="true"
+      @confirm="leaveLeague"
+      @cancel="showLeaveLeagueModal = false"
+    />
+
+    <ConfirmModal
+      :show="showRemovePlayerModal"
+      title="Remove Player"
+      :message="removePlayerMessage"
+      confirmText="Remove Player"
+      :danger="true"
+      @confirm="removePlayer"
+      @cancel="showRemovePlayerModal = false"
+    />
+
+    <!-- Change Group Modal -->
+    <div v-if="showChangeGroupModal && selectedPlayerForAction" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold mb-4">Change Group</h3>
+        <p class="text-gray-400 mb-4">
+          Move <span class="text-white font-semibold">{{ selectedPlayerForAction.username || selectedPlayerForAction.discord_username }}</span> to:
+        </p>
+        <select v-model="newGroupId" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 mb-4">
+          <option v-for="group in availableGroups" :key="group.group_id" :value="group.group_id">
+            {{ group.group_name }}
+          </option>
+        </select>
+        <div v-if="changeGroupError" class="mb-4 bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded text-sm">
+          {{ changeGroupError }}
+        </div>
+        <div class="flex gap-3">
+          <button @click="showChangeGroupModal = false" class="flex-1 btn-secondary">Cancel</button>
+          <button @click="changePlayerGroup" :disabled="actionLoading" class="flex-1 btn-primary">
+            {{ actionLoading ? 'Moving...' : 'Move Player' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Match Score Modal -->
     <div v-if="showMatchModal && selectedMatch" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -764,24 +894,75 @@
             </div>
             <div>
               <h3 class="text-xl font-bold">{{ selectedListEntry.username || selectedListEntry.discord_username }}</h3>
-              <p v-if="selectedListEntry.army_faction" class="text-sm text-gray-400">{{ selectedListEntry.army_faction }}</p>
+              <p v-if="selectedListEntry.army_faction && !editingList" class="text-sm text-gray-400">{{ selectedListEntry.army_faction }}</p>
             </div>
           </div>
-          <button @click="showArmyListModal = false" class="text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <div class="flex items-center gap-2">
+            <button
+              v-if="isOrganizer && !editingList"
+              @click="startEditingList"
+              class="text-blue-400 hover:text-blue-300"
+              title="Edit list"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+            <button @click="closeListModal" class="text-gray-400 hover:text-white">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- View Mode -->
+        <template v-if="!editingList">
+          <div class="bg-gray-900 rounded p-4 overflow-y-auto flex-1">
+            <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ selectedListEntry.army_list }}</pre>
+          </div>
+          <button
+            @click="closeListModal"
+            class="mt-4 w-full btn-secondary"
+          >
+            Close
           </button>
-        </div>
-        <div class="bg-gray-900 rounded p-4 overflow-y-auto flex-1">
-          <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ selectedListEntry.army_list }}</pre>
-        </div>
-        <button
-          @click="showArmyListModal = false"
-          class="mt-4 w-full btn-secondary"
-        >
-          Close
-        </button>
+        </template>
+
+        <!-- Edit Mode (Organizer) -->
+        <template v-else>
+          <div class="space-y-4 flex-1 overflow-y-auto">
+            <div>
+              <label class="block text-sm text-gray-400 mb-1">Army Faction</label>
+              <select v-model="editListFaction" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2">
+                <option value="">Select faction...</option>
+                <option v-for="faction in armyFactions" :key="faction" :value="faction">{{ faction }}</option>
+              </select>
+            </div>
+            <div class="flex-1">
+              <label class="block text-sm text-gray-400 mb-1">Army List</label>
+              <textarea
+                v-model="editListContent"
+                rows="12"
+                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 font-mono text-sm"
+                placeholder="Paste army list here..."
+              ></textarea>
+            </div>
+            <div v-if="editListError" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-2 rounded text-sm">
+              {{ editListError }}
+            </div>
+          </div>
+          <div class="flex gap-3 mt-4">
+            <button @click="cancelEditingList" class="flex-1 btn-secondary">Cancel</button>
+            <button
+              @click="saveEditedList"
+              :disabled="savingList || !editListFaction || !editListContent.trim()"
+              class="flex-1 btn-primary"
+            >
+              {{ savingList ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -827,6 +1008,27 @@ const showAdvanceKnockoutModal = ref(false)
 const showMatchModal = ref(false)
 const selectedMatch = ref(null)
 const submittingScore = ref(false)
+
+// Leave league modal
+const showLeaveLeagueModal = ref(false)
+
+// Player management modals
+const showRemovePlayerModal = ref(false)
+const showChangeGroupModal = ref(false)
+const selectedPlayerForAction = ref(null)
+const newGroupId = ref(null)
+const changeGroupError = ref('')
+
+// Actions menu state
+const showActionsMenu = ref(false)
+
+// List editing state (for organizers)
+const editingList = ref(false)
+const editListFaction = ref('')
+const editListContent = ref('')
+const editListError = ref('')
+const savingList = ref(false)
+const editListPhase = ref('group') // 'group' or 'knockout'
 
 // Army list viewing modal
 const showArmyListModal = ref(false)
@@ -881,9 +1083,100 @@ const isJoined = computed(() => {
   return players.value.some(p => p.user_id === authStore.user.id)
 })
 
+// Can player leave the league?
+const canLeaveLeague = computed(() => {
+  if (!league.value) return false
+  // Can leave during registration or active phases, but not when finished
+  return league.value.status !== 'finished'
+})
+
+// Message for leave league modal
+const leaveLeagueMessage = computed(() => {
+  if (!league.value) return ''
+  if (league.value.status === 'registration') {
+    return 'Are you sure you want to leave this league? You can rejoin before registration closes.'
+  }
+  return 'Are you sure you want to leave? Your opponents will receive walkover wins (25:0, 1075 points) for unplayed matches.'
+})
+
+// Message for remove player modal
+const removePlayerMessage = computed(() => {
+  if (!selectedPlayerForAction.value || !league.value) return ''
+  const name = selectedPlayerForAction.value.username || selectedPlayerForAction.value.discord_username
+  if (league.value.status === 'registration') {
+    return `Remove ${name} from the league?`
+  }
+  return `Remove ${name}? Their opponents will receive walkover wins (25:0, 1075 points) for unplayed matches.`
+})
+
+// Available groups for change group modal
+const availableGroups = computed(() => {
+  if (!standings.value || !selectedPlayerForAction.value) return []
+  return standings.value.filter(g => g.group_id !== selectedPlayerForAction.value.group_id)
+})
+
+// Check if there are any actions available for the menu (excluding Join which is a separate button)
+const hasAnyActions = computed(() => {
+  if (!league.value) return false
+  // Can leave
+  if (isJoined.value && canLeaveLeague.value) return true
+  // Is organizer
+  if (isOrganizer.value) return true
+  return false
+})
+
+// Check if there are list-related actions available
+const hasListActions = computed(() => {
+  if (!league.value || !isOrganizer.value) return false
+  // Group phase list actions
+  if (league.value.has_group_phase_lists && !league.value.group_lists_frozen && league.value.status === 'registration') return true
+  if (league.value.has_group_phase_lists && league.value.group_lists_frozen && !league.value.group_lists_visible) return true
+  // Knockout phase list actions
+  if (league.value.has_knockout_phase_lists && league.value.status === 'knockout_phase' && !league.value.knockout_lists_frozen) return true
+  if (league.value.has_knockout_phase_lists && league.value.status === 'knockout_phase' && !league.value.knockout_lists_visible) return true
+  return false
+})
+
 const groupPhaseEnded = computed(() => {
   if (!league.value) return false
   return league.value.group_phase_ended === true
+})
+
+// League format description
+const leagueFormat = computed(() => {
+  if (!league.value) return ''
+  if (league.value.has_knockout_phase) {
+    const knockoutInfo = league.value.knockout_size ? ` (Top ${league.value.knockout_size})` : ''
+    return `Groups + Knockout${knockoutInfo}`
+  }
+  return 'Groups Only'
+})
+
+// Phase end label and date based on current status
+const phaseEndLabel = computed(() => {
+  if (!league.value) return 'Ends'
+  if (league.value.status === 'registration') return 'Registration Ends'
+  if (league.value.status === 'group_phase') return 'Group Phase Ends'
+  if (league.value.status === 'knockout_phase') return 'Round Deadline'
+  if (league.value.status === 'finished') return 'Finished'
+  return 'Ends'
+})
+
+const phaseEndDate = computed(() => {
+  if (!league.value) return '-'
+  if (league.value.status === 'registration') {
+    return formatDateTime(league.value.registration_end)
+  }
+  if (league.value.status === 'group_phase') {
+    return league.value.group_phase_end ? formatDateTime(league.value.group_phase_end) : '-'
+  }
+  if (league.value.status === 'knockout_phase') {
+    return league.value.knockout_phase_end ? formatDateTime(league.value.knockout_phase_end) : '-'
+  }
+  if (league.value.status === 'finished') {
+    return league.value.finished_at ? formatDateTime(league.value.finished_at) : '-'
+  }
+  return '-'
 })
 
 // Get current user's player ID in this league
@@ -1464,6 +1757,239 @@ const submitArmyList = async () => {
     showActionError(err.response?.data?.detail || 'Failed to submit army list')
   } finally {
     submittingList.value = false
+  }
+}
+
+// Leave league (player drops out)
+const leaveLeague = async () => {
+  showLeaveLeagueModal.value = false
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/leave`)
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to leave league')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+// Open remove player modal (organizer)
+const openRemovePlayerModal = (player) => {
+  selectedPlayerForAction.value = player
+  showRemovePlayerModal.value = true
+}
+
+// Remove player (organizer)
+const removePlayer = async () => {
+  showRemovePlayerModal.value = false
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    await axios.delete(`${API_URL}/league/${league.value.id}/player/${selectedPlayerForAction.value.id}`)
+    selectedPlayerForAction.value = null
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to remove player')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+// Open change group modal (organizer)
+const openChangeGroupModal = (player) => {
+  selectedPlayerForAction.value = player
+  newGroupId.value = null
+  changeGroupError.value = ''
+  showChangeGroupModal.value = true
+}
+
+// Change player group (organizer)
+const changePlayerGroup = async () => {
+  if (!newGroupId.value) {
+    changeGroupError.value = 'Please select a group'
+    return
+  }
+  actionLoading.value = true
+  changeGroupError.value = ''
+  try {
+    await axios.patch(
+      `${API_URL}/league/${league.value.id}/player/${selectedPlayerForAction.value.id}/group`,
+      { group_id: newGroupId.value }
+    )
+    showChangeGroupModal.value = false
+    selectedPlayerForAction.value = null
+    await fetchLeague()
+  } catch (err) {
+    changeGroupError.value = err.response?.data?.detail || 'Failed to change group'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+// Check if any lists are enabled for this league
+const hasAnyListsEnabled = computed(() => {
+  if (!league.value) return false
+  return league.value.has_group_phase_lists || league.value.has_knockout_phase_lists
+})
+
+// Get current list phase based on league status
+const getCurrentListPhase = computed(() => {
+  if (!league.value) return 'group'
+  if (league.value.status === 'knockout_phase' || league.value.status === 'finished') {
+    return league.value.has_knockout_phase_lists ? 'knockout' : 'group'
+  }
+  return 'group'
+})
+
+// Get player's army list based on current phase
+const getPlayerArmyList = (player) => {
+  if (!league.value) return null
+  // Check if lists are visible for the current phase
+  if (league.value.status === 'knockout_phase' || league.value.status === 'finished') {
+    if (league.value.knockout_lists_visible && player.knockout_army_list) {
+      return { faction: player.knockout_army_faction, list: player.knockout_army_list }
+    }
+  }
+  if (league.value.group_lists_visible && player.group_army_list) {
+    return { faction: player.group_army_faction, list: player.group_army_list }
+  }
+  return null
+}
+
+// Get list icon CSS class based on status
+// White = revealed, Yellow = submitted but not visible, Red = not submitted
+const getListIconClass = (player, phase) => {
+  if (!league.value) return 'text-red-500'
+
+  const isGroup = phase === 'group'
+  const submitted = isGroup ? player.group_list_submitted : player.knockout_list_submitted
+  const visible = isGroup ? league.value.group_lists_visible : league.value.knockout_lists_visible
+  const hasList = isGroup ? player.group_army_list : player.knockout_army_list
+
+  if (hasList && visible) {
+    return 'text-white hover:text-gray-300 cursor-pointer'
+  } else if (submitted) {
+    return 'text-yellow-400 cursor-default'
+  } else {
+    return 'text-red-500 cursor-default'
+  }
+}
+
+// Get list icon title/tooltip based on status
+const getListIconTitle = (player, phase) => {
+  if (!league.value) return 'List not submitted'
+
+  const isGroup = phase === 'group'
+  const submitted = isGroup ? player.group_list_submitted : player.knockout_list_submitted
+  const visible = isGroup ? league.value.group_lists_visible : league.value.knockout_lists_visible
+  const hasList = isGroup ? player.group_army_list : player.knockout_army_list
+
+  if (hasList && visible) {
+    return 'Army list'
+  } else if (submitted) {
+    return 'List hidden'
+  } else {
+    return 'List not submitted'
+  }
+}
+
+// For standings entries (uses entry.list_submitted and entry.army_list)
+const getStandingsListIconClass = (entry) => {
+  if (!league.value) return 'text-red-500'
+
+  if (entry.army_list && league.value.group_lists_visible) {
+    return 'text-white hover:text-gray-300 cursor-pointer'
+  } else if (entry.list_submitted) {
+    return 'text-yellow-400 cursor-default'
+  } else {
+    return 'text-red-500 cursor-default'
+  }
+}
+
+const getStandingsListIconTitle = (entry) => {
+  if (!league.value) return 'List not submitted'
+
+  if (entry.army_list && league.value.group_lists_visible) {
+    return 'Army list'
+  } else if (entry.list_submitted) {
+    return 'List hidden'
+  } else {
+    return 'List not submitted'
+  }
+}
+
+// Show player list modal
+const showPlayerListModal = (player) => {
+  const armyData = getPlayerArmyList(player)
+  if (armyData) {
+    selectedListEntry.value = {
+      ...player,
+      army_faction: armyData.faction,
+      army_list: armyData.list
+    }
+    // Determine which phase this list is from
+    if (league.value?.knockout_lists_visible && player.knockout_army_list) {
+      editListPhase.value = 'knockout'
+    } else {
+      editListPhase.value = 'group'
+    }
+    editingList.value = false
+    showArmyListModal.value = true
+  }
+}
+
+// Close list modal
+const closeListModal = () => {
+  showArmyListModal.value = false
+  editingList.value = false
+  editListError.value = ''
+}
+
+// Start editing list (organizer)
+const startEditingList = () => {
+  editListFaction.value = selectedListEntry.value.army_faction || ''
+  editListContent.value = selectedListEntry.value.army_list || ''
+  editListError.value = ''
+  editingList.value = true
+}
+
+// Cancel editing list
+const cancelEditingList = () => {
+  editingList.value = false
+  editListError.value = ''
+}
+
+// Save edited list
+const saveEditedList = async () => {
+  if (!selectedListEntry.value || !league.value) return
+
+  savingList.value = true
+  editListError.value = ''
+
+  try {
+    const endpoint = editListPhase.value === 'knockout'
+      ? `${API_URL}/league/${league.value.id}/knockout-list/${selectedListEntry.value.id}`
+      : `${API_URL}/league/${league.value.id}/group-list/${selectedListEntry.value.id}`
+
+    await axios.put(endpoint, {
+      army_faction: editListFaction.value,
+      army_list: editListContent.value
+    })
+
+    // Update the modal view
+    selectedListEntry.value.army_faction = editListFaction.value
+    selectedListEntry.value.army_list = editListContent.value
+
+    // Refresh data
+    await fetchLeague()
+
+    editingList.value = false
+  } catch (err) {
+    editListError.value = err.response?.data?.detail || 'Failed to save list'
+  } finally {
+    savingList.value = false
   }
 }
 

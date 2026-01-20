@@ -93,6 +93,7 @@ class League(SQLModel, table=True):
     current_knockout_round: Optional[str] = Field(default=None, max_length=20)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    finished_at: Optional[datetime] = Field(default=None)
 
     # Relationships
     groups: list["Group"] = Relationship(back_populates="league")

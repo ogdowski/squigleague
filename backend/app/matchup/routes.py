@@ -2,6 +2,7 @@ from datetime import datetime
 
 from app.core.deps import get_current_user, get_current_user_optional
 from app.db import get_session
+from app.league.models import League
 from app.matchup.models import Matchup
 from app.matchup.schemas import (
     MatchupCreate,
@@ -106,9 +107,14 @@ async def get_stats(session: Session = Depends(get_session)):
     expired_statement = select(func.count(Matchup.id)).where(Matchup.expires_at < now)
     expired_count = session.execute(expired_statement).scalar_one()
 
+    # Count leagues created
+    leagues_statement = select(func.count(League.id))
+    leagues_count = session.execute(leagues_statement).scalar_one()
+
     return {
         "exchanges_completed": completed_count,
         "exchanges_expired": expired_count,
+        "leagues_created": leagues_count,
         "version": "0.3.0",
     }
 

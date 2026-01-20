@@ -73,6 +73,7 @@ class LeagueResponse(BaseModel):
     knockout_lists_visible: bool
     current_knockout_round: Optional[str]
     created_at: datetime
+    finished_at: Optional[datetime] = None
     player_count: Optional[int] = None
     is_registration_open: bool = False
     # Computed fields for display
@@ -88,6 +89,7 @@ class LeagueListResponse(BaseModel):
     name: str
     status: str
     registration_end: datetime
+    finished_at: Optional[datetime] = None
     player_count: int
     organizer_name: Optional[str] = None
     is_organizer: bool = False
@@ -157,8 +159,10 @@ class LeaguePlayerResponse(BaseModel):
     avatar_url: Optional[str] = None
     joined_at: datetime
     group_army_faction: Optional[str] = None
+    group_army_list: Optional[str] = None  # Only included if lists are visible
     group_list_submitted: bool = False
     knockout_army_faction: Optional[str] = None
+    knockout_army_list: Optional[str] = None  # Only included if lists are visible
     knockout_list_submitted: bool = False
     knockout_placement: Optional[str] = None  # "1", "2", "top_4", "top_8", etc.
 
