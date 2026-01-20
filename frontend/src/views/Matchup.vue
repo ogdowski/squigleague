@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-4xl mx-auto">
     <div v-if="loading" class="text-center py-12">
-      <p class="text-xl text-gray-300">Loading matchup...</p>
+      <p class="text-xl text-gray-300">{{ t('matchups.loadingMatchup') }}</p>
     </div>
 
     <div v-else-if="error" class="card">
@@ -13,9 +13,9 @@
     <div v-else-if="matchup">
       <div class="card mb-6">
         <div class="flex items-center justify-between mb-4">
-          <h1 class="text-3xl font-bold">Matchup: {{ matchup.name }}</h1>
+          <h1 class="text-3xl font-bold">{{ t('matchups.matchupTitle') }}: {{ matchup.name }}</h1>
           <span class="text-sm text-gray-400">
-            Expires: {{ formatDate(matchup.expires_at) }}
+            {{ t('matchups.expires') }}: {{ formatDate(matchup.expires_at) }}
           </span>
         </div>
 
@@ -34,11 +34,11 @@
                 </svg>
               </div>
               <h3 class="font-bold">
-                {{ matchup.player1_username || 'Player 1' }}
+                {{ matchup.player1_username || t('matchups.player1') }}
               </h3>
             </div>
             <p :class="matchup.player1_submitted ? 'text-green-400' : 'text-gray-400'">
-              {{ matchup.player1_submitted ? '✓ List submitted' : '○ Waiting for list' }}
+              {{ matchup.player1_submitted ? '✓ ' + t('matchups.listSubmitted') : '○ ' + t('matchups.waitingForList') }}
             </p>
           </div>
           <div class="bg-gray-900 p-4 rounded">
@@ -55,11 +55,11 @@
                 </svg>
               </div>
               <h3 class="font-bold">
-                {{ matchup.player2_username || 'Player 2' }}
+                {{ matchup.player2_username || t('matchups.player2') }}
               </h3>
             </div>
             <p :class="matchup.player2_submitted ? 'text-green-400' : 'text-gray-400'">
-              {{ matchup.player2_submitted ? '✓ List submitted' : '○ Waiting for list' }}
+              {{ matchup.player2_submitted ? '✓ ' + t('matchups.listSubmitted') : '○ ' + t('matchups.waitingForList') }}
             </p>
           </div>
         </div>
@@ -68,22 +68,22 @@
       <div v-if="!matchup.is_revealed" class="card">
         <div class="mb-6">
           <div class="bg-blue-900/30 border border-blue-500 text-blue-200 px-4 py-3 rounded">
-            Player 1 has submitted their army list. Submit yours to reveal both lists and the mission!
+            {{ t('matchups.submitPrompt') }}
           </div>
         </div>
 
-        <h2 class="text-2xl font-bold mb-4">Submit Your Army List</h2>
+        <h2 class="text-2xl font-bold mb-4">{{ t('matchups.submitYourList') }}</h2>
 
         <form @submit.prevent="submitList" class="space-y-4">
           <div>
             <label class="block text-sm font-medium mb-2">
-              Paste your army list here
+              {{ t('matchups.pasteListHere') }}
             </label>
             <textarea
               v-model="armyList"
               rows="15"
               class="input-field w-full font-mono text-sm"
-              placeholder="Paste your army list here..."
+              :placeholder="t('matchups.pasteListHere') + '...'"
               required
             ></textarea>
           </div>
@@ -93,8 +93,8 @@
           </div>
 
           <div v-if="submitSuccess" class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded">
-            List submitted successfully!
-            <span v-if="!matchup.is_revealed">Waiting for reveal...</span>
+            {{ t('matchups.listSubmittedSuccess') }}
+            <span v-if="!matchup.is_revealed">{{ t('matchups.waitingForReveal') }}</span>
           </div>
 
           <button
@@ -102,7 +102,7 @@
             :disabled="submitting"
             class="btn-primary w-full"
           >
-            {{ submitting ? 'Submitting...' : 'Submit List' }}
+            {{ submitting ? t('matchups.submitting') : t('matchups.submitList') }}
           </button>
         </form>
       </div>
@@ -110,11 +110,11 @@
       <div v-else class="space-y-6">
         <div class="card">
           <div class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded mb-6">
-            Both lists have been submitted! The matchup is revealed.
+            {{ t('matchups.bothListsSubmitted') }}
           </div>
 
           <div class="mb-8">
-            <h2 class="text-2xl font-bold mb-4 text-squig-yellow">Map Assignment</h2>
+            <h2 class="text-2xl font-bold mb-4 text-squig-yellow">{{ t('matchups.mapAssignment') }}</h2>
             <BattlePlanDisplay
               :map-name="reveal.map_name"
               :map-image="reveal.map_image"
@@ -137,7 +137,7 @@
                   </svg>
                 </div>
                 <h3 class="text-xl font-bold">
-                  {{ reveal.player1_username || 'Player 1' }}
+                  {{ reveal.player1_username || t('matchups.player1') }}
                 </h3>
               </div>
               <div class="bg-gray-900 p-4 rounded">
@@ -159,7 +159,7 @@
                   </svg>
                 </div>
                 <h3 class="text-xl font-bold">
-                  {{ reveal.player2_username || 'Player 2' }}
+                  {{ reveal.player2_username || t('matchups.player2') }}
                 </h3>
               </div>
               <div class="bg-gray-900 p-4 rounded">
@@ -176,9 +176,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
 
+const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
 
@@ -213,11 +215,11 @@ const fetchMatchup = async () => {
     }
   } catch (err) {
     if (err.response?.status === 404) {
-      error.value = 'Matchup not found'
+      error.value = t('matchups.matchupNotFound')
     } else if (err.response?.status === 410) {
-      error.value = 'This matchup has expired'
+      error.value = t('matchups.matchupExpired')
     } else {
-      error.value = 'Failed to load matchup'
+      error.value = t('matchups.failedToLoad')
     }
   } finally {
     loading.value = false
@@ -253,7 +255,7 @@ const submitList = async () => {
       matchup.value.player1_submitted = true
     }
   } catch (err) {
-    submitError.value = err.response?.data?.detail || 'Failed to submit list'
+    submitError.value = err.response?.data?.detail || t('matchups.failedToSubmitList')
   } finally {
     submitting.value = false
   }

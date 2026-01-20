@@ -1,17 +1,17 @@
 <template>
   <div class="max-w-2xl mx-auto">
     <div class="card">
-      <h1 class="text-3xl font-bold mb-6">Settings</h1>
+      <h1 class="text-3xl font-bold mb-6">{{ t('settings.title') }}</h1>
 
       <div v-if="loading" class="text-center py-12">
-        <p class="text-xl text-gray-300">Loading...</p>
+        <p class="text-xl text-gray-300">{{ t('common.loading') }}</p>
       </div>
 
       <div v-else>
         <form @submit.prevent="updateSettings" class="space-y-6">
           <!-- Avatar Section -->
           <div>
-            <label class="block text-sm font-medium mb-2">Avatar</label>
+            <label class="block text-sm font-medium mb-2">{{ t('settings.avatar') }}</label>
             <div class="flex items-start gap-4">
               <div class="flex flex-col items-center gap-2">
                 <div class="w-20 h-20 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
@@ -27,7 +27,7 @@
                   </div>
                 </div>
                 <label class="btn-secondary text-xs cursor-pointer px-3 py-1">
-                  {{ isUploadedAvatar ? 'Change' : 'Upload' }}
+                  {{ isUploadedAvatar ? t('settings.changeAvatar') : t('settings.uploadAvatar') }}
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/gif,image/webp"
@@ -47,13 +47,13 @@
                     :disabled="avatarFile"
                   />
                   <p class="text-xs text-gray-500">
-                    Upload an image (max 5MB) or enter a URL.
-                    <span v-if="hasDiscordOAuth">Your Discord avatar is used by default.</span>
+                    {{ t('settings.avatarUploadNote') }}
+                    <span v-if="hasDiscordOAuth">{{ t('settings.avatarDiscordNote') }}</span>
                   </p>
                 </template>
                 <template v-else>
                   <p class="text-xs text-gray-500 mb-2">
-                    Avatar uploaded. Click "Change" to upload a new one.
+                    {{ t('settings.avatarUploaded') }}
                   </p>
                 </template>
                 <div v-if="avatarFile" class="mt-2 flex items-center gap-2">
@@ -71,7 +71,7 @@
 
           <div>
             <label class="block text-sm font-medium mb-2">
-              Email
+              {{ t('settings.email') }}
             </label>
             <input
               v-model="formData.email"
@@ -83,7 +83,7 @@
 
           <div>
             <label class="block text-sm font-medium mb-2">
-              Username
+              {{ t('settings.username') }}
             </label>
             <input
               v-model="formData.username"
@@ -97,8 +97,8 @@
 
           <div>
             <label class="block text-sm font-medium mb-2">
-              Discord Username
-              <span v-if="hasDiscordOAuth" class="text-gray-500 text-xs ml-2">(managed by Discord)</span>
+              {{ t('settings.discordUsername') }}
+              <span v-if="hasDiscordOAuth" class="text-gray-500 text-xs ml-2">{{ t('settings.managedByDiscord') }}</span>
             </label>
             <input
               v-model="formData.discord_username"
@@ -110,7 +110,7 @@
               placeholder="e.g. johndoe"
             />
             <p v-if="hasDiscordOAuth" class="text-xs text-gray-500 mt-1">
-              Your Discord username is automatically synced from your Discord account.
+              {{ t('settings.discordSyncNote') }}
             </p>
           </div>
 
@@ -122,7 +122,7 @@
               class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
             />
             <label for="show_email" class="text-sm">
-              Show email on my public profile
+              {{ t('settings.showEmailOnProfile') }}
             </label>
           </div>
 
@@ -134,9 +134,62 @@
               class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
             />
             <label for="wants_organizer" class="text-sm">
-              I want to organize leagues
-              <span class="text-gray-500 text-xs ml-1">(enables league creation)</span>
+              {{ t('settings.wantOrganizer') }}
+              <span class="text-gray-500 text-xs ml-1">{{ t('settings.organizerNote') }}</span>
             </label>
+          </div>
+
+          <!-- Language Preference -->
+          <div>
+            <label class="block text-sm font-medium mb-2">
+              {{ t('settings.language') }}
+            </label>
+            <div class="flex items-center gap-4">
+              <button
+                type="button"
+                @click="handleLanguageChange('en')"
+                class="flex items-center gap-2 px-4 py-2 rounded border transition-all"
+                :class="formData.preferred_language === 'en'
+                  ? 'border-squig-yellow bg-squig-yellow/10'
+                  : 'border-gray-600 hover:border-gray-500'"
+              >
+                <!-- UK Flag -->
+                <svg viewBox="0 0 60 30" class="w-6 h-4">
+                  <clipPath id="uk-settings">
+                    <path d="M0,0 v30 h60 v-30 z"/>
+                  </clipPath>
+                  <clipPath id="uk-diag-settings">
+                    <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/>
+                  </clipPath>
+                  <g clip-path="url(#uk-settings)">
+                    <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+                    <path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#uk-diag-settings)" stroke="#C8102E" stroke-width="4"/>
+                    <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
+                    <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
+                  </g>
+                </svg>
+                <span>English</span>
+              </button>
+              <button
+                type="button"
+                @click="handleLanguageChange('pl')"
+                class="flex items-center gap-2 px-4 py-2 rounded border transition-all"
+                :class="formData.preferred_language === 'pl'
+                  ? 'border-squig-yellow bg-squig-yellow/10'
+                  : 'border-gray-600 hover:border-gray-500'"
+              >
+                <!-- Polish Flag -->
+                <svg viewBox="0 0 16 10" class="w-6 h-4">
+                  <rect width="16" height="5" fill="#fff"/>
+                  <rect y="5" width="16" height="5" fill="#dc143c"/>
+                </svg>
+                <span>Polski</span>
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ t('settings.languageNote') }}
+            </p>
           </div>
 
           <div v-if="error" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
@@ -144,7 +197,7 @@
           </div>
 
           <div v-if="success" class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded">
-            Settings updated successfully!
+            {{ t('success.settingsUpdated') }}
           </div>
 
           <div class="flex gap-4">
@@ -153,14 +206,14 @@
               :disabled="submitting || !hasChanges"
               class="btn-primary flex-1"
             >
-              {{ submitting ? 'Saving...' : 'Save Changes' }}
+              {{ submitting ? t('common.saving') : t('common.save') }}
             </button>
             <button
               type="button"
               @click="resetForm"
               class="btn-secondary flex-1"
             >
-              Reset
+              {{ t('common.reset') }}
             </button>
           </div>
         </form>
@@ -171,11 +224,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
+import { useLanguageStore } from '../stores/language'
 import axios from 'axios'
 
+const { t, locale } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const authStore = useAuthStore()
+const languageStore = useLanguageStore()
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -195,6 +252,7 @@ const formData = ref({
   show_email: false,
   avatar_url: '',
   wants_organizer: false,
+  preferred_language: 'en',
 })
 
 const originalData = ref({
@@ -204,6 +262,7 @@ const originalData = ref({
   show_email: false,
   avatar_url: '',
   wants_organizer: false,
+  preferred_language: 'en',
 })
 
 const isAdmin = computed(() => authStore.user?.role === 'admin')
@@ -215,6 +274,7 @@ const hasChanges = computed(() => {
          formData.value.show_email !== originalData.value.show_email ||
          formData.value.avatar_url !== originalData.value.avatar_url ||
          formData.value.wants_organizer !== originalData.value.wants_organizer ||
+         formData.value.preferred_language !== originalData.value.preferred_language ||
          avatarFile.value !== null
 })
 
@@ -223,13 +283,19 @@ const isUploadedAvatar = computed(() => {
   return formData.value.avatar_url && formData.value.avatar_url.startsWith('/api/uploads/')
 })
 
+const handleLanguageChange = (newLocale) => {
+  formData.value.preferred_language = newLocale
+  locale.value = newLocale
+  languageStore.setLocale(newLocale, false) // Don't persist yet - will happen on save
+}
+
 const handleFileSelect = (event) => {
   const file = event.target.files[0]
   if (!file) return
 
   // Validate file size (5MB)
   if (file.size > 5 * 1024 * 1024) {
-    error.value = 'File too large. Maximum size is 5MB.'
+    error.value = t('errors.fileTooLarge')
     return
   }
 
@@ -260,7 +326,7 @@ const uploadAvatar = async () => {
     clearAvatarFile()
     return true
   } catch (err) {
-    error.value = err.response?.data?.detail || 'Failed to upload avatar'
+    error.value = err.response?.data?.detail || t('errors.failedToUploadAvatar')
     return false
   } finally {
     uploadingAvatar.value = false
@@ -276,10 +342,13 @@ const loadUserData = async () => {
     formData.value.show_email = response.data.show_email || false
     formData.value.avatar_url = response.data.avatar_url || ''
     formData.value.wants_organizer = response.data.role === 'organizer'
+    formData.value.preferred_language = response.data.preferred_language || 'en'
     hasDiscordOAuth.value = response.data.has_discord_oauth || false
     originalData.value = { ...formData.value }
+    // Sync vue-i18n locale
+    locale.value = formData.value.preferred_language
   } catch (err) {
-    error.value = 'Failed to load user data'
+    error.value = t('errors.failedToLoad')
   } finally {
     loading.value = false
   }
@@ -325,6 +394,11 @@ const updateSettings = async () => {
       updateData.wants_organizer = formData.value.wants_organizer
     }
 
+    // Add preferred_language if changed
+    if (formData.value.preferred_language !== originalData.value.preferred_language) {
+      updateData.preferred_language = formData.value.preferred_language
+    }
+
     // Only make the PATCH request if there are other changes
     if (Object.keys(updateData).length > 0) {
       const response = await axios.patch(`${API_URL}/auth/me`, updateData)
@@ -337,10 +411,14 @@ const updateSettings = async () => {
       originalData.value.show_email = response.data.show_email
       originalData.value.avatar_url = response.data.avatar_url || ''
       originalData.value.wants_organizer = response.data.role === 'organizer'
+      originalData.value.preferred_language = response.data.preferred_language || 'en'
       formData.value.discord_username = response.data.discord_username || ''
       formData.value.show_email = response.data.show_email
       formData.value.avatar_url = response.data.avatar_url || ''
       formData.value.wants_organizer = response.data.role === 'organizer'
+      formData.value.preferred_language = response.data.preferred_language || 'en'
+      // Update language store with saved preference
+      languageStore.initFromUser(response.data.preferred_language)
     }
 
     success.value = true
@@ -348,7 +426,7 @@ const updateSettings = async () => {
       success.value = false
     }, 3000)
   } catch (err) {
-    error.value = err.response?.data?.detail || 'Failed to update settings'
+    error.value = err.response?.data?.detail || t('errors.failedToUpdate')
   } finally {
     submitting.value = false
   }

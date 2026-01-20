@@ -47,9 +47,9 @@
         <div class="text-sm text-gray-400 mt-1">
           <span v-if="showRound && match.knockout_round">{{ knockoutRoundText(match.knockout_round) }}</span>
           <span v-if="match.player1_league_points !== null">
-            League pts: {{ displayLeftPoints }} - {{ displayRightPoints }}
+            {{ t('matchCard.leaguePts') }} {{ displayLeftPoints }} - {{ displayRightPoints }}
           </span>
-          <span v-if="match.map_name"> | Map: {{ match.map_name }}</span>
+          <span v-if="match.map_name"> | {{ t('matchCard.map') }} {{ match.map_name }}</span>
         </div>
       </router-link>
       <div class="flex items-center gap-2">
@@ -58,14 +58,14 @@
           @click.stop="$emit('confirm', match)"
           class="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 rounded text-white"
         >
-          Confirm
+          {{ t('matchCard.confirm') }}
         </button>
         <button
           v-if="canEdit"
           @click.stop="$emit('edit', match)"
           class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded"
         >
-          Edit
+          {{ t('matchCard.edit') }}
         </button>
         <div
           :class="matchStatusClass(match.status)"
@@ -80,6 +80,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   match: {
@@ -184,20 +187,20 @@ const matchStatusClass = (status) => {
 
 const matchStatusText = (status) => {
   switch (status) {
-    case 'scheduled': return 'Scheduled'
-    case 'pending_confirmation': return 'Pending'
-    case 'confirmed': return 'Completed'
+    case 'scheduled': return t('matchCard.scheduled')
+    case 'pending_confirmation': return t('matchCard.pending')
+    case 'confirmed': return t('matchCard.completed')
     default: return status
   }
 }
 
 const knockoutRoundText = (round) => {
   switch (round) {
-    case 'round_of_32': return 'Round of 32'
-    case 'round_of_16': return 'Round of 16'
-    case 'quarter': return 'Quarter-final'
-    case 'semi': return 'Semi-final'
-    case 'final': return 'Final'
+    case 'round_of_32': return t('matchCard.roundOf32')
+    case 'round_of_16': return t('matchCard.roundOf16')
+    case 'quarter': return t('matchCard.quarterFinal')
+    case 'semi': return t('matchCard.semiFinal')
+    case 'final': return t('matchCard.final')
     default: return round
   }
 }

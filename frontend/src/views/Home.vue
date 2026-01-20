@@ -6,8 +6,7 @@
         Squig League
       </h1>
       <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-        A toolset for Age of Sigmar players and tournament organizers.
-        Manage leagues, exchange army lists safely, and more.
+        {{ t('home.subtitle') }}
       </p>
     </div>
 
@@ -22,13 +21,12 @@
             </svg>
           </span>
         </div>
-        <h2 class="text-2xl font-bold mb-3 group-hover:text-squig-yellow transition-colors">Leagues</h2>
+        <h2 class="text-2xl font-bold mb-3 group-hover:text-squig-yellow transition-colors">{{ t('home.leaguesTitle') }}</h2>
         <p class="text-gray-400 mb-4">
-          Organize and manage competitive leagues with group phases, knockout brackets,
-          and automated scoring. Track standings, schedule matches, and crown champions.
+          {{ t('home.leaguesDesc') }}
         </p>
         <span class="text-squig-yellow font-semibold inline-flex items-center">
-          Browse Leagues
+          {{ t('home.browseLeagues') }}
           <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -44,13 +42,12 @@
             </svg>
           </span>
         </div>
-        <h2 class="text-2xl font-bold mb-3 group-hover:text-squig-yellow transition-colors">Matchups</h2>
+        <h2 class="text-2xl font-bold mb-3 group-hover:text-squig-yellow transition-colors">{{ t('home.matchupsTitle') }}</h2>
         <p class="text-gray-400 mb-4">
-          Safe blind army list exchange. Both players submit their lists secretly,
-          then reveal simultaneously with a random map. No peeking, no cheating.
+          {{ t('home.matchupsDesc') }}
         </p>
         <span class="text-squig-yellow font-semibold inline-flex items-center">
-          Create Matchup
+          {{ t('home.createMatchup') }}
           <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -66,27 +63,28 @@
             </svg>
           </span>
         </div>
-        <h2 class="text-2xl font-bold mb-3 text-gray-500">Coming Soon</h2>
+        <h2 class="text-2xl font-bold mb-3 text-gray-500">{{ t('common.comingSoon') }}</h2>
         <p class="text-gray-500 mb-4">
-          Score tracker and game assistant for your Age of Sigmar battles.
+          {{ t('home.comingSoonDesc') }}
         </p>
         <span class="text-gray-500 font-semibold">
-          Stay Tuned
+          {{ t('common.stayTuned') }}
         </span>
       </div>
     </div>
 
     <!-- Quick Info Section -->
     <div class="card text-center">
-      <h3 class="text-xl font-bold mb-4">Built for the Community</h3>
+      <h3 class="text-xl font-bold mb-4">{{ t('home.communityTitle') }}</h3>
       <p class="text-gray-400 max-w-2xl mx-auto">
-        Squig League is a free platform designed to make organizing and playing
-        Age of Sigmar more enjoyable. Whether you're running a local league or
-        just need a fair way to exchange lists before a game, we've got you covered.
+        {{ t('home.communityDesc') }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 </script>

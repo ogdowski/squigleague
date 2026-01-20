@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { useLanguageStore } from './language'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -44,6 +45,12 @@ export const useAuthStore = defineStore('auth', {
           headers: { Authorization: `Bearer ${this.token}` },
         })
         this.user = response.data
+
+        // Sync language preference from user data
+        const languageStore = useLanguageStore()
+        if (response.data.preferred_language) {
+          languageStore.initFromUser(response.data.preferred_language)
+        }
       } catch (error) {
         this.logout()
       }
