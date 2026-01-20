@@ -463,9 +463,11 @@
               :match="match"
               :league-id="league.id"
               :can-edit="canEditMatch(match)"
+              :can-confirm="canConfirmMatchInList(match)"
               :current-player-id="currentUserPlayerId"
               :show-round="true"
               @edit="openMatchModal"
+              @confirm="confirmMatchDirect"
             />
           </div>
         </div>
@@ -498,8 +500,10 @@
                 :match="match"
                 :league-id="league.id"
                 :can-edit="canEditMatch(match)"
+                :can-confirm="canConfirmMatchInList(match)"
                 :current-player-id="currentUserPlayerId"
                 @edit="openMatchModal"
+                @confirm="confirmMatchDirect"
               />
             </div>
 
@@ -512,8 +516,10 @@
                 :match="match"
                 :league-id="league.id"
                 :can-edit="canEditMatch(match)"
+                :can-confirm="canConfirmMatchInList(match)"
                 :current-player-id="currentUserPlayerId"
                 @edit="openMatchModal"
+                @confirm="confirmMatchDirect"
               />
             </div>
           </div>
@@ -1480,6 +1486,43 @@ const canEditMatch = (match) => {
   const isPlayer = userPlayer && (userPlayer.id === match.player1_id || userPlayer.id === match.player2_id)
 
   return isPlayer || isOrgOrAdmin
+}
+
+// Check if current user can confirm this match in the list (opponent or organizer, match is pending)
+const canConfirmMatchInList = (match) => {
+  if (!authStore.user || !league.value) return false
+  if (match.status !== 'pending_confirmation') return false
+
+  const isOrgOrAdmin = league.value.organizer_id === authStore.user.id || authStore.user.role === 'admin'
+  if (isOrgOrAdmin) return true
+
+  // Check if user is the opponent (not the one who submitted)
+  const userPlayer = players.value.find(p => p.user_id === authStore.user.id)
+  if (!userPlayer) return false
+
+  const isPlayer1 = userPlayer.id === match.player1_id
+  const isPlayer2 = userPlayer.id === match.player2_id
+
+  if (!isPlayer1 && !isPlayer2) return false
+
+  // Can confirm if they are the opponent of whoever submitted
+  // submitted_by_id is the player who submitted the score
+  if (match.submitted_by_id) {
+    return (isPlayer1 && match.submitted_by_id === match.player2_id) ||
+           (isPlayer2 && match.submitted_by_id === match.player1_id)
+  }
+
+  return false
+}
+
+// Confirm match directly without opening modal
+const confirmMatchDirect = async (match) => {
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/matches/${match.id}/confirm`)
+    await fetchLeague()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to confirm match')
+  }
 }
 
 const openMatchModal = (match) => {

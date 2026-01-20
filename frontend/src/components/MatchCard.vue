@@ -11,22 +11,29 @@
         class="flex-1 cursor-pointer"
       >
         <div class="flex items-center gap-4">
-          <span class="font-bold">{{ match.player1_username }}</span>
+          <span class="font-bold">{{ displayLeftPlayer }}</span>
           <span v-if="match.player1_score !== null" class="text-2xl font-bold text-squig-yellow">
-            {{ match.player1_score }} - {{ match.player2_score }}
+            {{ displayLeftScore }} - {{ displayRightScore }}
           </span>
           <span v-else class="text-gray-500">vs</span>
-          <span class="font-bold">{{ match.player2_username }}</span>
+          <span class="font-bold">{{ displayRightPlayer }}</span>
         </div>
         <div class="text-sm text-gray-400 mt-1">
           <span v-if="showRound && match.knockout_round">{{ knockoutRoundText(match.knockout_round) }}</span>
           <span v-if="match.player1_league_points !== null">
-            League pts: {{ match.player1_league_points }} - {{ match.player2_league_points }}
+            League pts: {{ displayLeftPoints }} - {{ displayRightPoints }}
           </span>
           <span v-if="match.map_name"> | Map: {{ match.map_name }}</span>
         </div>
       </router-link>
       <div class="flex items-center gap-2">
+        <button
+          v-if="canConfirm"
+          @click.stop="$emit('confirm', match)"
+          class="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 rounded text-white"
+        >
+          Confirm
+        </button>
         <button
           v-if="canEdit"
           @click.stop="$emit('edit', match)"
@@ -61,6 +68,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  canConfirm: {
+    type: Boolean,
+    default: false,
+  },
   showRound: {
     type: Boolean,
     default: false,
@@ -71,7 +82,37 @@ const props = defineProps({
   },
 })
 
-defineEmits(['edit'])
+defineEmits(['edit', 'confirm'])
+
+// Check if current player is player2 (need to swap display order)
+const shouldSwap = computed(() => {
+  return props.currentPlayerId && props.match.player2_id === props.currentPlayerId
+})
+
+// Display players - current user always on left if they're in the match
+const displayLeftPlayer = computed(() => {
+  return shouldSwap.value ? props.match.player2_username : props.match.player1_username
+})
+
+const displayRightPlayer = computed(() => {
+  return shouldSwap.value ? props.match.player1_username : props.match.player2_username
+})
+
+const displayLeftScore = computed(() => {
+  return shouldSwap.value ? props.match.player2_score : props.match.player1_score
+})
+
+const displayRightScore = computed(() => {
+  return shouldSwap.value ? props.match.player1_score : props.match.player2_score
+})
+
+const displayLeftPoints = computed(() => {
+  return shouldSwap.value ? props.match.player2_league_points : props.match.player1_league_points
+})
+
+const displayRightPoints = computed(() => {
+  return shouldSwap.value ? props.match.player1_league_points : props.match.player2_league_points
+})
 
 const resultClass = computed(() => {
   if (!props.currentPlayerId || props.match.player1_score === null) {

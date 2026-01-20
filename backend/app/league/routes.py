@@ -1046,6 +1046,21 @@ async def list_matches(
     # Get league for list visibility settings
     league = session.scalars(select(League).where(League.id == league_id)).first()
 
+    # Auto-confirm matches pending for more than 24 hours
+    if league and league.status not in ("finished",):
+        auto_confirm_cutoff = datetime.utcnow() - timedelta(hours=24)
+        pending_old = session.scalars(
+            select(Match).where(
+                Match.league_id == league_id,
+                Match.status == "pending_confirmation",
+                Match.submitted_at < auto_confirm_cutoff,
+            )
+        ).all()
+
+        for match in pending_old:
+            # Auto-confirm the match using confirm_match_result
+            confirm_match_result(session, match)
+
     statement = select(Match).where(Match.league_id == league_id)
     if phase:
         statement = statement.where(Match.phase == phase)
