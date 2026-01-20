@@ -10,6 +10,8 @@ from app.league.models import Group, League, LeaguePlayer, Match, PlayerElo
 from app.league.schemas import (
     ArmyListResponse,
     ArmyListSubmit,
+    ChangeGroupResponse,
+    ChangePlayerGroupRequest,
     GroupResponse,
     GroupStandings,
     GroupUpdate,
@@ -27,6 +29,7 @@ from app.league.schemas import (
     MatchResponse,
     MatchResultSubmit,
     PlayerEloResponse,
+    PlayerRemovalResponse,
     StandingsEntry,
 )
 from app.league.service import (
@@ -34,6 +37,7 @@ from app.league.service import (
     all_round_matches_confirmed,
     calculate_knockout_size,
     calculate_phase_dates,
+    change_player_group,
     confirm_match_result,
     draw_groups,
     generate_group_matches,
@@ -46,6 +50,7 @@ from app.league.service import (
     get_next_knockout_round,
     get_qualified_players,
     get_qualifying_info,
+    remove_player_from_league,
     submit_match_result,
 )
 from app.users.models import User
@@ -386,6 +391,58 @@ async def join_league(
     )
 
 
+@router.post("/{league_id}/leave", response_model=PlayerRemovalResponse)
+async def leave_league(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Leaves a league (player drops out).
+
+    - During registration: simply removes the player
+    - During group/knockout phase: removes player and awards walkovers (25:0, 1175 pts)
+    - After finished: not allowed
+    """
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.status == "finished":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="League has already finished",
+        )
+
+    statement = select(LeaguePlayer).where(
+        LeaguePlayer.league_id == league_id,
+        LeaguePlayer.user_id == current_user.id,
+    )
+    player = session.scalars(statement).first()
+
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not in this league",
+        )
+
+    # Award walkovers during active phases (group or knockout)
+    award_walkovers = league.status in ("group_phase", "knockout_phase")
+
+    result = remove_player_from_league(session, player, award_walkovers=award_walkovers)
+
+    return PlayerRemovalResponse(
+        message="Successfully left the league",
+        deleted_matches=result["deleted_matches"],
+        walkover_matches=result["walkover_matches"],
+    )
+
+
 @router.post("/{league_id}/add-player", response_model=LeaguePlayerResponse)
 async def add_player(
     league_id: int,
@@ -502,16 +559,20 @@ async def list_players(
     return result
 
 
-@router.delete(
-    "/{league_id}/player/{player_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{league_id}/player/{player_id}", response_model=PlayerRemovalResponse)
 async def remove_player(
     league_id: int,
     player_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_organizer),
 ):
-    """Removes a player from a league (organizer)."""
+    """
+    Removes a player from a league (organizer).
+
+    - During registration: simply removes the player
+    - During group/knockout phase: removes player and awards walkovers (25:0, 1175 pts)
+    - After finished: not allowed
+    """
     statement = select(League).where(League.id == league_id)
     league = session.scalars(statement).first()
 
@@ -527,6 +588,12 @@ async def remove_player(
             detail="Not authorized",
         )
 
+    if league.status == "finished":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="League has already finished",
+        )
+
     statement = select(LeaguePlayer).where(
         LeaguePlayer.id == player_id,
         LeaguePlayer.league_id == league_id,
@@ -539,8 +606,93 @@ async def remove_player(
             detail="Player not found",
         )
 
-    session.delete(player)
-    session.commit()
+    # Award walkovers during active phases (group or knockout)
+    award_walkovers = league.status in ("group_phase", "knockout_phase")
+
+    result = remove_player_from_league(session, player, award_walkovers=award_walkovers)
+
+    return PlayerRemovalResponse(
+        message="Player removed from league",
+        deleted_matches=result["deleted_matches"],
+        walkover_matches=result["walkover_matches"],
+    )
+
+
+@router.patch(
+    "/{league_id}/player/{player_id}/group", response_model=ChangeGroupResponse
+)
+async def change_player_group_endpoint(
+    league_id: int,
+    player_id: int,
+    data: ChangePlayerGroupRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """
+    Moves a player to a different group (organizer).
+
+    Only available during group phase. Deletes old matches and creates new ones.
+    """
+    statement = select(League).where(League.id == league_id)
+    league = session.scalars(statement).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if league.status != "group_phase":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only change groups during group phase",
+        )
+
+    statement = select(LeaguePlayer).where(
+        LeaguePlayer.id == player_id,
+        LeaguePlayer.league_id == league_id,
+    )
+    player = session.scalars(statement).first()
+
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found",
+        )
+
+    statement = select(Group).where(
+        Group.id == data.group_id,
+        Group.league_id == league_id,
+    )
+    new_group = session.scalars(statement).first()
+
+    if not new_group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target group not found",
+        )
+
+    if player.group_id == new_group.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Player is already in this group",
+        )
+
+    result = change_player_group(session, player, new_group)
+
+    return ChangeGroupResponse(
+        message=f"Player moved to {new_group.name}",
+        deleted_matches=result["deleted_matches"],
+        created_matches=result["created_matches"],
+        new_group_id=new_group.id,
+        new_group_name=new_group.name,
+    )
 
 
 # ============ Groups ============

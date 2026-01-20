@@ -114,6 +114,24 @@ class GroupUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=50)
 
 
+class ChangePlayerGroupRequest(BaseModel):
+    group_id: int
+
+
+class PlayerRemovalResponse(BaseModel):
+    message: str
+    deleted_matches: int
+    walkover_matches: int
+
+
+class ChangeGroupResponse(BaseModel):
+    message: str
+    deleted_matches: int
+    created_matches: int
+    new_group_id: int
+    new_group_name: str
+
+
 # ============ LeaguePlayer Schemas ============
 
 

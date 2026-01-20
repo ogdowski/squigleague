@@ -805,6 +805,218 @@ def advance_knockout_winner(session: Session, match: Match) -> Optional[Match]:
 # ============ Tiebreakers ============
 
 
+def remove_player_from_league(
+    session: Session,
+    player: LeaguePlayer,
+    award_walkovers: bool = True,
+) -> dict:
+    """
+    Removes a player from a league, handling their matches.
+
+    For unplayed/pending matches: awards walkover (25:0, 1175 pts) to opponent
+    For confirmed matches: keeps them (stats already counted)
+
+    Walkover score is 25:0 with 1175 league points (max win + bonus).
+
+    Args:
+        session: Database session
+        player: LeaguePlayer to remove
+        award_walkovers: If True, unplayed matches become walkovers for opponent
+
+    Returns:
+        dict with counts of deleted/modified matches
+    """
+    # Walkover constants
+    WALKOVER_WINNER_SCORE = 25
+    WALKOVER_LOSER_SCORE = 0
+    WALKOVER_WINNER_POINTS = 1175
+    WALKOVER_LOSER_POINTS = 0
+
+    statement = select(Match).where(
+        Match.league_id == player.league_id,
+        (Match.player1_id == player.id) | (Match.player2_id == player.id),
+    )
+    matches = list(session.scalars(statement).all())
+
+    deleted_count = 0
+    walkover_count = 0
+
+    for match in matches:
+        if match.status == "confirmed":
+            # Keep confirmed matches - stats already counted
+            continue
+
+        if award_walkovers and match.status in ("scheduled", "pending_confirmation"):
+            # Award walkover to opponent
+            opponent_id = (
+                match.player2_id if match.player1_id == player.id else match.player1_id
+            )
+            opponent = session.get(LeaguePlayer, opponent_id)
+
+            if opponent:
+                # Reverse any previous pending stats from this match
+                if match.player1_league_points is not None:
+                    other_points = (
+                        match.player2_league_points
+                        if match.player1_id == player.id
+                        else match.player1_league_points
+                    )
+                    opponent.games_played -= 1
+                    opponent.total_points -= other_points or 0
+                    # Reverse win/loss/draw
+                    if match.player1_score > match.player2_score:
+                        if match.player1_id == player.id:
+                            opponent.games_lost -= 1
+                        else:
+                            opponent.games_won -= 1
+                    elif match.player1_score < match.player2_score:
+                        if match.player1_id == player.id:
+                            opponent.games_won -= 1
+                        else:
+                            opponent.games_lost -= 1
+                    else:
+                        opponent.games_drawn -= 1
+
+                # Set walkover score (25:0, 1175 pts)
+                if match.player1_id == player.id:
+                    match.player1_score = WALKOVER_LOSER_SCORE
+                    match.player2_score = WALKOVER_WINNER_SCORE
+                    match.player1_league_points = WALKOVER_LOSER_POINTS
+                    match.player2_league_points = WALKOVER_WINNER_POINTS
+                else:
+                    match.player1_score = WALKOVER_WINNER_SCORE
+                    match.player2_score = WALKOVER_LOSER_SCORE
+                    match.player1_league_points = WALKOVER_WINNER_POINTS
+                    match.player2_league_points = WALKOVER_LOSER_POINTS
+
+                # Update opponent stats with walkover win
+                opponent.games_played += 1
+                opponent.games_won += 1
+                opponent.total_points += WALKOVER_WINNER_POINTS
+                session.add(opponent)
+
+                match.status = "confirmed"
+                match.confirmed_at = datetime.utcnow()
+                session.add(match)
+                walkover_count += 1
+                continue
+
+        # Delete match if no walkover
+        session.delete(match)
+        deleted_count += 1
+
+    # Remove player
+    session.delete(player)
+    session.commit()
+
+    return {"deleted_matches": deleted_count, "walkover_matches": walkover_count}
+
+
+def change_player_group(
+    session: Session,
+    player: LeaguePlayer,
+    new_group: Group,
+    regenerate_matches: bool = True,
+) -> dict:
+    """
+    Moves a player from one group to another.
+
+    Deletes old group matches and creates new ones if regenerate_matches=True.
+
+    Args:
+        session: Database session
+        player: LeaguePlayer to move
+        new_group: Target Group
+        regenerate_matches: If True, regenerates matches for affected groups
+
+    Returns:
+        dict with counts of deleted/created matches
+    """
+    old_group_id = player.group_id
+    league = session.get(League, player.league_id)
+
+    if not league or old_group_id == new_group.id:
+        return {"deleted_matches": 0, "created_matches": 0}
+
+    deleted_count = 0
+    created_count = 0
+
+    if regenerate_matches:
+        # Delete player's existing group matches (only unconfirmed ones)
+        statement = select(Match).where(
+            Match.league_id == player.league_id,
+            Match.phase == "group",
+            (Match.player1_id == player.id) | (Match.player2_id == player.id),
+        )
+        old_matches = list(session.scalars(statement).all())
+
+        for match in old_matches:
+            if match.status != "confirmed":
+                # Reverse stats if match had pending results
+                if match.player1_league_points is not None:
+                    other_player_id = (
+                        match.player2_id
+                        if match.player1_id == player.id
+                        else match.player1_id
+                    )
+                    other_player = session.get(LeaguePlayer, other_player_id)
+                    if other_player:
+                        other_points = (
+                            match.player2_league_points
+                            if match.player1_id == player.id
+                            else match.player1_league_points
+                        )
+                        other_player.games_played -= 1
+                        other_player.total_points -= other_points or 0
+                        # Reverse win/loss/draw
+                        if match.player1_score > match.player2_score:
+                            if match.player1_id == player.id:
+                                other_player.games_lost -= 1
+                            else:
+                                other_player.games_won -= 1
+                        elif match.player1_score < match.player2_score:
+                            if match.player1_id == player.id:
+                                other_player.games_won -= 1
+                            else:
+                                other_player.games_lost -= 1
+                        else:
+                            other_player.games_drawn -= 1
+                        session.add(other_player)
+
+                session.delete(match)
+                deleted_count += 1
+
+    # Move player to new group
+    player.group_id = new_group.id
+    session.add(player)
+    session.commit()
+
+    if regenerate_matches:
+        # Create new matches with players in the new group
+        statement = select(LeaguePlayer).where(
+            LeaguePlayer.group_id == new_group.id,
+            LeaguePlayer.id != player.id,
+        )
+        new_groupmates = list(session.scalars(statement).all())
+
+        base_deadline = datetime.utcnow()
+        for groupmate in new_groupmates:
+            match = Match(
+                league_id=player.league_id,
+                player1_id=player.id,
+                player2_id=groupmate.id,
+                phase="group",
+                status="scheduled",
+                deadline=base_deadline + timedelta(days=league.days_per_match),
+            )
+            session.add(match)
+            created_count += 1
+
+        session.commit()
+
+    return {"deleted_matches": deleted_count, "created_matches": created_count}
+
+
 def compare_for_knockout_tiebreaker(
     session: Session,
     player1: LeaguePlayer,
