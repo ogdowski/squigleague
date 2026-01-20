@@ -33,6 +33,9 @@ class Matchup(SQLModel, table=True):
     # Map assignment (after both lists submitted)
     map_name: Optional[str] = None
 
+    # Visibility - if True, matchup appears in public completed matchups list
+    is_public: bool = Field(default=True)
+
     # Metadata
     created_at: datetime = Field(default_factory=datetime.utcnow)
     expires_at: datetime = Field(

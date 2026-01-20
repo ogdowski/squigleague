@@ -8,13 +8,15 @@ from app.matchup.models import Matchup
 from app.matchup.schemas import (
     MatchupCreate,
     MatchupCreateResponse,
+    MatchupPublicToggle,
     MatchupReveal,
     MatchupStatus,
     MatchupSubmit,
 )
 from app.matchup.service import get_battle_plan_data, get_map_image, submit_list
 from app.users.models import User
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlmodel import Session, func, select
 
 router = APIRouter()
@@ -29,10 +31,20 @@ async def create_matchup(
     current_user=Depends(get_current_user_optional),
 ):
     """Create a new matchup with Player 1's army list and return the UUID link."""
+    # Look up player2 by username if provided
+    player2_id = None
+    if data.player2_username:
+        statement = select(User).where(User.username == data.player2_username)
+        player2 = session.scalars(statement).first()
+        if player2:
+            player2_id = player2.id
+
     matchup = Matchup(
         player1_id=current_user.id if current_user else None,
+        player2_id=player2_id,
         player1_list=data.army_list,
         player1_submitted=True,
+        is_public=data.is_public,
     )
 
     session.add(matchup)
@@ -52,8 +64,6 @@ async def get_my_matchups(
     current_user=Depends(get_current_user),
 ):
     """Get all matchups for the current user."""
-    from sqlalchemy import or_
-
     statement = (
         select(Matchup, User)
         .outerjoin(User, Matchup.player1_id == User.id)
@@ -66,14 +76,22 @@ async def get_my_matchups(
         .order_by(Matchup.created_at.desc())
     )
 
-    results = session.exec(statement).all()
+    results = session.scalars(
+        select(Matchup)
+        .where(
+            or_(
+                Matchup.player1_id == current_user.id,
+                Matchup.player2_id == current_user.id,
+            )
+        )
+        .order_by(Matchup.created_at.desc())
+    ).all()
 
-    # Fetch player2 info separately
+    # Fetch player info separately
     matchup_list = []
-    for matchup, player1 in results:
-        player2 = None
-        if matchup.player2_id:
-            player2 = session.get(User, matchup.player2_id)
+    for matchup in results:
+        player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
+        player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
 
         matchup_list.append(
             MatchupStatus(
@@ -81,6 +99,7 @@ async def get_my_matchups(
                 player1_submitted=matchup.player1_submitted,
                 player2_submitted=matchup.player2_submitted,
                 is_revealed=matchup.is_revealed,
+                is_public=matchup.is_public,
                 created_at=matchup.created_at,
                 expires_at=matchup.expires_at,
                 player1_username=player1.username if player1 else None,
@@ -91,6 +110,82 @@ async def get_my_matchups(
         )
 
     return matchup_list
+
+
+@router.get("/public", response_model=list[MatchupStatus])
+async def get_public_matchups(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user_optional),
+    limit: int = Query(default=50, le=100),
+):
+    """Get public completed matchups from other users."""
+    now = datetime.utcnow()
+
+    # Base query: public, revealed, not expired
+    statement = (
+        select(Matchup)
+        .where(
+            Matchup.is_public.is_(True),
+            Matchup.player1_submitted.is_(True),
+            Matchup.player2_submitted.is_(True),
+            Matchup.expires_at > now,
+        )
+        .order_by(Matchup.revealed_at.desc())
+        .limit(limit)
+    )
+
+    results = session.scalars(statement).all()
+
+    matchup_list = []
+    for matchup in results:
+        player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
+        player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
+
+        matchup_list.append(
+            MatchupStatus(
+                name=matchup.name,
+                player1_submitted=matchup.player1_submitted,
+                player2_submitted=matchup.player2_submitted,
+                is_revealed=matchup.is_revealed,
+                is_public=matchup.is_public,
+                created_at=matchup.created_at,
+                expires_at=matchup.expires_at,
+                player1_username=player1.username if player1 else None,
+                player2_username=player2.username if player2 else None,
+                player1_avatar=player1.avatar_url if player1 else None,
+                player2_avatar=player2.avatar_url if player2 else None,
+            )
+        )
+
+    return matchup_list
+
+
+@router.get("/search-users")
+async def search_users(
+    q: str = Query(min_length=2),
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """Search for users by username for matchup assignment."""
+    statement = (
+        select(User)
+        .where(
+            User.username.ilike(f"%{q}%"),
+            User.id != current_user.id,  # Exclude self
+        )
+        .limit(10)
+    )
+
+    users = session.scalars(statement).all()
+
+    return [
+        {
+            "id": user.id,
+            "username": user.username,
+            "avatar_url": user.avatar_url,
+        }
+        for user in users
+    ]
 
 
 @router.get("/maps")
@@ -149,10 +244,11 @@ async def get_stats(session: Session = Depends(get_session)):
 async def get_matchup_status(
     matchup_name: str,
     session: Session = Depends(get_session),
+    current_user=Depends(get_current_user_optional),
 ):
     """Get matchup status (without revealing lists)."""
     statement = select(Matchup).where(Matchup.name == matchup_name)
-    matchup = session.exec(statement).first()
+    matchup = session.scalars(statement).first()
 
     if not matchup:
         raise HTTPException(
@@ -170,11 +266,20 @@ async def get_matchup_status(
     player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
     player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
 
+    # Check if current user is a participant
+    is_participant = False
+    if current_user:
+        is_participant = (
+            matchup.player1_id == current_user.id
+            or matchup.player2_id == current_user.id
+        )
+
     return MatchupStatus(
         name=matchup.name,
         player1_submitted=matchup.player1_submitted,
         player2_submitted=matchup.player2_submitted,
         is_revealed=matchup.is_revealed,
+        is_public=matchup.is_public,
         created_at=matchup.created_at,
         expires_at=matchup.expires_at,
         player1_username=player1.username if player1 else None,
@@ -182,6 +287,37 @@ async def get_matchup_status(
         player1_avatar=player1.avatar_url if player1 else None,
         player2_avatar=player2.avatar_url if player2 else None,
     )
+
+
+@router.patch("/{matchup_name}/public")
+async def toggle_matchup_public(
+    matchup_name: str,
+    data: MatchupPublicToggle,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """Toggle matchup public visibility. Only participants can do this."""
+    statement = select(Matchup).where(Matchup.name == matchup_name)
+    matchup = session.scalars(statement).first()
+
+    if not matchup:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Matchup not found",
+        )
+
+    # Check if user is a participant
+    if matchup.player1_id != current_user.id and matchup.player2_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only participants can change matchup visibility",
+        )
+
+    matchup.is_public = data.is_public
+    session.add(matchup)
+    session.commit()
+
+    return {"message": "Visibility updated", "is_public": matchup.is_public}
 
 
 @router.post("/{matchup_name}/submit")
@@ -193,7 +329,7 @@ async def submit_army_list(
 ):
     """Submit an army list to a matchup."""
     statement = select(Matchup).where(Matchup.name == matchup_name)
-    matchup = session.exec(statement).first()
+    matchup = session.scalars(statement).first()
 
     if not matchup:
         raise HTTPException(
@@ -241,7 +377,7 @@ async def reveal_matchup(
 ):
     """Reveal both army lists and the assigned map."""
     statement = select(Matchup).where(Matchup.name == matchup_name)
-    matchup = session.exec(statement).first()
+    matchup = session.scalars(statement).first()
 
     if not matchup:
         raise HTTPException(

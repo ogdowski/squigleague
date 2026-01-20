@@ -89,7 +89,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
@@ -97,7 +97,11 @@ import axios from 'axios'
 const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+
+// Get redirect URL from query params
+const redirectUrl = route.query.redirect || '/'
 
 const email = ref('')
 const username = ref('')
@@ -111,7 +115,7 @@ const handleRegister = async () => {
 
   try {
     await authStore.register(email.value, username.value, password.value)
-    router.push('/')
+    router.push(redirectUrl)
   } catch (err) {
     error.value = err.response?.data?.detail || t('auth.registerFailed')
   } finally {
@@ -121,6 +125,10 @@ const handleRegister = async () => {
 
 const loginWithDiscord = async () => {
   try {
+    // Store redirect URL in sessionStorage for after OAuth callback
+    if (redirectUrl !== '/') {
+      sessionStorage.setItem('auth_redirect', redirectUrl)
+    }
     const response = await axios.get(`${API_URL}/auth/oauth/discord`)
     window.location.href = response.data.authorization_url
   } catch (err) {

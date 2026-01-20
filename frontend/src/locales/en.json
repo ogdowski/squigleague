@@ -5,7 +5,8 @@
     "loading": "Loading...",
     "saving": "Saving...",
     "comingSoon": "Coming Soon",
-    "stayTuned": "Stay Tuned"
+    "stayTuned": "Stay Tuned",
+    "close": "Close"
   },
   "home": {
     "subtitle": "A toolset for Age of Sigmar players and tournament organizers. Manage leagues, exchange army lists safely, and more.",
@@ -22,6 +23,7 @@
   "nav": {
     "leagues": "Leagues",
     "matchups": "Matchups",
+    "ranking": "Players",
     "admin": "Admin",
     "profile": "Profile",
     "settings": "Settings",
@@ -53,6 +55,20 @@
     "title": "Matchups",
     "createMatchup": "Create Matchup",
     "createMatchupDesc": "Create a matchup to exchange army lists",
+    "howItWorks": "How It Works",
+    "howItWorksStep1": "First player uploads their list - it can't be changed later",
+    "howItWorksStep2": "First player sends matchup link to second player",
+    "howItWorksStep3": "Second player submits their army list",
+    "howItWorksStep4": "Lists are revealed simultaneously with a random map",
+    "assignOpponent": "Assign Opponent",
+    "optional": "optional",
+    "searchByUsername": "Search by username...",
+    "publishAfterCompletion": "Show this matchup in public list after completion",
+    "myMatchups": "My Matchups",
+    "publicMatchups": "Recent Public Matchups",
+    "noPublicMatchups": "No public matchups yet",
+    "anonymous": "Anonymous",
+    "showInPublicList": "Show this matchup in the public list",
     "loadingMatchups": "Loading matchups...",
     "noMatchups": "No matchups yet",
     "failedToLoad": "Failed to load matchups",
@@ -150,10 +166,28 @@
     "vs": "vs",
     "failedToLoad": "Failed to load profile"
   },
+  "ranking": {
+    "title": "Players",
+    "activePlayers": "Active Players",
+    "totalPlayers": "Players",
+    "totalGames": "League Games",
+    "topArmies": "Most Popular Armies",
+    "searchPlaceholder": "Search by username...",
+    "leaderboard": "Leaderboard (League Games)",
+    "noPlayers": "No players found",
+    "newPlayers": "New Players",
+    "games": "league games",
+    "loadMore": "Load More",
+    "failedToLoad": "Failed to load ranking"
+  },
   "footer": {
     "copyright": "All Rights Reserved.",
     "leagues": "leagues",
-    "exchanges": "exchanges"
+    "exchanges": "exchanges",
+    "feedback": "Share feedback",
+    "feedbackInfo": "Have suggestions or found a bug? Get in touch!",
+    "or": "or",
+    "onDiscord": "on Discord"
   },
   "auth": {
     "login": "Login",
@@ -194,6 +228,13 @@
     "joining": "Joining...",
     "joinLeague": "Join League",
     "leaveLeague": "Leave League",
+    "loginRequired": "Login Required",
+    "loginRequiredMessage": "Only registered users can join leagues. Would you like to login or create an account?",
+    "organizer": "Tournament Organizer",
+    "statusRegistration": "Registration",
+    "statusGroupPhase": "Group Phase",
+    "statusKnockout": "Knockout",
+    "statusFinished": "Finished",
     "settings": "Settings",
     "actions": "Actions",
     "drawGroups": "Draw Groups",

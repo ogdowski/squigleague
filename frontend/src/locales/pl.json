@@ -5,7 +5,8 @@
     "loading": "Ładowanie...",
     "saving": "Zapisywanie...",
     "comingSoon": "Wkrótce",
-    "stayTuned": "Czekaj na więcej"
+    "stayTuned": "Czekaj na więcej",
+    "close": "Zamknij"
   },
   "home": {
     "subtitle": "Zestaw narzędzi dla graczy Age of Sigmar i organizatorów turniejów. Zarządzaj ligami, wymieniaj listy armii bezpiecznie i więcej.",
@@ -22,6 +23,7 @@
   "nav": {
     "leagues": "Ligi",
     "matchups": "Mecze",
+    "ranking": "Gracze",
     "admin": "Admin",
     "profile": "Profil",
     "settings": "Ustawienia",
@@ -53,6 +55,20 @@
     "title": "Mecze",
     "createMatchup": "Utwórz mecz",
     "createMatchupDesc": "Utwórz mecz aby wymienić listy armii",
+    "howItWorks": "Jak to działa",
+    "howItWorksStep1": "Pierwszy gracz wysyła swoją listę - nie może jej później zmienić",
+    "howItWorksStep2": "Pierwszy gracz wysyła link do meczu drugiemu graczowi",
+    "howItWorksStep3": "Drugi gracz wysyła swoją listę armii",
+    "howItWorksStep4": "Listy są odsłaniane jednocześnie z losową mapą",
+    "assignOpponent": "Przypisz przeciwnika",
+    "optional": "opcjonalne",
+    "searchByUsername": "Szukaj po nazwie użytkownika...",
+    "publishAfterCompletion": "Pokaż ten mecz na publicznej liście po zakończeniu",
+    "myMatchups": "Moje mecze",
+    "publicMatchups": "Ostatnie publiczne mecze",
+    "noPublicMatchups": "Brak publicznych meczy",
+    "anonymous": "Anonimowy",
+    "showInPublicList": "Pokaż ten mecz na publicznej liście",
     "loadingMatchups": "Ładowanie meczy...",
     "noMatchups": "Brak meczy",
     "failedToLoad": "Nie udało się załadować meczy",
@@ -150,10 +166,28 @@
     "vs": "vs",
     "failedToLoad": "Nie udało się załadować profilu"
   },
+  "ranking": {
+    "title": "Gracze",
+    "activePlayers": "Aktywni gracze",
+    "totalPlayers": "Graczy",
+    "totalGames": "Gier ligowych",
+    "topArmies": "Najpopularniejsze armie",
+    "searchPlaceholder": "Szukaj po nazwie użytkownika...",
+    "leaderboard": "Ranking (gry ligowe)",
+    "noPlayers": "Nie znaleziono graczy",
+    "newPlayers": "Nowi gracze",
+    "games": "gier ligowych",
+    "loadMore": "Załaduj więcej",
+    "failedToLoad": "Nie udało się załadować rankingu"
+  },
   "footer": {
     "copyright": "Wszelkie prawa zastrzeżone.",
     "leagues": "lig",
-    "exchanges": "wymian"
+    "exchanges": "wymian",
+    "feedback": "Podziel się opinią",
+    "feedbackInfo": "Masz sugestie lub znalazłeś błąd? Napisz do mnie!",
+    "or": "lub",
+    "onDiscord": "na Discordzie"
   },
   "auth": {
     "login": "Zaloguj",
@@ -194,6 +228,13 @@
     "joining": "Dołączanie...",
     "joinLeague": "Dołącz do ligi",
     "leaveLeague": "Opuść ligę",
+    "loginRequired": "Wymagane logowanie",
+    "loginRequiredMessage": "Tylko zarejestrowani użytkownicy mogą dołączać do lig. Chcesz się zalogować lub założyć konto?",
+    "organizer": "Organizator turnieju",
+    "statusRegistration": "Rejestracja",
+    "statusGroupPhase": "Faza grupowa",
+    "statusKnockout": "Puchar",
+    "statusFinished": "Zakończona",
     "settings": "Ustawienia",
     "actions": "Akcje",
     "drawGroups": "Losuj grupy",

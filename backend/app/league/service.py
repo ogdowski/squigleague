@@ -6,9 +6,248 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from app.league.elo import get_or_create_player_elo, update_elo_after_match
-from app.league.models import Group, League, LeaguePlayer, Match, PlayerElo
+from app.league.models import (
+    ArmyMatchupStats,
+    ArmyStats,
+    Group,
+    League,
+    LeaguePlayer,
+    Match,
+    PlayerElo,
+)
 from app.league.scoring import calculate_match_points
 from sqlmodel import Session, select
+
+
+def recalculate_all_army_stats(session: Session) -> dict:
+    """Recalculates all army stats from confirmed matches. Run once to populate cache."""
+    # Clear existing stats
+    session.query(ArmyStats).delete()
+    session.query(ArmyMatchupStats).delete()
+
+    # Get all confirmed matches
+    matches = session.scalars(select(Match).where(Match.status == "confirmed")).all()
+
+    stats_count = 0
+    matchup_count = 0
+
+    for match in matches:
+        # Get players
+        player1 = session.scalars(
+            select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
+        ).first()
+        player2 = session.scalars(
+            select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
+        ).first()
+
+        if not player1 or not player2:
+            continue
+
+        # Get factions
+        if match.phase == "knockout":
+            p1_faction = player1.knockout_army_faction
+            p2_faction = player2.knockout_army_faction
+        else:
+            p1_faction = player1.group_army_faction
+            p2_faction = player2.group_army_faction
+
+        if not p1_faction and not p2_faction:
+            continue
+
+        # Determine results
+        if match.player1_score > match.player2_score:
+            p1_result, p2_result = "win", "loss"
+        elif match.player1_score < match.player2_score:
+            p1_result, p2_result = "loss", "win"
+        else:
+            p1_result, p2_result = "draw", "draw"
+
+        is_mirror = p1_faction and p2_faction and p1_faction == p2_faction
+
+        # Update global stats
+        for faction, result in [(p1_faction, p1_result), (p2_faction, p2_result)]:
+            if not faction:
+                continue
+
+            stats = session.scalars(
+                select(ArmyStats).where(ArmyStats.faction == faction)
+            ).first()
+
+            if not stats:
+                stats = ArmyStats(faction=faction)
+                session.add(stats)
+                stats_count += 1
+
+            stats.games_played += 1
+            if result == "win":
+                stats.wins += 1
+            elif result == "draw":
+                stats.draws += 1
+            else:
+                stats.losses += 1
+            stats.updated_at = datetime.utcnow()
+
+        # Update matchup stats (skip mirrors)
+        if not is_mirror and p1_faction and p2_faction:
+            # p1 vs p2
+            matchup1 = session.scalars(
+                select(ArmyMatchupStats).where(
+                    ArmyMatchupStats.faction == p1_faction,
+                    ArmyMatchupStats.opponent_faction == p2_faction,
+                )
+            ).first()
+
+            if not matchup1:
+                matchup1 = ArmyMatchupStats(
+                    faction=p1_faction, opponent_faction=p2_faction
+                )
+                session.add(matchup1)
+                matchup_count += 1
+
+            matchup1.games_played += 1
+            if p1_result == "win":
+                matchup1.wins += 1
+            elif p1_result == "draw":
+                matchup1.draws += 1
+            else:
+                matchup1.losses += 1
+            matchup1.updated_at = datetime.utcnow()
+
+            # p2 vs p1
+            matchup2 = session.scalars(
+                select(ArmyMatchupStats).where(
+                    ArmyMatchupStats.faction == p2_faction,
+                    ArmyMatchupStats.opponent_faction == p1_faction,
+                )
+            ).first()
+
+            if not matchup2:
+                matchup2 = ArmyMatchupStats(
+                    faction=p2_faction, opponent_faction=p1_faction
+                )
+                session.add(matchup2)
+                matchup_count += 1
+
+            matchup2.games_played += 1
+            if p2_result == "win":
+                matchup2.wins += 1
+            elif p2_result == "draw":
+                matchup2.draws += 1
+            else:
+                matchup2.losses += 1
+            matchup2.updated_at = datetime.utcnow()
+
+    session.commit()
+
+    return {
+        "matches_processed": len(matches),
+        "factions_tracked": stats_count,
+        "matchups_tracked": matchup_count,
+    }
+
+
+def update_army_stats_after_match(
+    session: Session,
+    player1: LeaguePlayer,
+    player2: LeaguePlayer,
+    player1_score: int,
+    player2_score: int,
+    phase: str,
+) -> None:
+    """Updates cached army statistics after a match is confirmed."""
+    # Determine factions based on match phase
+    p1_faction = (
+        player1.knockout_army_faction
+        if phase == "knockout"
+        else player1.group_army_faction
+    )
+    p2_faction = (
+        player2.knockout_army_faction
+        if phase == "knockout"
+        else player2.group_army_faction
+    )
+
+    # Skip if no factions set
+    if not p1_faction and not p2_faction:
+        return
+
+    # Check if mirror match
+    is_mirror = p1_faction and p2_faction and p1_faction == p2_faction
+
+    # Determine results
+    if player1_score > player2_score:
+        p1_result, p2_result = "win", "loss"
+    elif player1_score < player2_score:
+        p1_result, p2_result = "loss", "win"
+    else:
+        p1_result, p2_result = "draw", "draw"
+
+    # Update global stats for each faction (including mirrors)
+    for faction, result in [(p1_faction, p1_result), (p2_faction, p2_result)]:
+        if not faction:
+            continue
+
+        stats = session.scalars(
+            select(ArmyStats).where(ArmyStats.faction == faction)
+        ).first()
+
+        if not stats:
+            stats = ArmyStats(faction=faction)
+            session.add(stats)
+
+        stats.games_played += 1
+        if result == "win":
+            stats.wins += 1
+        elif result == "draw":
+            stats.draws += 1
+        else:
+            stats.losses += 1
+        stats.updated_at = datetime.utcnow()
+
+    # Update matchup stats (skip mirrors)
+    if not is_mirror and p1_faction and p2_faction:
+        # Update p1 faction vs p2 faction
+        matchup1 = session.scalars(
+            select(ArmyMatchupStats).where(
+                ArmyMatchupStats.faction == p1_faction,
+                ArmyMatchupStats.opponent_faction == p2_faction,
+            )
+        ).first()
+
+        if not matchup1:
+            matchup1 = ArmyMatchupStats(faction=p1_faction, opponent_faction=p2_faction)
+            session.add(matchup1)
+
+        matchup1.games_played += 1
+        if p1_result == "win":
+            matchup1.wins += 1
+        elif p1_result == "draw":
+            matchup1.draws += 1
+        else:
+            matchup1.losses += 1
+        matchup1.updated_at = datetime.utcnow()
+
+        # Update p2 faction vs p1 faction
+        matchup2 = session.scalars(
+            select(ArmyMatchupStats).where(
+                ArmyMatchupStats.faction == p2_faction,
+                ArmyMatchupStats.opponent_faction == p1_faction,
+            )
+        ).first()
+
+        if not matchup2:
+            matchup2 = ArmyMatchupStats(faction=p2_faction, opponent_faction=p1_faction)
+            session.add(matchup2)
+
+        matchup2.games_played += 1
+        if p2_result == "win":
+            matchup2.wins += 1
+        elif p2_result == "draw":
+            matchup2.draws += 1
+        else:
+            matchup2.losses += 1
+        matchup2.updated_at = datetime.utcnow()
+
 
 # ============ League Operations ============
 
@@ -479,6 +718,17 @@ def confirm_match_result(
         if match.knockout_round == "final":
             winner.knockout_placement = "1"
             session.add(winner)
+
+    # Update army statistics
+    if player1 and player2:
+        update_army_stats_after_match(
+            session,
+            player1,
+            player2,
+            match.player1_score,
+            match.player2_score,
+            match.phase,
+        )
 
     session.add(match)
     session.commit()

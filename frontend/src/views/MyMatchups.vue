@@ -2,19 +2,46 @@
   <div class="max-w-6xl mx-auto">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-3xl font-bold">{{ t('matchups.title') }}</h1>
-      <router-link v-if="authStore.isAuthenticated" to="/matchup/create" class="btn-primary">
+      <router-link to="/matchup/create" class="btn-primary">
         {{ t('matchups.createMatchup') }}
       </router-link>
     </div>
 
-    <div v-if="!authStore.isAuthenticated" class="card text-center py-12">
-      <p class="text-xl text-gray-400 mb-4">{{ t('matchups.createMatchupDesc') }}</p>
-      <router-link to="/matchup/create" class="btn-primary inline-block">
-        {{ t('matchups.createMatchup') }}
-      </router-link>
+    <!-- How It Works section -->
+    <div v-if="!howItWorksHidden" class="mb-6 relative">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold">{{ t('matchups.howItWorks') }}</h2>
+        <button
+          @click="hideHowItWorks"
+          class="text-gray-400 hover:text-white transition-colors p-1"
+          aria-label="Close"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div class="text-2xl font-bold text-squig-yellow mb-2">1</div>
+          <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep1') }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div class="text-2xl font-bold text-squig-yellow mb-2">2</div>
+          <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep2') }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div class="text-2xl font-bold text-squig-yellow mb-2">3</div>
+          <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep3') }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div class="text-2xl font-bold text-squig-yellow mb-2">4</div>
+          <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep4') }}</p>
+        </div>
+      </div>
     </div>
 
-    <div v-else-if="loading" class="text-center py-12">
+    <div v-if="loading" class="text-center py-12">
       <p class="text-xl text-gray-300">{{ t('matchups.loadingMatchups') }}</p>
     </div>
 
@@ -24,70 +51,36 @@
       </div>
     </div>
 
-    <div v-else-if="matchups.length === 0" class="card text-center py-12">
-      <p class="text-xl text-gray-400 mb-4">{{ t('matchups.noMatchups') }}</p>
-    </div>
+    <div v-else class="space-y-8">
+      <!-- My Matchups Section -->
+      <div v-if="authStore.isAuthenticated">
+        <h2 class="text-xl font-bold mb-4 text-squig-yellow">{{ t('matchups.myMatchups') }}</h2>
+        <div v-if="myMatchups.length === 0" class="card text-center py-8">
+          <p class="text-gray-400">{{ t('matchups.noMatchups') }}</p>
+        </div>
+        <div v-else class="space-y-3">
+          <MatchupCard
+            v-for="matchup in myMatchups"
+            :key="matchup.name"
+            :matchup="matchup"
+            @click="goToMatchup(matchup.name)"
+          />
+        </div>
+      </div>
 
-    <div v-else class="space-y-4">
-      <div
-        v-for="matchup in matchups"
-        :key="matchup.name"
-        class="card hover:bg-gray-700 transition-colors cursor-pointer"
-        @click="goToMatchup(matchup.name)"
-      >
-        <div class="flex items-center justify-between">
-          <div class="flex-1">
-            <h3 class="text-xl font-bold text-squig-yellow mb-2">
-              {{ matchup.name }}
-            </h3>
-            <div class="flex gap-6 text-sm mb-2">
-              <div>
-                <span class="text-gray-400">{{ t('matchups.created') }}:</span>
-                <span class="text-white ml-2">{{ formatDate(matchup.created_at) }}</span>
-              </div>
-              <div>
-                <span class="text-gray-400">{{ t('matchups.expires') }}:</span>
-                <span class="text-white ml-2">{{ formatDate(matchup.expires_at) }}</span>
-              </div>
-            </div>
-            <div v-if="matchup.player1_username || matchup.player2_username" class="flex gap-4 text-sm">
-              <div v-if="matchup.player1_username">
-                <span class="text-gray-400">P1:</span>
-                <span class="text-squig-yellow ml-1">{{ matchup.player1_username }}</span>
-              </div>
-              <div v-if="matchup.player2_username">
-                <span class="text-gray-400">P2:</span>
-                <span class="text-squig-yellow ml-1">{{ matchup.player2_username }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-4">
-            <div class="text-center">
-              <div class="text-xs text-gray-400 mb-1">{{ t('matchups.player1') }}</div>
-              <div :class="matchup.player1_submitted ? 'text-green-400' : 'text-gray-500'">
-                {{ matchup.player1_submitted ? '✓' : '○' }}
-              </div>
-            </div>
-            <div class="text-center">
-              <div class="text-xs text-gray-400 mb-1">{{ t('matchups.player2') }}</div>
-              <div :class="matchup.player2_submitted ? 'text-green-400' : 'text-gray-500'">
-                {{ matchup.player2_submitted ? '✓' : '○' }}
-              </div>
-            </div>
-            <div
-              v-if="matchup.is_revealed"
-              class="bg-green-900/30 border border-green-500 text-green-200 px-3 py-1 rounded text-sm"
-            >
-              {{ t('matchups.revealed') }}
-            </div>
-            <div
-              v-else
-              class="bg-yellow-900/30 border border-yellow-500 text-yellow-200 px-3 py-1 rounded text-sm"
-            >
-              {{ t('matchups.pending') }}
-            </div>
-          </div>
+      <!-- Public Matchups Section -->
+      <div>
+        <h2 class="text-xl font-bold mb-4">{{ t('matchups.publicMatchups') }}</h2>
+        <div v-if="publicMatchups.length === 0" class="card text-center py-8">
+          <p class="text-gray-400">{{ t('matchups.noPublicMatchups') }}</p>
+        </div>
+        <div v-else class="space-y-3">
+          <MatchupCard
+            v-for="matchup in publicMatchups"
+            :key="matchup.name"
+            :matchup="matchup"
+            @click="goToMatchup(matchup.name)"
+          />
         </div>
       </div>
     </div>
@@ -95,11 +88,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
+import MatchupCard from '../components/MatchupCard.vue'
 
 const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -108,22 +102,45 @@ const authStore = useAuthStore()
 
 const loading = ref(true)
 const error = ref('')
-const matchups = ref([])
+const myMatchups = ref([])
+const allPublicMatchups = ref([])
+const howItWorksHidden = ref(localStorage.getItem('matchups_howItWorksHidden') === 'true')
 
-const fetchMatchups = async () => {
-  if (!authStore.isAuthenticated) {
-    loading.value = false
-    return
+// Filter public matchups to exclude user's own matchups
+const publicMatchups = computed(() => {
+  if (!authStore.isAuthenticated || !authStore.user) {
+    return allPublicMatchups.value
   }
+  const username = authStore.user.username
+  return allPublicMatchups.value.filter(
+    m => m.player1_username !== username && m.player2_username !== username
+  )
+})
+
+const hideHowItWorks = () => {
+  howItWorksHidden.value = true
+  localStorage.setItem('matchups_howItWorksHidden', 'true')
+}
+
+const fetchData = async () => {
   try {
-    const response = await axios.get(`${API_URL}/matchup/my-matchups`)
-    matchups.value = response.data
-  } catch (err) {
-    if (err.response?.status === 401) {
-      error.value = t('matchups.pleaseLogin')
-    } else {
-      error.value = t('matchups.failedToLoad')
+    // Fetch public matchups always
+    const publicResponse = await axios.get(`${API_URL}/matchup/public`)
+    allPublicMatchups.value = publicResponse.data
+
+    // Fetch user's matchups if authenticated
+    if (authStore.isAuthenticated) {
+      try {
+        const myResponse = await axios.get(`${API_URL}/matchup/my-matchups`)
+        myMatchups.value = myResponse.data
+      } catch (err) {
+        if (err.response?.status !== 401) {
+          console.error('Failed to load my matchups:', err)
+        }
+      }
     }
+  } catch (err) {
+    error.value = t('matchups.failedToLoad')
   } finally {
     loading.value = false
   }
@@ -133,12 +150,7 @@ const goToMatchup = (name) => {
   router.push(`/matchup/${name}`)
 }
 
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
 onMounted(() => {
-  fetchMatchups()
+  fetchData()
 })
 </script>
