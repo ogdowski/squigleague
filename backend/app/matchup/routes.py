@@ -109,7 +109,7 @@ async def get_stats(session: Session = Depends(get_session)):
     return {
         "exchanges_completed": completed_count,
         "exchanges_expired": expired_count,
-        "version": "0.3.2",
+        "version": "0.3.3",
     }
 
 
