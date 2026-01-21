@@ -270,21 +270,6 @@
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex gap-2 mb-6 border-b border-gray-700">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          @click="changeTab(tab.id)"
-          :class="activeTab === tab.id ? 'border-squig-yellow text-squig-yellow' : 'border-transparent text-gray-400'"
-          class="px-4 py-2 border-b-2 transition-colors"
-        >
-          {{ tab.name }}
-        </button>
-      </div>
-
-      <!-- Tab Content -->
-
       <!-- Registration Phase - Show registered players -->
       <div v-if="league.status === 'registration'" class="card mb-6">
         <h2 class="text-xl font-bold mb-4">{{ t('leagueDetail.registeredPlayers', { count: players.length }) }}</h2>
@@ -329,6 +314,21 @@
           </div>
         </div>
       </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-6 border-b border-gray-700">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          @click="changeTab(tab.id)"
+          :class="activeTab === tab.id ? 'border-squig-yellow text-squig-yellow' : 'border-transparent text-gray-400'"
+          class="px-4 py-2 border-b-2 transition-colors"
+        >
+          {{ tab.name }}
+        </button>
+      </div>
+
+      <!-- Tab Content -->
 
       <!-- Info Tab -->
       <div v-if="activeTab === 'info'" class="card">

@@ -1064,8 +1064,8 @@ async def list_matches(
         ).all()
 
         for match in pending_old:
-            # Auto-confirm the match using confirm_match_result
-            confirm_match_result(session, match)
+            # Auto-confirm the match using confirm_match_result (use submitter as confirmer)
+            confirm_match_result(session, match, match.submitted_by_id)
 
     statement = select(Match).where(Match.league_id == league_id)
     if phase:
