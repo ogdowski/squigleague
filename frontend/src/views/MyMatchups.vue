@@ -64,6 +64,9 @@
             :key="matchup.name"
             :matchup="matchup"
             @click="goToMatchup(matchup.name)"
+            @submit-result="(m) => goToMatchup(m.name)"
+            @confirm-result="(m) => goToMatchup(m.name)"
+            @edit-result="(m) => goToMatchup(m.name)"
           />
         </div>
       </div>
