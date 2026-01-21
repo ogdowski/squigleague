@@ -7,7 +7,8 @@
     "comingSoon": "Coming Soon",
     "stayTuned": "Stay Tuned",
     "close": "Close",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "optional": "optional"
   },
   "home": {
     "subtitle": "A toolset for Age of Sigmar players and tournament organizers. Manage leagues, exchange army lists safely, and more.",
@@ -483,7 +484,18 @@
     "semiFinal": "Semi-Final",
     "quarterFinal": "Quarter-Final",
     "roundOf16": "Round of 16",
-    "roundOf32": "Round of 32"
+    "roundOf32": "Round of 32",
+    "submitArmyList": "Submit Army List",
+    "armyFaction": "Army Faction",
+    "armyList": "Army List",
+    "selectFaction": "Select faction...",
+    "autoDetect": "Auto-detect from list",
+    "noMapSelected": "No map selected",
+    "pasteArmyList": "Paste your army list here...",
+    "blindExchangeNote": "Your list will be hidden until your opponent also submits their list.",
+    "submitList": "Submit List",
+    "failedToSubmitList": "Failed to submit army list",
+    "listSubmittedWaiting": "Your list has been submitted. Waiting for opponent to submit their list."
   },
   "adminUsers": {
     "title": "Admin Panel - Users",

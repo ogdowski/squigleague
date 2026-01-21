@@ -481,6 +481,7 @@
               :can-confirm="canConfirmMatchInList(match)"
               :current-player-id="currentUserPlayerId"
               :show-round="true"
+              :require-army-lists="league.require_army_lists"
               @edit="openMatchModal"
               @confirm="confirmMatchDirect"
             />
@@ -517,6 +518,7 @@
                 :can-edit="canEditMatch(match)"
                 :can-confirm="canConfirmMatchInList(match)"
                 :current-player-id="currentUserPlayerId"
+                :require-army-lists="league.require_army_lists"
                 @edit="openMatchModal"
                 @confirm="confirmMatchDirect"
               />
@@ -533,6 +535,7 @@
                 :can-edit="canEditMatch(match)"
                 :can-confirm="canConfirmMatchInList(match)"
                 :current-player-id="currentUserPlayerId"
+                :require-army-lists="league.require_army_lists"
                 @edit="openMatchModal"
                 @confirm="confirmMatchDirect"
               />
@@ -844,8 +847,8 @@
                 max="100"
                 class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow text-center text-xl"
               />
-              <p v-if="calculatedPoints.player1 !== null" class="text-sm text-squig-yellow font-semibold mt-2 text-center">
-                {{ calculatedPoints.player1 }} pts
+              <p v-if="calculatedPoints.player1 !== null" class="text-sm text-squig-yellow font-semibold mt-1 text-center">
+                → {{ calculatedPoints.player1 }} pkt
               </p>
             </div>
             <div>
@@ -857,8 +860,8 @@
                 max="100"
                 class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow text-center text-xl"
               />
-              <p v-if="calculatedPoints.player2 !== null" class="text-sm text-squig-yellow font-semibold mt-2 text-center">
-                {{ calculatedPoints.player2 }} pts
+              <p v-if="calculatedPoints.player2 !== null" class="text-sm text-squig-yellow font-semibold mt-1 text-center">
+                → {{ calculatedPoints.player2 }} pkt
               </p>
             </div>
           </div>
@@ -1519,7 +1522,10 @@ const canConfirmThisMatch = computed(() => {
 const calculatedPoints = computed(() => {
   const p1 = scoreForm.value.player1_score
   const p2 = scoreForm.value.player2_score
-  if (p1 === null || p2 === null || p1 === '' || p2 === '') {
+  // Both scores must be valid numbers (including 0)
+  const p1Valid = typeof p1 === 'number' && !Number.isNaN(p1)
+  const p2Valid = typeof p2 === 'number' && !Number.isNaN(p2)
+  if (!p1Valid || !p2Valid) {
     return { player1: null, player2: null }
   }
   return {
@@ -2231,7 +2237,15 @@ watch(() => route.params.tab, (newTab) => {
   if (newTab) {
     activeTab.value = newTab
   } else {
-    activeTab.value = 'info'
+    // Default to standings if user is joined, otherwise info
+    activeTab.value = isJoined.value ? 'standings' : 'info'
+  }
+})
+
+// When players load and no tab specified, switch to standings if joined
+watch(isJoined, (joined) => {
+  if (joined && !route.params.tab) {
+    activeTab.value = 'standings'
   }
 })
 

@@ -213,6 +213,13 @@ class MatchMapSet(BaseModel):
     random: bool = False  # If True, assign random map
 
 
+class MatchArmyListSubmit(BaseModel):
+    """Submit army list for a match."""
+
+    army_list: str = Field(min_length=1)
+    army_faction: Optional[str] = Field(default=None, max_length=50)
+
+
 class MatchResponse(BaseModel):
     id: int
     league_id: int
@@ -240,9 +247,13 @@ class MatchResponse(BaseModel):
     submitted_by_id: Optional[int] = None
     created_at: datetime
     is_completed: bool
-    # Army lists (visible based on league settings)
+    # Per-match army lists (blind exchange)
     player1_army_list: Optional[str] = None
     player2_army_list: Optional[str] = None
+    player1_list_submitted: bool = False
+    player2_list_submitted: bool = False
+    lists_revealed: bool = False
+    lists_revealed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -267,6 +278,11 @@ class MatchDetailResponse(BaseModel):
     player2_army_faction: Optional[str] = None
     player1_army_list: Optional[str] = None
     player2_army_list: Optional[str] = None
+    # Per-match list submission status
+    player1_list_submitted: bool = False
+    player2_list_submitted: bool = False
+    lists_revealed: bool = False
+    lists_revealed_at: Optional[datetime] = None
     # Match info
     phase: str
     knockout_round: Optional[str] = None
@@ -292,6 +308,13 @@ class MatchDetailResponse(BaseModel):
     # Permissions (for current user)
     can_edit: bool = False
     can_set_map: bool = False
+    can_submit_army_list: bool = (
+        False  # True if per-match lists allowed (not required by league)
+    )
+    # League scoring settings (for live preview)
+    points_per_win: int = 1000
+    points_per_draw: int = 600
+    points_per_loss: int = 100
 
 
 class BracketMatch(BaseModel):

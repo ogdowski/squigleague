@@ -127,19 +127,75 @@
         </div>
       </div>
 
-      <!-- Army Lists -->
-      <div v-if="match.player1_army_list || match.player2_army_list" class="card mb-6">
+      <!-- Army List Submission (per-match, blind exchange) -->
+      <div v-if="canSubmitArmyList && match.status !== 'confirmed'" class="card mb-6">
+        <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.submitArmyList') }}</h2>
+
+        <!-- Submission status -->
+        <div class="flex gap-4 mb-4 text-sm">
+          <div class="flex items-center gap-2">
+            <span :class="match.player1_list_submitted ? 'text-green-400' : 'text-gray-500'">
+              {{ match.player1_list_submitted ? '✓' : '○' }}
+            </span>
+            <span>{{ match.player1_username }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span :class="match.player2_list_submitted ? 'text-green-400' : 'text-gray-500'">
+              {{ match.player2_list_submitted ? '✓' : '○' }}
+            </span>
+            <span>{{ match.player2_username }}</span>
+          </div>
+        </div>
+
+        <div v-if="myListSubmitted" class="p-3 bg-green-900/20 border border-green-600 rounded mb-4">
+          <p class="text-green-300 text-sm">{{ t('matchDetail.listSubmittedWaiting') }}</p>
+        </div>
+
+        <form v-else @submit.prevent="submitArmyList" class="space-y-4">
+          <div>
+            <label class="block text-sm text-gray-400 mb-1">{{ t('matchDetail.armyFaction') }} <span class="text-gray-500">({{ t('common.optional') }})</span></label>
+            <select v-model="armyListForm.army_faction" class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
+              <option value="">{{ t('matchDetail.autoDetect') }}</option>
+              <option v-for="faction in armyFactions" :key="faction" :value="faction">{{ faction }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-1">{{ t('matchDetail.armyList') }}</label>
+            <textarea
+              v-model="armyListForm.army_list"
+              rows="8"
+              required
+              class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 font-mono text-sm"
+              :placeholder="t('matchDetail.pasteArmyList')"
+            ></textarea>
+          </div>
+          <p class="text-xs text-gray-500">{{ t('matchDetail.blindExchangeNote') }}</p>
+          <div v-if="armyListError" class="text-red-400 text-sm">{{ armyListError }}</div>
+          <button type="submit" :disabled="submittingList || !armyListForm.army_list.trim()" class="btn-primary">
+            {{ submittingList ? t('matchDetail.submitting') : t('matchDetail.submitList') }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Army Lists (shown when revealed or from league settings) -->
+      <div v-if="match.lists_revealed || match.player1_army_list || match.player2_army_list" class="card mb-6">
         <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.armyLists') }}</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div v-if="match.player1_army_list">
-            <h3 class="font-semibold mb-2">{{ match.player1_username }}</h3>
-            <div class="bg-gray-900 p-4 rounded max-h-96 overflow-y-auto">
+            <h3 class="font-semibold mb-2">
+              {{ match.player1_username }}
+              <span v-if="match.player1_army_faction" class="text-sm text-gray-400 font-normal ml-2">({{ match.player1_army_faction }})</span>
+            </h3>
+            <div class="bg-gray-900 p-4 rounded">
               <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ match.player1_army_list }}</pre>
             </div>
           </div>
           <div v-if="match.player2_army_list">
-            <h3 class="font-semibold mb-2">{{ match.player2_username }}</h3>
-            <div class="bg-gray-900 p-4 rounded max-h-96 overflow-y-auto">
+            <h3 class="font-semibold mb-2">
+              {{ match.player2_username }}
+              <span v-if="match.player2_army_faction" class="text-sm text-gray-400 font-normal ml-2">({{ match.player2_army_faction }})</span>
+            </h3>
+            <div class="bg-gray-900 p-4 rounded">
               <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ match.player2_army_list }}</pre>
             </div>
           </div>
@@ -154,12 +210,18 @@
             <div>
               <label class="block text-sm text-gray-400 mb-1">{{ match.player1_username }} {{ t('matchDetail.score') }}</label>
               <input v-model.number="resultForm.player1_score" type="number" min="0" required
-                     class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" />
+                     class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-center text-xl" />
+              <p v-if="calculatedPoints.player1 !== null" class="text-sm text-squig-yellow font-semibold mt-1 text-center">
+                Tournament Score: {{ calculatedPoints.player1 }}
+              </p>
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-1">{{ match.player2_username }} {{ t('matchDetail.score') }}</label>
               <input v-model.number="resultForm.player2_score" type="number" min="0" required
-                     class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" />
+                     class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-center text-xl" />
+              <p v-if="calculatedPoints.player2 !== null" class="text-sm text-squig-yellow font-semibold mt-1 text-center">
+                Tournament Score: {{ calculatedPoints.player2 }}
+              </p>
             </div>
           </div>
           <div v-if="submitError" class="text-red-400 text-sm">{{ submitError }}</div>
@@ -202,10 +264,13 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
 import { fetchMapsData } from '@/constants/maps'
+import { useAuthStore } from '@/stores/auth'
+import { ARMY_FACTIONS } from '@/constants/armies'
 
 const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
+const authStore = useAuthStore()
 
 const match = ref(null)
 const loading = ref(true)
@@ -217,6 +282,56 @@ const settingMap = ref(false)
 const resultForm = ref({ player1_score: 0, player2_score: 0 })
 const submitting = ref(false)
 const submitError = ref('')
+
+// Army list submission
+const armyListForm = ref({ army_list: '', army_faction: '' })
+const submittingList = ref(false)
+const armyListError = ref('')
+const armyFactions = ARMY_FACTIONS
+
+// Check if current user is one of the players
+const isPlayer1 = computed(() => {
+  return authStore.user && match.value && match.value.player1_user_id === authStore.user.id
+})
+const isPlayer2 = computed(() => {
+  return authStore.user && match.value && match.value.player2_user_id === authStore.user.id
+})
+const isPlayer = computed(() => isPlayer1.value || isPlayer2.value)
+
+// Check if current user can submit army list (per-match lists, not league-required)
+const canSubmitArmyList = computed(() => {
+  if (!isPlayer.value || !match.value) return false
+  // Can't submit if lists are already revealed
+  if (match.value.lists_revealed) return false
+  // Backend determines if per-match lists are allowed (not required by league for this phase)
+  if (!match.value.can_submit_army_list) return false
+  return true
+})
+
+// Check if current user has already submitted
+const myListSubmitted = computed(() => {
+  if (!match.value) return false
+  if (isPlayer1.value) return match.value.player1_list_submitted
+  if (isPlayer2.value) return match.value.player2_list_submitted
+  return false
+})
+
+const submitArmyList = async () => {
+  submittingList.value = true
+  armyListError.value = ''
+  try {
+    await axios.post(
+      `${API_URL}/league/${route.params.leagueId}/matches/${route.params.matchId}/army-list`,
+      armyListForm.value
+    )
+    await fetchMatch()
+    armyListForm.value = { army_list: '', army_faction: '' }
+  } catch (err) {
+    armyListError.value = err.response?.data?.detail || t('matchDetail.failedToSubmitList')
+  } finally {
+    submittingList.value = false
+  }
+}
 
 // Maps data from API
 const mapsData = ref(null)
@@ -275,6 +390,38 @@ const p2ScoreClass = computed(() => {
   if (match.value.player2_score < match.value.player1_score) return 'text-red-400'
   return 'text-yellow-400'
 })
+
+// Calculate league points from game scores (live preview)
+const calculatedPoints = computed(() => {
+  const p1 = resultForm.value.player1_score
+  const p2 = resultForm.value.player2_score
+  // Both scores must be valid numbers
+  const p1Valid = typeof p1 === 'number' && !Number.isNaN(p1)
+  const p2Valid = typeof p2 === 'number' && !Number.isNaN(p2)
+  if (!p1Valid || !p2Valid || !match.value) {
+    return { player1: null, player2: null }
+  }
+  return {
+    player1: calculateLeaguePoints(p1, p2),
+    player2: calculateLeaguePoints(p2, p1),
+  }
+})
+
+const calculateLeaguePoints = (playerScore, opponentScore) => {
+  if (!match.value) return 0
+  const { points_per_win, points_per_draw, points_per_loss } = match.value
+  let base
+  if (playerScore > opponentScore) {
+    base = points_per_win
+  } else if (playerScore < opponentScore) {
+    base = points_per_loss
+  } else {
+    base = points_per_draw
+  }
+  const diff = playerScore - opponentScore
+  const bonus = Math.min(100, Math.max(0, diff + 50))
+  return base + bonus
+}
 
 const formatKnockoutRound = (round) => {
   const labels = {

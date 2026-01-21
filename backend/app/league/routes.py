@@ -24,6 +24,7 @@ from app.league.schemas import (
     LeaguePlayerResponse,
     LeagueResponse,
     LeagueUpdate,
+    MatchArmyListSubmit,
     MatchDetailResponse,
     MatchMapSet,
     MatchResponse,
@@ -1140,6 +1141,56 @@ async def list_matches(
             if group:
                 group_name = group.name
 
+        # Per-match army lists (blind exchange) - only show if both submitted
+        match_p1_list = None
+        match_p2_list = None
+        match_p1_faction = None
+        match_p2_faction = None
+        if match.lists_revealed:
+            match_p1_list = match.player1_army_list
+            match_p2_list = match.player2_army_list
+            match_p1_faction = match.player1_army_faction
+            match_p2_faction = match.player2_army_faction
+
+        # Use per-match lists if available, otherwise fall back to league lists
+        final_p1_list = match_p1_list if match_p1_list else p1_army_list
+        final_p2_list = match_p2_list if match_p2_list else p2_army_list
+        final_p1_faction = match_p1_faction if match_p1_faction else p1_army_faction
+        final_p2_faction = match_p2_faction if match_p2_faction else p2_army_faction
+
+        # Determine if player has submitted a list (per-match OR required league list)
+        if match.phase == "knockout":
+            p1_has_league_list = (
+                league
+                and league.has_knockout_phase_lists
+                and p1
+                and p1.knockout_army_list
+            )
+            p2_has_league_list = (
+                league
+                and league.has_knockout_phase_lists
+                and p2
+                and p2.knockout_army_list
+            )
+        else:
+            p1_has_league_list = (
+                league and league.has_group_phase_lists and p1 and p1.group_army_list
+            )
+            p2_has_league_list = (
+                league and league.has_group_phase_lists and p2 and p2.group_army_list
+            )
+
+        p1_list_submitted = bool(match.player1_army_list) or bool(p1_has_league_list)
+        p2_list_submitted = bool(match.player2_army_list) or bool(p2_has_league_list)
+
+        # Lists are revealed if per-match lists revealed OR if league lists are visible
+        lists_are_revealed = match.lists_revealed
+        if not lists_are_revealed and league:
+            if match.phase == "knockout" and league.knockout_lists_visible:
+                lists_are_revealed = True
+            elif match.phase == "group" and league.group_lists_visible:
+                lists_are_revealed = True
+
         result.append(
             MatchResponse(
                 id=match.id,
@@ -1152,8 +1203,8 @@ async def list_matches(
                 player2_username=p2_username,
                 player1_avatar=p1_avatar,
                 player2_avatar=p2_avatar,
-                player1_army_faction=p1_army_faction,
-                player2_army_faction=p2_army_faction,
+                player1_army_faction=final_p1_faction,
+                player2_army_faction=final_p2_faction,
                 group_id=group_id,
                 group_name=group_name,
                 phase=match.phase,
@@ -1168,8 +1219,12 @@ async def list_matches(
                 submitted_by_id=match.submitted_by_id,
                 created_at=match.created_at,
                 is_completed=match.is_completed,
-                player1_army_list=p1_army_list,
-                player2_army_list=p2_army_list,
+                player1_army_list=final_p1_list,
+                player2_army_list=final_p2_list,
+                player1_list_submitted=p1_list_submitted,
+                player2_list_submitted=p2_list_submitted,
+                lists_revealed=lists_are_revealed,
+                lists_revealed_at=match.lists_revealed_at,
             )
         )
 
@@ -1283,7 +1338,57 @@ async def get_match_detail(
         and (current_user.id == league.organizer_id or current_user.role == "admin")
     )
     can_edit = (is_participant or is_org_or_admin) and match.status != "confirmed"
-    can_set_map = is_participant or is_org_or_admin
+    # Only organizer can CHANGE map after it's been auto-assigned (for corrections)
+    # Map is auto-assigned when both players submit their lists - no manual selection allowed
+    can_set_map = (
+        is_org_or_admin and match.map_name is not None and match.status != "confirmed"
+    )
+
+    # Per-match army lists allowed only if league doesn't require them for this phase
+    # If lists are required, they come from player profile, not per-match submission
+    if match.phase == "knockout":
+        lists_required_for_phase = league.has_knockout_phase_lists
+        p1_has_league_list = (
+            lists_required_for_phase and player1 and player1.knockout_army_list
+        )
+        p2_has_league_list = (
+            lists_required_for_phase and player2 and player2.knockout_army_list
+        )
+    else:
+        lists_required_for_phase = league.has_group_phase_lists
+        p1_has_league_list = (
+            lists_required_for_phase and player1 and player1.group_army_list
+        )
+        p2_has_league_list = (
+            lists_required_for_phase and player2 and player2.group_army_list
+        )
+    can_submit_army_list = not lists_required_for_phase
+
+    # Player has list if per-match submitted OR league-required list exists
+    p1_list_submitted = bool(match.player1_army_list) or bool(p1_has_league_list)
+    p2_list_submitted = bool(match.player2_army_list) or bool(p2_has_league_list)
+
+    # Lists are revealed if per-match lists revealed OR if league lists are visible
+    lists_are_revealed = match.lists_revealed
+    if not lists_are_revealed:
+        if match.phase == "knockout" and league.knockout_lists_visible:
+            lists_are_revealed = True
+        elif match.phase == "group" and league.group_lists_visible:
+            lists_are_revealed = True
+
+    # Per-match lists - use them if revealed, otherwise use league lists
+    final_p1_list = match.player1_army_list if match.lists_revealed else p1_army_list
+    final_p2_list = match.player2_army_list if match.lists_revealed else p2_army_list
+    final_p1_faction = (
+        match.player1_army_faction
+        if match.lists_revealed and match.player1_army_faction
+        else p1_army_faction
+    )
+    final_p2_faction = (
+        match.player2_army_faction
+        if match.lists_revealed and match.player2_army_faction
+        else p2_army_faction
+    )
 
     return MatchDetailResponse(
         id=match.id,
@@ -1297,10 +1402,14 @@ async def get_match_detail(
         player2_username=p2_username,
         player1_avatar=p1_avatar,
         player2_avatar=p2_avatar,
-        player1_army_faction=p1_army_faction,
-        player2_army_faction=p2_army_faction,
-        player1_army_list=p1_army_list,
-        player2_army_list=p2_army_list,
+        player1_army_faction=final_p1_faction,
+        player2_army_faction=final_p2_faction,
+        player1_army_list=final_p1_list,
+        player2_army_list=final_p2_list,
+        player1_list_submitted=p1_list_submitted,
+        player2_list_submitted=p2_list_submitted,
+        lists_revealed=lists_are_revealed,
+        lists_revealed_at=match.lists_revealed_at,
         phase=match.phase,
         knockout_round=match.knockout_round,
         group_name=group_name,
@@ -1322,6 +1431,10 @@ async def get_match_detail(
         created_at=match.created_at,
         can_edit=can_edit,
         can_set_map=can_set_map,
+        can_submit_army_list=can_submit_army_list,
+        points_per_win=league.points_per_win,
+        points_per_draw=league.points_per_draw,
+        points_per_loss=league.points_per_loss,
     )
 
 
@@ -1391,6 +1504,96 @@ async def set_match_map(
     session.commit()
 
     return {"map_name": match.map_name}
+
+
+@router.post("/{league_id}/matches/{match_id}/army-list")
+async def submit_match_army_list(
+    league_id: int,
+    match_id: int,
+    data: MatchArmyListSubmit,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Submit army list for a match (blind exchange like matchups)."""
+    # Get match
+    statement = select(Match).where(
+        Match.id == match_id,
+        Match.league_id == league_id,
+    )
+    match = session.scalars(statement).first()
+
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    # Get league to check list settings
+    league = session.get(League, league_id)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+
+    # Get player info
+    player1 = session.get(LeaguePlayer, match.player1_id)
+    player2 = session.get(LeaguePlayer, match.player2_id)
+
+    # Check if current user is one of the players
+    is_player1 = player1 and player1.user_id == current_user.id
+    is_player2 = player2 and player2.user_id == current_user.id
+
+    if not is_player1 and not is_player2:
+        raise HTTPException(
+            status_code=403, detail="You are not a participant in this match"
+        )
+
+    # Check if match is completed - can't submit lists after
+    if match.status == "confirmed":
+        raise HTTPException(
+            status_code=400, detail="Cannot submit list for completed match"
+        )
+
+    # Auto-detect faction if not provided
+    army_faction = data.army_faction
+    if not army_faction:
+        from app.matchup.constants import detect_army_faction
+
+        army_faction = detect_army_faction(data.army_list)
+
+    # Determine which player's list to update
+    if is_player1:
+        if match.player1_army_list is not None:
+            raise HTTPException(
+                status_code=400, detail="You have already submitted your list"
+            )
+        match.player1_army_list = data.army_list
+        match.player1_army_faction = army_faction
+        match.player1_list_submitted_at = datetime.utcnow()
+    else:
+        if match.player2_army_list is not None:
+            raise HTTPException(
+                status_code=400, detail="You have already submitted your list"
+            )
+        match.player2_army_list = data.army_list
+        match.player2_army_faction = army_faction
+        match.player2_list_submitted_at = datetime.utcnow()
+
+    # Check if both lists are now submitted - reveal and assign map
+    if match.both_lists_submitted and not match.lists_revealed_at:
+        match.lists_revealed_at = datetime.utcnow()
+        # Assign random map if not already set
+        if not match.map_name:
+            import random
+
+            from app.league.constants import MISSION_MAPS
+
+            match.map_name = random.choice(MISSION_MAPS)
+
+    session.add(match)
+    session.commit()
+    session.refresh(match)
+
+    return {
+        "message": "Army list submitted",
+        "lists_revealed": match.lists_revealed,
+        "map_name": match.map_name if match.lists_revealed else None,
+    }
 
 
 @router.post("/{league_id}/matches/{match_id}/result")

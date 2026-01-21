@@ -24,12 +24,20 @@
               </svg>
             </div>
             <span class="font-bold">{{ displayLeftPlayer }}</span>
+            <!-- Army list icon -->
+            <svg v-if="leftListStatus" class="w-4 h-4" :class="leftListStatus === 'revealed' ? 'text-white' : 'text-squig-yellow'" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
           </div>
           <span v-if="match.player1_score !== null" class="text-2xl font-bold text-squig-yellow">
             {{ displayLeftScore }} - {{ displayRightScore }}
           </span>
           <span v-else class="text-gray-500">vs</span>
           <div class="flex items-center gap-2">
+            <!-- Army list icon -->
+            <svg v-if="rightListStatus" class="w-4 h-4" :class="rightListStatus === 'revealed' ? 'text-white' : 'text-squig-yellow'" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
             <span class="font-bold">{{ displayRightPlayer }}</span>
             <img
               v-if="displayRightAvatar"
@@ -109,6 +117,10 @@ const props = defineProps({
     type: Number,
     default: null,
   },
+  requireArmyLists: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 defineEmits(['edit', 'confirm'])
@@ -149,6 +161,27 @@ const displayLeftAvatar = computed(() => {
 
 const displayRightAvatar = computed(() => {
   return shouldSwap.value ? props.match.player1_avatar : props.match.player2_avatar
+})
+
+// Army list status for left player - 'revealed', 'submitted', or null
+// Show icon whenever a list is submitted (regardless of league settings)
+const leftListStatus = computed(() => {
+  const hasSubmitted = shouldSwap.value
+    ? props.match.player2_list_submitted
+    : props.match.player1_list_submitted
+  if (!hasSubmitted) return null
+  if (props.match.lists_revealed) return 'revealed'
+  return 'submitted'
+})
+
+// Army list status for right player
+const rightListStatus = computed(() => {
+  const hasSubmitted = shouldSwap.value
+    ? props.match.player1_list_submitted
+    : props.match.player2_list_submitted
+  if (!hasSubmitted) return null
+  if (props.match.lists_revealed) return 'revealed'
+  return 'submitted'
 })
 
 const resultClass = computed(() => {

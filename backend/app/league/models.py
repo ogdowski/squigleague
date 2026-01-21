@@ -223,6 +223,15 @@ class Match(SQLModel, table=True):
     player2_elo_before: Optional[int] = None
     player2_elo_after: Optional[int] = None
 
+    # Per-match army lists (optional, blind exchange like matchups)
+    player1_army_list: Optional[str] = None
+    player1_army_faction: Optional[str] = Field(default=None, max_length=50)
+    player1_list_submitted_at: Optional[datetime] = None
+    player2_army_list: Optional[str] = None
+    player2_army_faction: Optional[str] = Field(default=None, max_length=50)
+    player2_list_submitted_at: Optional[datetime] = None
+    lists_revealed_at: Optional[datetime] = None
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
@@ -241,6 +250,16 @@ class Match(SQLModel, table=True):
         elif self.player2_score > self.player1_score:
             return self.player2_id
         return None  # Draw
+
+    @property
+    def both_lists_submitted(self) -> bool:
+        """Check if both players have submitted their army lists."""
+        return self.player1_army_list is not None and self.player2_army_list is not None
+
+    @property
+    def lists_revealed(self) -> bool:
+        """Check if army lists are revealed (both submitted)."""
+        return self.lists_revealed_at is not None
 
 
 class PlayerElo(SQLModel, table=True):

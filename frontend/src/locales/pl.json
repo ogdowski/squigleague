@@ -7,7 +7,8 @@
     "comingSoon": "Wkrótce",
     "stayTuned": "Czekaj na więcej",
     "close": "Zamknij",
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "optional": "opcjonalne"
   },
   "home": {
     "subtitle": "Zestaw narzędzi dla graczy Age of Sigmar i organizatorów turniejów. Zarządzaj ligami, wymieniaj listy armii bezpiecznie i więcej.",
@@ -483,7 +484,18 @@
     "semiFinal": "Półfinał",
     "quarterFinal": "Ćwierćfinał",
     "roundOf16": "1/8 finału",
-    "roundOf32": "1/16 finału"
+    "roundOf32": "1/16 finału",
+    "submitArmyList": "Prześlij listę armii",
+    "armyFaction": "Frakcja armii",
+    "armyList": "Lista armii",
+    "selectFaction": "Wybierz frakcję...",
+    "autoDetect": "Wykryj automatycznie z listy",
+    "pasteArmyList": "Wklej swoją listę armii tutaj...",
+    "blindExchangeNote": "Twoja lista będzie ukryta dopóki przeciwnik nie prześle swojej.",
+    "submitList": "Prześlij listę",
+    "failedToSubmitList": "Nie udało się przesłać listy armii",
+    "listSubmittedWaiting": "Twoja lista została przesłana. Oczekiwanie na przesłanie listy przez przeciwnika.",
+    "noMapSelected": "Nie wybrano mapy"
   },
   "adminUsers": {
     "title": "Panel administratora - Użytkownicy",

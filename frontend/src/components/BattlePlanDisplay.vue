@@ -36,10 +36,14 @@
       </div>
     </div>
   </div>
-  <div v-else class="text-gray-500">No map selected</div>
+  <div v-else class="text-gray-500">{{ t('matchDetail.noMapSelected') }}</div>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 defineProps({
   mapName: {
     type: String,
