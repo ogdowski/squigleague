@@ -51,7 +51,12 @@
     "avatarDiscordNote": "Twój awatar Discord jest używany domyślnie.",
     "avatarUploaded": "Awatar wgrany. Kliknij \"Zmień\" aby wgrać nowy.",
     "language": "Język",
-    "languageNote": "Wybierz preferowany język"
+    "languageNote": "Wybierz preferowany język",
+    "city": "Miasto",
+    "cityPlaceholder": "np. Warszawa",
+    "country": "Kraj",
+    "countryPlaceholder": "np. Polska",
+    "organizerEmailNote": "Uwaga: Jeśli jesteś organizatorem ligi, Twój email jest zawsze widoczny na profilu."
   },
   "matchups": {
     "title": "Mecze",
@@ -163,6 +168,8 @@
     "viewDetails": "Zobacz szczegóły",
     "playing": "Grasz",
     "registrationEnds": "Koniec rejestracji",
+    "groupPhaseEnds": "Koniec fazy grupowej",
+    "knockoutEnds": "Koniec pucharu",
     "finishedOn": "Zakończona"
   },
   "profile": {
@@ -451,7 +458,11 @@
     "keepLeague": "Zachowaj ligę",
     "cancelling": "Anulowanie...",
     "leagueCancelled": "Ta liga została anulowana.",
-    "failedToCancel": "Nie udało się anulować ligi"
+    "failedToCancel": "Nie udało się anulować ligi",
+    "city": "Miasto",
+    "cityPlaceholder": "np. Warszawa lub Online",
+    "country": "Kraj",
+    "countryPlaceholder": "np. Polska"
   },
   "matchDetail": {
     "loadingMatch": "Ładowanie meczu...",

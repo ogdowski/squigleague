@@ -4,6 +4,17 @@ from typing import Optional
 from sqlmodel import Field, Relationship, SQLModel
 
 
+class Location(SQLModel, table=True):
+    """Cached unique cities and countries for autocomplete."""
+
+    __tablename__ = "locations"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    city: Optional[str] = Field(default=None, max_length=100, index=True)
+    country: Optional[str] = Field(default=None, max_length=100, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class OAuthAccount(SQLModel, table=True):
     """OAuth account linked to a user."""
 
@@ -36,6 +47,10 @@ class User(SQLModel, table=True):
     # Contact info
     discord_username: Optional[str] = Field(default=None, max_length=100)
     show_email: bool = Field(default=False)  # Whether to show email on profile
+
+    # Location
+    city: Optional[str] = Field(default=None, max_length=100)
+    country: Optional[str] = Field(default=None, max_length=100)
 
     # Avatar
     avatar_url: Optional[str] = Field(default=None, max_length=500)

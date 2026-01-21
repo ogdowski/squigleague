@@ -24,6 +24,9 @@
             >{{ league.organizer_name }}</RouterLink>
             <span v-else class="text-gray-300">{{ league.organizer_name }}</span>
           </p>
+          <p v-if="league.city || league.country" class="text-sm text-gray-500">
+            {{ [league.city, league.country].filter(Boolean).join(', ') }}
+          </p>
         </div>
         <div class="flex items-center gap-3">
           <!-- Join League Button (prominent) -->

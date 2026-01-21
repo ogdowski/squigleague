@@ -13,22 +13,37 @@
             {{ t('leagues.playing') }}
           </span>
         </div>
-        <div class="flex gap-6 text-sm">
+        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <div v-if="league.city || league.country" class="flex items-center gap-1 text-gray-400">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="text-white">{{ [league.city, league.country].filter(Boolean).join(', ') }}</span>
+          </div>
           <div>
             <span class="text-gray-400">{{ t('leagues.organizer') }}:</span>
-            <span class="text-white ml-2">{{ league.organizer_name || 'N/A' }}</span>
+            <span class="text-white ml-1">{{ league.organizer_name || 'N/A' }}</span>
           </div>
           <div>
             <span class="text-gray-400">{{ t('leagues.players') }}:</span>
-            <span class="text-white ml-2">{{ league.player_count }}</span>
+            <span class="text-white ml-1">{{ league.player_count }}</span>
           </div>
           <div v-if="league.status === 'finished' && league.finished_at">
             <span class="text-gray-400">{{ t('leagues.finishedOn') }}:</span>
-            <span class="text-white ml-2">{{ formatDate(league.finished_at) }}</span>
+            <span class="text-white ml-1">{{ formatDate(league.finished_at) }}</span>
           </div>
-          <div v-else>
+          <div v-else-if="league.status === 'knockout_phase' && league.knockout_phase_end">
+            <span class="text-gray-400">{{ t('leagues.knockoutEnds') }}:</span>
+            <span class="text-white ml-1">{{ formatDate(league.knockout_phase_end) }}</span>
+          </div>
+          <div v-else-if="league.status === 'group_phase' && league.group_phase_end">
+            <span class="text-gray-400">{{ t('leagues.groupPhaseEnds') }}:</span>
+            <span class="text-white ml-1">{{ formatDate(league.group_phase_end) }}</span>
+          </div>
+          <div v-else-if="league.status === 'registration'">
             <span class="text-gray-400">{{ t('leagues.registrationEnds') }}:</span>
-            <span class="text-white ml-2">{{ formatDate(league.registration_end) }}</span>
+            <span class="text-white ml-1">{{ formatDate(league.registration_end) }}</span>
           </div>
         </div>
       </div>

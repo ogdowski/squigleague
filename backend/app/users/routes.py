@@ -129,6 +129,8 @@ async def get_current_user_info(
         avatar_url=current_user.avatar_url,
         has_discord_oauth=has_discord_oauth,
         preferred_language=current_user.preferred_language,
+        city=current_user.city,
+        country=current_user.country,
         created_at=current_user.created_at,
     )
 
@@ -199,6 +201,14 @@ async def update_current_user(
     if user_update.preferred_language is not None:
         current_user.preferred_language = user_update.preferred_language
 
+    # Location
+    if user_update.city is not None:
+        current_user.city = user_update.city
+        add_location_if_new(session, city=user_update.city)
+    if user_update.country is not None:
+        current_user.country = user_update.country
+        add_location_if_new(session, country=user_update.country)
+
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
@@ -224,6 +234,8 @@ async def update_current_user(
         avatar_url=current_user.avatar_url,
         has_discord_oauth=has_discord_oauth,
         preferred_language=current_user.preferred_language,
+        city=current_user.city,
+        country=current_user.country,
         created_at=current_user.created_at,
     )
 
@@ -557,3 +569,50 @@ async def oauth_discord_callback(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"OAuth authentication failed: {str(e)}",
         )
+
+
+@router.get("/locations/cities")
+async def get_cities(session: Session = Depends(get_session)):
+    """Get all unique cities for autocomplete, sorted alphabetically."""
+    from app.users.models import Location
+
+    statement = (
+        select(Location.city)
+        .where(Location.city.isnot(None))
+        .distinct()
+        .order_by(Location.city)
+    )
+    cities = session.exec(statement).all()
+    return [c for c in cities if c]
+
+
+@router.get("/locations/countries")
+async def get_countries(session: Session = Depends(get_session)):
+    """Get all unique countries for autocomplete, sorted alphabetically."""
+    from app.users.models import Location
+
+    statement = (
+        select(Location.country)
+        .where(Location.country.isnot(None))
+        .distinct()
+        .order_by(Location.country)
+    )
+    countries = session.exec(statement).all()
+    return [c for c in countries if c]
+
+
+def add_location_if_new(session: Session, city: str = None, country: str = None):
+    """Add city/country to locations table if not already exists."""
+    from app.users.models import Location
+
+    if city:
+        existing = session.exec(select(Location).where(Location.city == city)).first()
+        if not existing:
+            session.add(Location(city=city))
+
+    if country:
+        existing = session.exec(
+            select(Location).where(Location.country == country)
+        ).first()
+        if not existing:
+            session.add(Location(country=country))

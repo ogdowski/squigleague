@@ -43,6 +43,40 @@
           </div>
         </div>
 
+        <!-- Location -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.city') }}</label>
+            <input
+              v-model="form.city"
+              type="text"
+              list="cities-list"
+              class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
+              maxlength="100"
+              :placeholder="t('leagueSettings.cityPlaceholder')"
+            />
+            <datalist id="cities-list">
+              <option value="Online" />
+              <option v-for="city in cities" :key="city" :value="city" />
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.country') }}</label>
+            <input
+              v-model="form.country"
+              type="text"
+              list="countries-list"
+              class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
+              maxlength="100"
+              :placeholder="t('leagueSettings.countryPlaceholder')"
+              :disabled="form.city === 'Online'"
+            />
+            <datalist id="countries-list">
+              <option v-for="country in countries" :key="country" :value="country" />
+            </datalist>
+          </div>
+        </div>
+
         <!-- Player Limits -->
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -314,6 +348,8 @@ const league = ref(null)
 const form = ref({
   name: '',
   description: '',
+  city: '',
+  country: '',
   min_players: 8,
   max_players: null,
   min_group_size: 4,
@@ -327,6 +363,23 @@ const form = ref({
   group_phase_end: '',
   knockout_phase_end: '',
 })
+
+// Location autocomplete
+const cities = ref([])
+const countries = ref([])
+
+const loadLocations = async () => {
+  try {
+    const [citiesRes, countriesRes] = await Promise.all([
+      axios.get(`${API_URL}/auth/locations/cities`),
+      axios.get(`${API_URL}/auth/locations/countries`),
+    ])
+    cities.value = citiesRes.data
+    countries.value = countriesRes.data
+  } catch (err) {
+    // Silently fail - autocomplete is optional
+  }
+}
 
 const onGroupListsChange = () => {
   if (form.value.has_group_phase_lists) {
@@ -352,6 +405,8 @@ const fetchLeague = async () => {
     form.value = {
       name: response.data.name,
       description: response.data.description || '',
+      city: response.data.city || '',
+      country: response.data.country || '',
       min_players: response.data.min_players,
       max_players: response.data.max_players,
       min_group_size: response.data.min_group_size,
@@ -381,6 +436,8 @@ const saveSettings = async () => {
     const payload = {
       name: form.value.name,
       description: form.value.description || null,
+      city: form.value.city || null,
+      country: form.value.city === 'Online' ? null : (form.value.country || null),
       min_players: form.value.min_players,
       max_players: form.value.max_players || null,
       min_group_size: form.value.min_group_size,
@@ -444,5 +501,6 @@ const cancelLeague = async () => {
 
 onMounted(() => {
   fetchLeague()
+  loadLocations()
 })
 </script>

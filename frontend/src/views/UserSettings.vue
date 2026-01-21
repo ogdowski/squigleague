@@ -114,16 +114,51 @@
             </p>
           </div>
 
-          <div class="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="show_email"
-              v-model="formData.show_email"
-              class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
-            />
-            <label for="show_email" class="text-sm">
-              {{ t('settings.showEmailOnProfile') }}
-            </label>
+          <!-- Location -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">{{ t('settings.city') }}</label>
+              <input
+                v-model="formData.city"
+                type="text"
+                list="cities-list"
+                class="input-field w-full"
+                maxlength="100"
+                :placeholder="t('settings.cityPlaceholder')"
+              />
+              <datalist id="cities-list">
+                <option v-for="city in cities" :key="city" :value="city" />
+              </datalist>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">{{ t('settings.country') }}</label>
+              <input
+                v-model="formData.country"
+                type="text"
+                list="countries-list"
+                class="input-field w-full"
+                maxlength="100"
+                :placeholder="t('settings.countryPlaceholder')"
+              />
+              <datalist id="countries-list">
+                <option v-for="country in countries" :key="country" :value="country" />
+              </datalist>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="show_email"
+                v-model="formData.show_email"
+                class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
+              />
+              <label for="show_email" class="text-sm">
+                {{ t('settings.showEmailOnProfile') }}
+              </label>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">{{ t('settings.organizerEmailNote') }}</p>
           </div>
 
           <div v-if="!isAdmin" class="flex items-center gap-3">
@@ -245,6 +280,23 @@ const avatarFile = ref(null)
 const avatarPreview = ref('')
 const uploadingAvatar = ref(false)
 
+// Location autocomplete
+const cities = ref([])
+const countries = ref([])
+
+const loadLocations = async () => {
+  try {
+    const [citiesRes, countriesRes] = await Promise.all([
+      axios.get(`${API_URL}/auth/locations/cities`),
+      axios.get(`${API_URL}/auth/locations/countries`),
+    ])
+    cities.value = citiesRes.data
+    countries.value = countriesRes.data
+  } catch (err) {
+    // Silently fail - autocomplete is optional
+  }
+}
+
 const formData = ref({
   email: '',
   username: '',
@@ -253,6 +305,8 @@ const formData = ref({
   avatar_url: '',
   wants_organizer: false,
   preferred_language: 'en',
+  city: '',
+  country: '',
 })
 
 const originalData = ref({
@@ -263,6 +317,8 @@ const originalData = ref({
   avatar_url: '',
   wants_organizer: false,
   preferred_language: 'en',
+  city: '',
+  country: '',
 })
 
 const isAdmin = computed(() => authStore.user?.role === 'admin')
@@ -275,6 +331,8 @@ const hasChanges = computed(() => {
          formData.value.avatar_url !== originalData.value.avatar_url ||
          formData.value.wants_organizer !== originalData.value.wants_organizer ||
          formData.value.preferred_language !== originalData.value.preferred_language ||
+         formData.value.city !== originalData.value.city ||
+         formData.value.country !== originalData.value.country ||
          avatarFile.value !== null
 })
 
@@ -343,6 +401,8 @@ const loadUserData = async () => {
     formData.value.avatar_url = response.data.avatar_url || ''
     formData.value.wants_organizer = response.data.role === 'organizer'
     formData.value.preferred_language = response.data.preferred_language || 'en'
+    formData.value.city = response.data.city || ''
+    formData.value.country = response.data.country || ''
     hasDiscordOAuth.value = response.data.has_discord_oauth || false
     originalData.value = { ...formData.value }
     // Sync vue-i18n locale
@@ -399,6 +459,14 @@ const updateSettings = async () => {
       updateData.preferred_language = formData.value.preferred_language
     }
 
+    // Add city and country if changed
+    if (formData.value.city !== originalData.value.city) {
+      updateData.city = formData.value.city || null
+    }
+    if (formData.value.country !== originalData.value.country) {
+      updateData.country = formData.value.country || null
+    }
+
     // Only make the PATCH request if there are other changes
     if (Object.keys(updateData).length > 0) {
       const response = await axios.patch(`${API_URL}/auth/me`, updateData)
@@ -412,11 +480,15 @@ const updateSettings = async () => {
       originalData.value.avatar_url = response.data.avatar_url || ''
       originalData.value.wants_organizer = response.data.role === 'organizer'
       originalData.value.preferred_language = response.data.preferred_language || 'en'
+      originalData.value.city = response.data.city || ''
+      originalData.value.country = response.data.country || ''
       formData.value.discord_username = response.data.discord_username || ''
       formData.value.show_email = response.data.show_email
       formData.value.avatar_url = response.data.avatar_url || ''
       formData.value.wants_organizer = response.data.role === 'organizer'
       formData.value.preferred_language = response.data.preferred_language || 'en'
+      formData.value.city = response.data.city || ''
+      formData.value.country = response.data.country || ''
       // Update language store with saved preference
       languageStore.initFromUser(response.data.preferred_language)
     }
@@ -446,5 +518,6 @@ const handleAvatarError = (e) => {
 
 onMounted(() => {
   loadUserData()
+  loadLocations()
 })
 </script>

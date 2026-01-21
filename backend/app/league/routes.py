@@ -103,6 +103,8 @@ async def create_league(
     league = League(
         name=data.name,
         description=data.description,
+        city=data.city,
+        country=data.country,
         organizer_id=current_user.id,
         registration_end=data.registration_end,
         min_players=data.min_players,
@@ -115,6 +117,15 @@ async def create_league(
         has_group_phase_lists=data.has_group_phase_lists,
         has_knockout_phase_lists=data.has_knockout_phase_lists,
     )
+
+    # Add city/country to shared locations pool
+    from app.users.routes import add_location_if_new
+
+    if data.city:
+        add_location_if_new(session, city=data.city)
+    if data.country:
+        add_location_if_new(session, country=data.country)
+
     session.add(league)
     session.commit()
     session.refresh(league)
@@ -163,8 +174,13 @@ async def list_leagues(
             LeagueListResponse(
                 id=league.id,
                 name=league.name,
+                city=league.city,
+                country=league.country,
                 status=league.status,
                 registration_end=league.registration_end,
+                group_phase_end=league.group_phase_end,
+                knockout_phase_end=league.knockout_phase_end,
+                finished_at=league.finished_at,
                 player_count=player_count,
                 organizer_name=organizer.username if organizer else None,
                 is_organizer=is_organizer,
@@ -286,6 +302,14 @@ async def update_league(
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(league, key, value)
+
+    # Add city/country to shared locations pool
+    from app.users.routes import add_location_if_new
+
+    if data.city:
+        add_location_if_new(session, city=data.city)
+    if data.country:
+        add_location_if_new(session, country=data.country)
 
     # Set finished_at when status changes to finished
     if update_data.get("status") == "finished" and league.finished_at is None:

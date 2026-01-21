@@ -51,7 +51,12 @@
     "avatarDiscordNote": "Your Discord avatar is used by default.",
     "avatarUploaded": "Avatar uploaded. Click \"Change\" to upload a new one.",
     "language": "Language",
-    "languageNote": "Choose your preferred language"
+    "languageNote": "Choose your preferred language",
+    "city": "City",
+    "cityPlaceholder": "e.g. Warsaw",
+    "country": "Country",
+    "countryPlaceholder": "e.g. Poland",
+    "organizerEmailNote": "Note: If you are a league organizer, your email is always visible on your profile."
   },
   "matchups": {
     "title": "Matchups",
@@ -162,8 +167,10 @@
     "leaveLeague": "Leave League",
     "viewDetails": "View Details",
     "playing": "Playing",
-    "registrationEnds": "Registration ends",
-    "finishedOn": "Finished"
+    "registrationEnds": "Registration Ends",
+    "groupPhaseEnds": "Group Phase Ends",
+    "knockoutEnds": "Knockout Ends",
+    "finishedOn": "Finished On"
   },
   "profile": {
     "main": "Main",
@@ -451,7 +458,11 @@
     "keepLeague": "Keep League",
     "cancelling": "Cancelling...",
     "leagueCancelled": "This league has been cancelled.",
-    "failedToCancel": "Failed to cancel league"
+    "failedToCancel": "Failed to cancel league",
+    "city": "City",
+    "cityPlaceholder": "e.g. Warsaw or Online",
+    "country": "Country",
+    "countryPlaceholder": "e.g. Poland"
   },
   "matchDetail": {
     "loadingMatch": "Loading match...",

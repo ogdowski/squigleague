@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 class LeagueCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     description: Optional[str] = Field(default=None, max_length=10000)
+    city: Optional[str] = Field(default=None, max_length=100)  # Can be "Online"
+    country: Optional[str] = Field(default=None, max_length=100)
     registration_end: datetime
     min_players: int = Field(default=8, ge=4)  # Hard minimum is 4
     max_players: Optional[int] = Field(default=None, ge=4)  # None = no limit
@@ -27,6 +29,8 @@ class LeagueCreate(BaseModel):
 class LeagueUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     description: Optional[str] = None
+    city: Optional[str] = Field(default=None, max_length=100)
+    country: Optional[str] = Field(default=None, max_length=100)
     registration_end: Optional[datetime] = None
     min_players: Optional[int] = Field(default=None, ge=4)
     max_players: Optional[int] = Field(default=None, ge=4)
@@ -46,6 +50,8 @@ class LeagueResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
+    city: Optional[str] = None
+    country: Optional[str] = None
     organizer_id: int
     registration_end: datetime
     min_players: int
@@ -88,8 +94,12 @@ class LeagueResponse(BaseModel):
 class LeagueListResponse(BaseModel):
     id: int
     name: str
+    city: Optional[str] = None
+    country: Optional[str] = None
     status: str
     registration_end: datetime
+    group_phase_end: Optional[datetime] = None
+    knockout_phase_end: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     player_count: int
     organizer_name: Optional[str] = None
@@ -439,7 +449,10 @@ class PlayerProfileResponse(BaseModel):
     user_id: int
     username: str
     avatar_url: Optional[str] = None
-    # Contact info (email only if user allows)
+    # Location (always visible)
+    city: Optional[str] = None
+    country: Optional[str] = None
+    # Contact info (email only if user allows or is organizer)
     email: Optional[str] = None
     discord_username: Optional[str] = None
     # ELO info

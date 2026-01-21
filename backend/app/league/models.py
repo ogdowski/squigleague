@@ -14,6 +14,10 @@ class League(SQLModel, table=True):
     description: Optional[str] = Field(default=None, max_length=10000)
     organizer_id: int = Field(foreign_key="users.id")
 
+    # Location (can be "Online" for online leagues)
+    city: Optional[str] = Field(default=None, max_length=100)
+    country: Optional[str] = Field(default=None, max_length=100)
+
     # Dates
     registration_end: datetime
     group_phase_start: Optional[datetime] = None

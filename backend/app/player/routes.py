@@ -377,13 +377,15 @@ async def get_player_profile(
             )
         ]
 
-    # Contact info - email only if user allows it
-    email = user.email if user.show_email else None
+    # Contact info - email visible if user allows it OR is organizer
+    email = user.email if (user.show_email or user.role == "organizer") else None
 
     return PlayerProfileResponse(
         user_id=user.id,
         username=user.username,
         avatar_url=user.avatar_url,
+        city=user.city,
+        country=user.country,
         email=email,
         discord_username=user.discord_username,
         elo=elo,
