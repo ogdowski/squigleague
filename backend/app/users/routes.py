@@ -94,6 +94,12 @@ async def login(credentials: UserLogin, session: Session = Depends(get_session))
             detail="Inactive user",
         )
 
+    # Update last login timestamp
+    user.last_login = datetime.utcnow()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
     access_token = create_access_token(data={"sub": str(user.id)})
 
     return TokenResponse(
@@ -405,6 +411,11 @@ async def oauth_google_callback(
             session.add(oauth_account)
             session.commit()
 
+        # Update last login timestamp
+        user.last_login = datetime.utcnow()
+        session.add(user)
+        session.commit()
+
         # Create JWT token
         access_token = create_access_token(data={"sub": str(user.id)})
 
@@ -552,6 +563,11 @@ async def oauth_discord_callback(
             )
             session.add(oauth_account)
             session.commit()
+
+        # Update last login timestamp
+        user.last_login = datetime.utcnow()
+        session.add(user)
+        session.commit()
 
         # Create JWT token
         access_token = create_access_token(data={"sub": str(user.id)})

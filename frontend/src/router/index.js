@@ -81,14 +81,9 @@ const routes = [
   },
   // Admin routes
   {
-    path: '/admin/users',
-    name: 'AdminUsers',
-    component: () => import('../views/AdminUsers.vue'),
-  },
-  {
-    path: '/admin/settings',
-    name: 'AdminSettings',
-    component: () => import('../views/AdminSettings.vue'),
+    path: '/admin/:tab?',
+    name: 'AdminPanel',
+    component: () => import('../views/AdminPanel.vue'),
   },
 ]
 
