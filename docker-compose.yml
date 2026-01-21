@@ -48,6 +48,8 @@ services:
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET:-}
       - SQUIG_VERSION=${SQUIG_VERSION:-2.0.0}
       - BASE_URL=${BASE_URL:-http://localhost}
+    volumes:
+      - uploads-data:/app/uploads
     networks:
       - squig-network
     healthcheck:
@@ -89,6 +91,7 @@ services:
     volumes:
       - certbot-webroot:/var/www/certbot:ro
       - certbot-certs:/etc/letsencrypt:ro
+      - uploads-data:/app/uploads:ro
     depends_on:
       - backend
       - frontend
@@ -120,6 +123,8 @@ services:
 
 volumes:
   postgres-data:
+    driver: local
+  uploads-data:
     driver: local
   certbot-webroot:
   certbot-certs:
