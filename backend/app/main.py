@@ -1,11 +1,43 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import sentry_sdk
 from app.config import settings
 from app.db import create_db_and_tables
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+
+# Initialize Sentry (before FastAPI app creation)
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        release=f"squigleague@{settings.SQUIG_VERSION}",
+        traces_sample_rate=0.1,  # 10% of requests for performance monitoring
+        profiles_sample_rate=0.1,
+    )
+
+
+class SentryHttpMiddleware(BaseHTTPMiddleware):
+    """Middleware to log 4xx errors to Sentry."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        if 400 <= response.status_code < 500 and settings.SENTRY_DSN:
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("http.status_code", response.status_code)
+                scope.set_tag("http.method", request.method)
+                scope.set_tag("http.path", request.url.path)
+                scope.set_level("warning")
+                sentry_sdk.capture_message(
+                    f"{response.status_code} {request.method} {request.url.path}",
+                    level="warning",
+                )
+
+        return response
 
 
 @asynccontextmanager
@@ -33,6 +65,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Log 4xx errors to Sentry
+if settings.SENTRY_DSN:
+    app.add_middleware(SentryHttpMiddleware)
 
 
 @app.get("/health")

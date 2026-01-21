@@ -48,6 +48,7 @@ services:
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET:-}
       - SQUIG_VERSION=${SQUIG_VERSION:-2.0.0}
       - BASE_URL=${BASE_URL:-http://localhost}
+      - SENTRY_DSN=${SENTRY_DSN:-}
     volumes:
       - uploads-data:/app/uploads
     networks:
