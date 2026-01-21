@@ -275,7 +275,7 @@ async def get_stats(session: Session = Depends(get_session)):
         "exchanges_completed": completed_count,
         "exchanges_expired": expired_count,
         "leagues_created": leagues_count,
-        "version": "0.4.0",
+        "version": "0.4.1",
     }
 
 
