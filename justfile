@@ -250,15 +250,10 @@ release VERSION:
     @echo "✅ Updated backend/app/config.py and routes.py to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 4/7: Updating environment files..."
-    @for f in .env.local.example .env.prod.example .env.local .env.prod; do \
-        if [ -f "$$f" ]; then \
-            if grep -q '^SQUIG_VERSION=' "$$f"; then \
-                sed -i '' 's/^SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' "$$f"; \
-            else \
-                echo 'SQUIG_VERSION={{VERSION}}' >> "$$f"; \
-            fi; \
-        fi; \
-    done
+    @if [ -f .env.local.example ]; then sed -i '' 's/^SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local.example; fi
+    @if [ -f .env.prod.example ]; then sed -i '' 's/^SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod.example; fi
+    @if [ -f .env.local ]; then sed -i '' 's/^SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.local; fi
+    @if [ -f .env.prod ]; then sed -i '' 's/^SQUIG_VERSION=.*/SQUIG_VERSION={{VERSION}}/' .env.prod; fi
     @echo "✅ Updated env files to v{{VERSION}}"
     @echo ""
     @echo "📋 Step 5/7: Committing changes..."
