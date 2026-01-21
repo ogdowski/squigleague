@@ -54,7 +54,7 @@ const routes = [
     component: () => import('../views/LeagueCreate.vue'),
   },
   {
-    path: '/league/:id',
+    path: '/league/:id/:tab?',
     name: 'LeagueDetail',
     component: () => import('../views/LeagueDetail.vue'),
   },

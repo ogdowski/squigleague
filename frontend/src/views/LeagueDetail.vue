@@ -15,7 +15,6 @@
       <div class="flex justify-between items-start mb-6">
         <div>
           <h1 class="text-3xl font-bold text-squig-yellow mb-2">{{ league.name }}</h1>
-          <div v-if="league.description" class="prose prose-invert prose-sm max-w-none text-gray-400 mb-2" v-html="renderedDescription"></div>
           <p v-if="league.organizer_name" class="text-sm text-gray-500">
             {{ t('leagueDetail.organizer') }}:
             <RouterLink
@@ -276,7 +275,7 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="activeTab = tab.id"
+          @click="changeTab(tab.id)"
           :class="activeTab === tab.id ? 'border-squig-yellow text-squig-yellow' : 'border-transparent text-gray-400'"
           class="px-4 py-2 border-b-2 transition-colors"
         >
@@ -331,6 +330,13 @@
         </div>
       </div>
 
+      <!-- Info Tab -->
+      <div v-if="activeTab === 'info'" class="card">
+        <div v-if="league.description" class="prose prose-invert prose-sm max-w-none" v-html="renderedDescription"></div>
+        <p v-else class="text-gray-500">{{ t('leagueDetail.noDescription') }}</p>
+      </div>
+
+      <!-- Standings Tab -->
       <div v-if="activeTab === 'standings'" class="space-y-6">
         <div v-for="group in standings" :key="group.group_id" class="card">
           <div class="flex justify-between items-center mb-4">
@@ -1005,7 +1011,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
@@ -1042,7 +1048,7 @@ const league = ref(null)
 const standings = ref([])
 const matches = ref([])
 const players = ref([])
-const activeTab = ref('standings')
+const activeTab = ref(route.params.tab || 'info')
 const joining = ref(false)
 const actionLoading = ref(false)
 
@@ -1113,6 +1119,7 @@ const showActionError = (message) => {
 
 const tabs = computed(() => {
   const baseTabs = [
+    { id: 'info', name: t('leagueDetail.info') },
     { id: 'standings', name: t('leagueDetail.standings') },
     { id: 'matches', name: t('leagueDetail.matches') },
     { id: 'players', name: t('leagueDetail.players') },
@@ -2214,6 +2221,19 @@ const knockoutRoundText = (round) => {
     default: return round
   }
 }
+
+// Tab navigation via URL
+const changeTab = (tabId) => {
+  router.push({ name: 'LeagueDetail', params: { id: route.params.id, tab: tabId } })
+}
+
+watch(() => route.params.tab, (newTab) => {
+  if (newTab) {
+    activeTab.value = newTab
+  } else {
+    activeTab.value = 'info'
+  }
+})
 
 onMounted(async () => {
   mapsData.value = await fetchMapsData()
