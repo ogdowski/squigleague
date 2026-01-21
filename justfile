@@ -493,7 +493,7 @@ vps-status:
     echo "📊 Checking status on ${VPS_USER}@${VPS_IP}..."
     ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose ps"
 
-# Update services on VPS (pulls latest version from .env.prod)
+# Update services on VPS (syncs configs, pulls latest images, runs migrations)
 vps-update:
     #!/usr/bin/env bash
     set -a
@@ -508,10 +508,13 @@ vps-update:
     echo "🔄 Updating services on ${VPS_USER}@${VPS_IP} to version squigleague-${SQUIG_VERSION}..."
     echo "📦 Syncing .env.prod to VPS..."
     scp .env.prod ${VPS_USER}@${VPS_IP}:~/squig_league/.env.prod
+    echo "📦 Syncing all configs..."
+    just vps-sync-all
     echo "🐳 Pulling and restarting services..."
     ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod pull && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d"
-    echo "🔄 Running migrations..."
-    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker exec -w /app squig-backend alembic upgrade head"
+    echo "🔄 Copying alembic files into container and running migrations..."
+    ssh ${VPS_USER}@${VPS_IP} "docker cp ~/squig_league/backend/alembic.ini squig-backend:/app/alembic.ini && docker cp ~/squig_league/backend/migrations squig-backend:/app/"
+    ssh ${VPS_USER}@${VPS_IP} "docker exec squig-backend alembic upgrade head"
     echo "✅ Update complete! Running version: squigleague-${SQUIG_VERSION}"
 
 # Sync docker-compose.prod.yml to VPS
@@ -554,11 +557,29 @@ vps-sync-nginx:
     echo "✅ Sync complete!"
     echo "⚠️  Restart nginx: ssh ${VPS_USER}@${VPS_IP} 'cd ~/squig_league && docker-compose restart nginx'"
 
-# Sync all VPS configs (compose + nginx)
+# Sync alembic migrations to VPS
+vps-sync-alembic:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    if [ -z "$VPS_IP" ]; then
+        echo "❌ VPS_IP not set. Create .env.prod and set VPS_IP"
+        exit 1
+    fi
+    echo "📦 Syncing alembic files to VPS..."
+    scp backend/alembic.ini ${VPS_USER}@${VPS_IP}:~/squig_league/backend/alembic.ini
+    scp -r backend/migrations ${VPS_USER}@${VPS_IP}:~/squig_league/backend/
+    echo "✅ Alembic files synced!"
+
+# Sync all VPS configs (compose + nginx + alembic)
 vps-sync-all:
     @echo "📦 Syncing all configs to VPS..."
     just vps-sync-compose
     just vps-sync-nginx
+    just vps-sync-alembic
     @echo "✅ All configs synced!"
 
 # ═══════════════════════════════════════════════
