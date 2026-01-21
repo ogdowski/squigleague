@@ -11,7 +11,7 @@ class League(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(max_length=100, index=True)
-    description: Optional[str] = Field(default=None, max_length=2000)
+    description: Optional[str] = Field(default=None, max_length=10000)
     organizer_id: int = Field(foreign_key="users.id")
 
     # Dates

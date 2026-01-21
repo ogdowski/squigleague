@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 class LeagueCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
-    description: Optional[str] = Field(default=None, max_length=2000)
+    description: Optional[str] = Field(default=None, max_length=10000)
     registration_end: datetime
     min_players: int = Field(default=8, ge=4)  # Hard minimum is 4
     max_players: Optional[int] = Field(default=None, ge=4)  # None = no limit

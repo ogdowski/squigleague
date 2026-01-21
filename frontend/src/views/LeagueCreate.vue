@@ -18,10 +18,14 @@
         <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueCreate.descriptionOptional') }}</label>
         <textarea
           v-model="form.description"
-          rows="3"
+          rows="6"
+          maxlength="10000"
           class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
           :placeholder="t('leagueCreate.descriptionPlaceholder')"
         ></textarea>
+        <div class="text-xs text-gray-500 text-right mt-1">
+          <span :class="form.description.length > 9000 ? 'text-yellow-400' : ''">{{ form.description.length }}</span> / 10000
+        </div>
       </div>
 
       <div>

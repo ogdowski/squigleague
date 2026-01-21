@@ -35,7 +35,7 @@ class User(SQLModel, table=True):
 
     # Contact info
     discord_username: Optional[str] = Field(default=None, max_length=100)
-    show_email: bool = Field(default=True)  # Whether to show email on profile
+    show_email: bool = Field(default=False)  # Whether to show email on profile
 
     # Avatar
     avatar_url: Optional[str] = Field(default=None, max_length=500)
