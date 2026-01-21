@@ -33,7 +33,7 @@ class MatchupStatus(BaseModel):
     is_revealed: bool
     is_public: bool = True
     created_at: datetime
-    expires_at: datetime
+    expires_at: Optional[datetime] = None
     player1_id: Optional[int] = None
     player2_id: Optional[int] = None
     player1_username: Optional[str] = None
@@ -109,7 +109,7 @@ class MatchupCreateResponse(BaseModel):
 
     name: str
     link: str
-    expires_at: datetime
+    expires_at: Optional[datetime] = None
 
 
 class ResultSubmit(BaseModel):
