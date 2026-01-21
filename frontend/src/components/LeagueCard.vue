@@ -25,35 +25,25 @@
             <span class="text-gray-400">{{ t('leagues.organizer') }}:</span>
             <span class="text-white ml-1">{{ league.organizer_name || 'N/A' }}</span>
           </div>
-          <div>
-            <span class="text-gray-400">{{ t('leagues.players') }}:</span>
-            <span class="text-white ml-1">{{ league.player_count }}</span>
-          </div>
-          <div v-if="league.status === 'finished' && league.finished_at">
-            <span class="text-gray-400">{{ t('leagues.finishedOn') }}:</span>
-            <span class="text-white ml-1">{{ formatDate(league.finished_at) }}</span>
-          </div>
-          <div v-else-if="league.status === 'knockout_phase' && league.knockout_phase_end">
-            <span class="text-gray-400">{{ t('leagues.knockoutEnds') }}:</span>
-            <span class="text-white ml-1">{{ formatDate(league.knockout_phase_end) }}</span>
-          </div>
-          <div v-else-if="league.status === 'group_phase' && league.group_phase_end">
-            <span class="text-gray-400">{{ t('leagues.groupPhaseEnds') }}:</span>
-            <span class="text-white ml-1">{{ formatDate(league.group_phase_end) }}</span>
-          </div>
-          <div v-else-if="league.status === 'registration'">
-            <span class="text-gray-400">{{ t('leagues.registrationEnds') }}:</span>
-            <span class="text-white ml-1">{{ formatDate(league.registration_end) }}</span>
-          </div>
         </div>
       </div>
 
       <div class="flex items-center gap-4">
-        <div
-          :class="statusClass(league.status)"
-          class="px-3 py-1 rounded text-sm"
-        >
-          {{ statusText(league.status) }}
+        <div class="text-center">
+          <div class="text-2xl font-bold text-squig-yellow">{{ league.player_count }}</div>
+          <div class="text-xs text-gray-400">{{ t('leagues.players') }}</div>
+        </div>
+        <div class="text-center min-w-[120px]">
+          <div
+            :class="statusClass(league.status)"
+            class="px-3 py-1 rounded text-sm text-center"
+          >
+            {{ statusText(league.status) }}
+          </div>
+          <div v-if="phaseDate" class="text-xs text-gray-400 mt-1">
+            <template v-if="league.status === 'finished'">{{ formatDate(phaseDate) }}</template>
+            <template v-else>{{ t('leagues.ends') }} {{ formatDate(phaseDate) }}</template>
+          </div>
         </div>
       </div>
     </div>
@@ -61,15 +51,25 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-defineProps({
+const props = defineProps({
   league: {
     type: Object,
     required: true,
   },
+})
+
+const phaseDate = computed(() => {
+  const l = props.league
+  if (l.status === 'finished') return l.finished_at
+  if (l.status === 'knockout_phase') return l.knockout_phase_end
+  if (l.status === 'group_phase') return l.group_phase_end
+  if (l.status === 'registration') return l.registration_end
+  return null
 })
 
 const formatDate = (dateString) => {

@@ -170,7 +170,8 @@
     "registrationEnds": "Registration Ends",
     "groupPhaseEnds": "Group Phase Ends",
     "knockoutEnds": "Knockout Ends",
-    "finishedOn": "Finished On"
+    "finishedOn": "Finished On",
+    "ends": "ends"
   },
   "profile": {
     "main": "Main",
