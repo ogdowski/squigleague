@@ -415,7 +415,7 @@
                         <span v-else>{{ entry.username || entry.discord_username }}</span>
                         <!-- Army list icon -->
                         <button
-                          v-if="league.has_group_phase_lists"
+                          v-if="league.has_group_phase_lists || league.group_phase_ended"
                           @click="entry.army_list ? showListModal(entry) : null"
                           :class="getStandingsListIconClass(entry)"
                           :title="getStandingsListIconTitle(entry)"
@@ -1015,6 +1015,12 @@ import MatchCard from '../components/MatchCard.vue'
 import KnockoutBracket from '../components/KnockoutBracket.vue'
 import { ARMY_FACTIONS } from '../constants/armies'
 import { marked } from 'marked'
+
+// Configure marked to respect line breaks
+marked.setOptions({
+  breaks: true,
+  gfm: true
+})
 import { fetchMapsData } from '../constants/maps'
 
 const armyFactions = ARMY_FACTIONS
