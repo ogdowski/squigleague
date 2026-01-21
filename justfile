@@ -510,6 +510,8 @@ vps-update:
     scp .env.prod ${VPS_USER}@${VPS_IP}:~/squig_league/.env.prod
     echo "🐳 Pulling and restarting services..."
     ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod pull && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d"
+    echo "🔄 Running migrations..."
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker exec -w /app squig-backend alembic upgrade head"
     echo "✅ Update complete! Running version: squigleague-${SQUIG_VERSION}"
 
 # Sync docker-compose.prod.yml to VPS
