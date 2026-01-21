@@ -351,8 +351,8 @@ const handleFileSelect = (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  // Validate file size (5MB)
-  if (file.size > 5 * 1024 * 1024) {
+  // Validate file size (20MB - will be resized on server)
+  if (file.size > 20 * 1024 * 1024) {
     error.value = t('errors.fileTooLarge')
     return
   }

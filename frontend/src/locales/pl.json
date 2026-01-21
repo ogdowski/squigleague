@@ -47,7 +47,7 @@
     "uploadAvatar": "Wgraj",
     "changeAvatar": "Zmień",
     "avatarUrlPlaceholder": "https://przyklad.com/awatar.png",
-    "avatarUploadNote": "Wgraj zdjęcie (max 5MB) lub podaj URL.",
+    "avatarUploadNote": "Wgraj zdjęcie (max 20MB) lub podaj URL.",
     "avatarDiscordNote": "Twój awatar Discord jest używany domyślnie.",
     "avatarUploaded": "Awatar wgrany. Kliknij \"Zmień\" aby wgrać nowy.",
     "language": "Język",
@@ -245,7 +245,7 @@
   "errors": {
     "failedToLoad": "Nie udało się załadować danych użytkownika",
     "failedToUpdate": "Nie udało się zaktualizować ustawień",
-    "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 5MB.",
+    "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 20MB.",
     "failedToUploadAvatar": "Nie udało się wgrać awatara"
   },
   "success": {

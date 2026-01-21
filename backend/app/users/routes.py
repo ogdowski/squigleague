@@ -257,10 +257,10 @@ async def upload_avatar(
     # Read and process image
     try:
         contents = await file.read()
-        if len(contents) > 5 * 1024 * 1024:  # 5MB limit
+        if len(contents) > 20 * 1024 * 1024:  # 20MB limit (will be resized)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File too large. Maximum size is 5MB.",
+                detail="File too large. Maximum size is 20MB.",
             )
 
         # Open and resize image
