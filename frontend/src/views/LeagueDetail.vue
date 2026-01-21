@@ -1966,16 +1966,26 @@ const changePlayerGroup = async () => {
   }
 }
 
-// Check if any lists are enabled for this league
+// Check if lists are relevant for current phase
 const hasAnyListsEnabled = computed(() => {
   if (!league.value) return false
-  return league.value.has_group_phase_lists || league.value.has_knockout_phase_lists
+  // During registration/group phase, only show if group lists are enabled
+  if (league.value.status === 'registration' || league.value.status === 'group_phase') {
+    // Show knockout list icon only after group phase ended
+    if (!league.value.has_group_phase_lists && league.value.has_knockout_phase_lists) {
+      return league.value.group_phase_ended
+    }
+    return league.value.has_group_phase_lists
+  }
+  // During knockout/finished, show if knockout lists are enabled (or group if no knockout)
+  return league.value.has_knockout_phase_lists || league.value.has_group_phase_lists
 })
 
 // Get current list phase based on league status
 const getCurrentListPhase = computed(() => {
   if (!league.value) return 'group'
-  if (league.value.status === 'knockout_phase' || league.value.status === 'finished') {
+  // After group phase ended, switch to knockout lists
+  if (league.value.status === 'knockout_phase' || league.value.status === 'finished' || league.value.group_phase_ended) {
     return league.value.has_knockout_phase_lists ? 'knockout' : 'group'
   }
   return 'group'
