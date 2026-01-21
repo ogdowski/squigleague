@@ -33,9 +33,14 @@
           <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.description') }}</label>
           <textarea
             v-model="form.description"
-            rows="3"
+            rows="12"
+            maxlength="10000"
             class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
           ></textarea>
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span>{{ t('leagueSettings.markdownSupported') }}</span>
+            <span :class="form.description.length > 9000 ? 'text-yellow-400' : ''">{{ form.description.length }} / 10000</span>
+          </div>
         </div>
 
         <div>

@@ -411,6 +411,7 @@
     "noPermission": "Nie masz uprawnień do edycji tej ligi.",
     "leagueName": "Nazwa ligi",
     "description": "Opis",
+    "markdownSupported": "Wspierane formatowanie Markdown",
     "daysPerMatch": "Dni na mecz",
     "daysPerMatchNote": "Czas na każdą rundę meczy",
     "knockoutSize": "Rozmiar pucharu",

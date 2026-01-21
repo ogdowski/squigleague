@@ -15,9 +15,15 @@
       <div class="flex justify-between items-start mb-6">
         <div>
           <h1 class="text-3xl font-bold text-squig-yellow mb-2">{{ league.name }}</h1>
-          <p v-if="league.description" class="text-gray-400 mb-1">{{ league.description }}</p>
+          <div v-if="league.description" class="prose prose-invert prose-sm max-w-none text-gray-400 mb-2" v-html="renderedDescription"></div>
           <p v-if="league.organizer_name" class="text-sm text-gray-500">
-            {{ t('leagueDetail.organizer') }}: <span class="text-gray-300">{{ league.organizer_name }}</span>
+            {{ t('leagueDetail.organizer') }}:
+            <RouterLink
+              v-if="league.organizer_id"
+              :to="{ name: 'PlayerProfile', params: { userId: league.organizer_id } }"
+              class="text-squig-yellow hover:underline"
+            >{{ league.organizer_name }}</RouterLink>
+            <span v-else class="text-gray-300">{{ league.organizer_name }}</span>
           </p>
         </div>
         <div class="flex items-center gap-3">
@@ -419,7 +425,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </button>
-                        <span v-if="entry.army_faction" class="text-xs text-gray-500">({{ entry.army_faction }})</span>
+                        <span v-if="entry.army_faction && (league.has_group_phase_lists || league.group_phase_ended)" class="text-xs text-gray-500">({{ entry.army_faction }})</span>
                       </div>
                     </div>
                   </td>
@@ -1008,6 +1014,7 @@ import ConfirmModal from '../components/ConfirmModal.vue'
 import MatchCard from '../components/MatchCard.vue'
 import KnockoutBracket from '../components/KnockoutBracket.vue'
 import { ARMY_FACTIONS } from '../constants/armies'
+import { marked } from 'marked'
 import { fetchMapsData } from '../constants/maps'
 
 const armyFactions = ARMY_FACTIONS
@@ -1114,6 +1121,11 @@ const tabs = computed(() => {
 const isOrganizer = computed(() => {
   if (!authStore.user || !league.value) return false
   return league.value.organizer_id === authStore.user.id || authStore.user.role === 'admin'
+})
+
+const renderedDescription = computed(() => {
+  if (!league.value?.description) return ''
+  return marked(league.value.description)
 })
 
 const isJoined = computed(() => {

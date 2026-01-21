@@ -411,6 +411,7 @@
     "noPermission": "You don't have permission to edit this league.",
     "leagueName": "League Name",
     "description": "Description",
+    "markdownSupported": "Markdown formatting supported",
     "daysPerMatch": "Days per Match",
     "daysPerMatchNote": "Time allowed for each match round",
     "knockoutSize": "Knockout Size",
