@@ -28,7 +28,7 @@
             {{ [league.city, league.country].filter(Boolean).join(', ') }}
           </p>
         </div>
-        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end sm:justify-start">
           <!-- Join League Button (prominent) -->
           <button
             v-if="league.is_registration_open && !isJoined"
