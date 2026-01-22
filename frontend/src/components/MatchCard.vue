@@ -5,82 +5,92 @@
       resultClass
     ]"
   >
-    <div class="flex items-center justify-between">
-      <router-link
-        :to="`/league/${leagueId}/match/${match.id}`"
-        class="flex-1 cursor-pointer"
-      >
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <img
-              v-if="displayLeftAvatar"
-              :src="displayLeftAvatar"
-              class="w-6 h-6 rounded-full"
-              :alt="displayLeftPlayer"
-            />
-            <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-            </div>
-            <span class="font-bold">{{ displayLeftPlayer }}</span>
-            <!-- Army list icon -->
-            <svg v-if="leftListStatus" class="w-4 h-4" :class="leftListStatus === 'revealed' ? 'text-white' : 'text-squig-yellow'" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+    <router-link
+      :to="`/league/${leagueId}/match/${match.id}`"
+      class="block cursor-pointer"
+    >
+      <!-- Mobile: stacked layout, Desktop: horizontal -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+        <!-- Player 1 -->
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <img
+            v-if="displayLeftAvatar"
+            :src="displayLeftAvatar"
+            class="w-7 h-7 sm:w-6 sm:h-6 rounded-full flex-shrink-0"
+            :alt="displayLeftPlayer"
+          />
+          <div v-else class="w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 flex-shrink-0">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
           </div>
-          <span v-if="match.player1_score !== null" class="text-2xl font-bold text-squig-yellow">
+          <span class="font-bold truncate">{{ displayLeftPlayer }}</span>
+          <svg v-if="leftListStatus" class="w-4 h-4 flex-shrink-0" :class="leftListStatus === 'revealed' ? 'text-white' : 'text-squig-yellow'" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+        </div>
+
+        <!-- Score / vs -->
+        <div class="flex items-center justify-center sm:justify-start gap-2 py-1 sm:py-0">
+          <span v-if="match.player1_score !== null" class="text-xl sm:text-2xl font-bold text-squig-yellow">
             {{ displayLeftScore }} - {{ displayRightScore }}
           </span>
-          <span v-else class="text-gray-500">vs</span>
-          <div class="flex items-center gap-2">
-            <!-- Army list icon -->
-            <svg v-if="rightListStatus" class="w-4 h-4" :class="rightListStatus === 'revealed' ? 'text-white' : 'text-squig-yellow'" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          <span v-else class="text-gray-500 font-medium">vs</span>
+        </div>
+
+        <!-- Player 2 -->
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <svg v-if="rightListStatus" class="w-4 h-4 flex-shrink-0 sm:order-first" :class="rightListStatus === 'revealed' ? 'text-white' : 'text-squig-yellow'" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+          <img
+            v-if="displayRightAvatar"
+            :src="displayRightAvatar"
+            class="w-7 h-7 sm:w-6 sm:h-6 rounded-full flex-shrink-0"
+            :alt="displayRightPlayer"
+          />
+          <div v-else class="w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 flex-shrink-0">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
-            <span class="font-bold">{{ displayRightPlayer }}</span>
-            <img
-              v-if="displayRightAvatar"
-              :src="displayRightAvatar"
-              class="w-6 h-6 rounded-full"
-              :alt="displayRightPlayer"
-            />
-            <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-            </div>
           </div>
+          <span class="font-bold truncate">{{ displayRightPlayer }}</span>
         </div>
-        <div class="text-sm text-gray-400 mt-1">
-          <span v-if="showRound && match.knockout_round">{{ knockoutRoundText(match.knockout_round) }}</span>
-          <span v-if="match.player1_league_points !== null">
-            {{ t('matchCard.leaguePts') }} {{ displayLeftPoints }} - {{ displayRightPoints }}
-          </span>
-          <span v-if="match.map_name"> | {{ t('matchCard.map') }} {{ match.map_name }}</span>
-        </div>
-      </router-link>
-      <div class="flex items-center gap-2">
+      </div>
+
+      <!-- Match info row -->
+      <div class="text-xs sm:text-sm text-gray-400 mt-2 flex flex-wrap gap-x-2">
+        <span v-if="showRound && match.knockout_round">{{ knockoutRoundText(match.knockout_round) }}</span>
+        <span v-if="match.player1_league_points !== null">
+          {{ t('matchCard.leaguePts') }} {{ displayLeftPoints }} - {{ displayRightPoints }}
+        </span>
+        <span v-if="match.map_name">{{ t('matchCard.map') }} {{ match.map_name }}</span>
+      </div>
+    </router-link>
+
+    <!-- Action row - stacked on mobile -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3 pt-3 border-t border-gray-700">
+      <div class="flex gap-2 flex-1">
         <button
           v-if="canConfirm"
           @click.stop="$emit('confirm', match)"
-          class="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 rounded text-white"
+          class="flex-1 sm:flex-initial text-sm px-3 py-2 sm:py-1 bg-green-700 hover:bg-green-600 rounded text-white"
         >
           {{ t('matchCard.confirm') }}
         </button>
         <button
           v-if="canEdit"
           @click.stop="$emit('edit', match)"
-          class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded"
+          class="flex-1 sm:flex-initial text-sm px-3 py-2 sm:py-1 bg-gray-700 hover:bg-gray-600 rounded"
         >
           {{ t('matchCard.edit') }}
         </button>
-        <div
-          :class="matchStatusClass(match.status)"
-          class="px-3 py-1 rounded text-sm"
-        >
-          {{ matchStatusText(match.status) }}
-        </div>
+      </div>
+      <div
+        :class="matchStatusClass(match.status)"
+        class="px-3 py-1.5 sm:py-1 rounded text-sm text-center sm:text-left"
+      >
+        {{ matchStatusText(match.status) }}
       </div>
     </div>
   </div>

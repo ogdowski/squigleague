@@ -144,7 +144,8 @@
     "confirmResult": "Potwierdź wynik",
     "editResult": "Edytuj",
     "submitEditedResult": "Wyślij poprawiony wynik",
-    "failedToSubmitResult": "Nie udało się podać wyniku"
+    "failedToSubmitResult": "Nie udało się podać wyniku",
+    "armyLists": "Listy armii"
   },
   "leagues": {
     "title": "Ligi",

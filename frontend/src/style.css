@@ -5,23 +5,73 @@
 @layer base {
   body {
     @apply bg-gray-900 text-white;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+  }
+
+  /* Better touch behavior */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text selection on buttons */
+  button, a {
+    -webkit-touch-callout: none;
+    user-select: none;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-squig-yellow hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded transition-colors;
+    @apply bg-squig-yellow hover:bg-yellow-500 text-black font-bold py-2.5 px-4 rounded transition-colors;
+    /* Minimum touch target size */
+    min-height: 44px;
   }
 
   .btn-secondary {
-    @apply bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors;
+    @apply bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded transition-colors;
+    min-height: 44px;
+  }
+
+  /* Large buttons for mobile actions */
+  .btn-primary-lg {
+    @apply bg-squig-yellow hover:bg-yellow-500 text-black font-bold py-3 px-6 rounded-lg transition-colors text-lg;
+    min-height: 52px;
+  }
+
+  .btn-secondary-lg {
+    @apply bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors text-lg;
+    min-height: 52px;
   }
 
   .input-field {
-    @apply bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-squig-yellow transition-colors;
+    @apply bg-gray-800 border border-gray-700 rounded px-4 py-3 text-white focus:outline-none focus:border-squig-yellow transition-colors text-base;
+    /* Prevent iOS zoom on focus */
+    font-size: 16px;
+    min-height: 48px;
+  }
+
+  /* Large input for mobile number entry */
+  .input-field-lg {
+    @apply bg-gray-800 border border-gray-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-squig-yellow transition-colors;
+    font-size: 24px;
+    text-align: center;
+    min-height: 60px;
   }
 
   .card {
-    @apply bg-gray-800 rounded-lg p-6 shadow-lg;
+    @apply bg-gray-800 rounded-lg p-4 md:p-6 shadow-lg;
+  }
+
+  /* Mobile-optimized card with larger touch areas */
+  .card-mobile {
+    @apply bg-gray-800 rounded-lg p-4 shadow-lg;
+  }
+}
+
+/* Mobile viewport height fix for iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
   }
 }

@@ -12,9 +12,9 @@
 
     <div v-else-if="matchup">
       <div class="card mb-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div>
-            <h1 class="text-3xl font-bold">
+            <h1 class="text-2xl md:text-3xl font-bold">
               {{ matchup.title || t('matchups.matchupTitle') + ': ' + matchup.name }}
             </h1>
             <p v-if="matchup.title" class="text-sm text-gray-400">ID: {{ matchup.name }}</p>
@@ -149,77 +149,141 @@
             {{ t('matchups.bothListsSubmitted') }}
           </div>
 
-          <div class="mb-8">
-            <h2 class="text-2xl font-bold mb-4 text-squig-yellow">{{ t('matchups.mapAssignment') }}</h2>
-            <BattlePlanDisplay
-              :map-name="reveal.map_name"
-              :map-image="reveal.map_image"
-              :battle-plan="revealBattlePlan"
-            />
+          <!-- Map Section - collapsible on mobile -->
+          <div class="mb-6">
+            <button
+              @click="showMapSection = !showMapSection"
+              class="w-full flex items-center justify-between text-left md:cursor-default"
+            >
+              <h2 class="text-lg md:text-2xl font-bold text-squig-yellow">
+                <span class="md:hidden">{{ reveal.map_name || t('matchups.mapAssignment') }}</span>
+                <span class="hidden md:inline">{{ t('matchups.mapAssignment') }}</span>
+              </h2>
+              <svg
+                class="w-5 h-5 text-gray-400 md:hidden transition-transform"
+                :class="{ 'rotate-180': showMapSection }"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div :class="{ 'hidden md:block': !showMapSection }" class="mt-4">
+              <BattlePlanDisplay
+                :map-name="reveal.map_name"
+                :map-image="reveal.map_image"
+                :battle-plan="revealBattlePlan"
+              />
+            </div>
           </div>
 
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <div class="flex items-center gap-3 mb-3">
-                <img
-                  v-if="reveal.player1_avatar"
-                  :src="reveal.player1_avatar"
-                  class="w-8 h-8 rounded-full"
-                  :alt="reveal.player1_username"
-                />
-                <div v-else class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
-                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+          <!-- Army Lists Section - collapsible on mobile -->
+          <div class="mb-6">
+            <button
+              @click="showListsSection = !showListsSection"
+              class="w-full flex items-center justify-between text-left md:cursor-default"
+            >
+              <h2 class="text-xl md:text-2xl font-bold text-squig-yellow">{{ t('matchups.armyLists') }}</h2>
+              <svg
+                class="w-5 h-5 text-gray-400 md:hidden transition-transform"
+                :class="{ 'rotate-180': showListsSection }"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div :class="{ 'hidden md:block': !showListsSection }" class="mt-4 grid md:grid-cols-2 gap-4 md:gap-6">
+              <!-- Player 1 List -->
+              <div>
+                <div class="flex items-center gap-3 mb-3">
+                  <img
+                    v-if="reveal.player1_avatar"
+                    :src="reveal.player1_avatar"
+                    class="w-8 h-8 rounded-full"
+                    :alt="reveal.player1_username"
+                  />
+                  <div v-else class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-lg md:text-xl font-bold">
+                      <RouterLink
+                        v-if="reveal.player1_id"
+                        :to="{ name: 'PlayerProfile', params: { userId: reveal.player1_id } }"
+                        class="hover:text-squig-yellow hover:underline"
+                      >{{ reveal.player1_username }}</RouterLink>
+                      <span v-else>{{ reveal.player1_username || t('matchups.player1') }}</span>
+                    </h3>
+                    <p v-if="reveal.player1_army_faction" class="text-sm text-squig-yellow">
+                      {{ reveal.player1_army_faction }}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 class="text-xl font-bold">
-                    <RouterLink
-                      v-if="reveal.player1_id"
-                      :to="{ name: 'PlayerProfile', params: { userId: reveal.player1_id } }"
-                      class="hover:text-squig-yellow hover:underline"
-                    >{{ reveal.player1_username }}</RouterLink>
-                    <span v-else>{{ reveal.player1_username || t('matchups.player1') }}</span>
-                  </h3>
-                  <p v-if="reveal.player1_army_faction" class="text-sm text-squig-yellow">
-                    {{ reveal.player1_army_faction }}
-                  </p>
+                <div class="bg-gray-900 p-3 md:p-4 rounded relative group">
+                  <button
+                    @click="copyList(reveal.player1_list, 'p1')"
+                    class="absolute top-2 right-2 p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
+                    :title="t('common.copy') || 'Copy'"
+                  >
+                    <svg v-if="copiedList !== 'p1'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <pre class="whitespace-pre-wrap font-mono text-xs md:text-sm text-gray-300 pr-8">{{ reveal.player1_list }}</pre>
                 </div>
               </div>
-              <div class="bg-gray-900 p-4 rounded">
-                <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player1_list }}</pre>
-              </div>
-            </div>
 
-            <div>
-              <div class="flex items-center gap-3 mb-3">
-                <img
-                  v-if="reveal.player2_avatar"
-                  :src="reveal.player2_avatar"
-                  class="w-8 h-8 rounded-full"
-                  :alt="reveal.player2_username"
-                />
-                <div v-else class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
-                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+              <!-- Player 2 List -->
+              <div>
+                <div class="flex items-center gap-3 mb-3">
+                  <img
+                    v-if="reveal.player2_avatar"
+                    :src="reveal.player2_avatar"
+                    class="w-8 h-8 rounded-full"
+                    :alt="reveal.player2_username"
+                  />
+                  <div v-else class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-lg md:text-xl font-bold">
+                      <RouterLink
+                        v-if="reveal.player2_id"
+                        :to="{ name: 'PlayerProfile', params: { userId: reveal.player2_id } }"
+                        class="hover:text-squig-yellow hover:underline"
+                      >{{ reveal.player2_username }}</RouterLink>
+                      <span v-else>{{ reveal.player2_username || t('matchups.player2') }}</span>
+                    </h3>
+                    <p v-if="reveal.player2_army_faction" class="text-sm text-squig-yellow">
+                      {{ reveal.player2_army_faction }}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 class="text-xl font-bold">
-                    <RouterLink
-                      v-if="reveal.player2_id"
-                      :to="{ name: 'PlayerProfile', params: { userId: reveal.player2_id } }"
-                      class="hover:text-squig-yellow hover:underline"
-                    >{{ reveal.player2_username }}</RouterLink>
-                    <span v-else>{{ reveal.player2_username || t('matchups.player2') }}</span>
-                  </h3>
-                  <p v-if="reveal.player2_army_faction" class="text-sm text-squig-yellow">
-                    {{ reveal.player2_army_faction }}
-                  </p>
+                <div class="bg-gray-900 p-3 md:p-4 rounded relative group">
+                  <button
+                    @click="copyList(reveal.player2_list, 'p2')"
+                    class="absolute top-2 right-2 p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
+                    :title="t('common.copy') || 'Copy'"
+                  >
+                    <svg v-if="copiedList !== 'p2'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <pre class="whitespace-pre-wrap font-mono text-xs md:text-sm text-gray-300 pr-8">{{ reveal.player2_list }}</pre>
                 </div>
-              </div>
-              <div class="bg-gray-900 p-4 rounded">
-                <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ reveal.player2_list }}</pre>
               </div>
             </div>
           </div>
@@ -266,49 +330,72 @@
                   <p class="text-sm text-gray-400">{{ reveal.player2_username || t('matchups.player2') }}</p>
                 </div>
               </div>
-              <!-- Confirm/Edit buttons for opponent -->
-              <div v-if="reveal.can_confirm_result && !showEditForm" class="flex gap-3">
-                <button @click="confirmResult" :disabled="resultSubmitting" class="btn-primary flex-1">
+              <!-- Confirm/Edit buttons for opponent - stacked on mobile -->
+              <div v-if="reveal.can_confirm_result && !showEditForm" class="flex flex-col sm:flex-row gap-3">
+                <button @click="confirmResult" :disabled="resultSubmitting" class="btn-primary flex-1 py-3 text-base">
                   {{ t('matchups.confirmResult') }}
                 </button>
-                <button @click="showEditForm = true; editPlayer1Score = reveal.player1_score; editPlayer2Score = reveal.player2_score" class="btn-secondary flex-1">
+                <button @click="showEditForm = true; editPlayer1Score = reveal.player1_score; editPlayer2Score = reveal.player2_score" class="btn-secondary flex-1 py-3 text-base">
                   {{ t('matchups.editResult') }}
                 </button>
               </div>
-              <!-- Edit form -->
+              <!-- Edit form - mobile-optimized -->
               <div v-if="reveal.can_confirm_result && showEditForm" class="mt-4">
                 <form @submit.prevent="editResult" class="space-y-4">
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-sm font-medium mb-2">
-                        {{ reveal.player1_username || t('matchups.player1') }} {{ t('matchups.score') }}
+                  <div class="flex items-center justify-center gap-4 py-4">
+                    <div class="text-center flex-1 max-w-32">
+                      <label class="block text-sm font-medium mb-2 text-gray-300 truncate">
+                        {{ reveal.player1_username || t('matchups.player1') }}
                       </label>
-                      <input
-                        v-model.number="editPlayer1Score"
-                        type="number"
-                        min="0"
-                        class="input-field w-full"
-                        required
-                      />
+                      <div class="relative group">
+                        <input
+                          v-model.number="editPlayer1Score"
+                          type="number"
+                          min="0"
+                          inputmode="numeric"
+                          pattern="[0-9]*"
+                          class="score-input w-full bg-gray-700 border-2 border-gray-600 rounded-lg text-center text-3xl font-bold py-4 focus:outline-none focus:border-squig-yellow transition-colors"
+                          style="font-size: 28px; min-height: 70px;"
+                          required
+                        />
+                        <button type="button" @click="editPlayer1Score++" class="score-btn-up">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                        <button type="button" @click="editPlayer1Score = Math.max(0, editPlayer1Score - 1)" class="score-btn-down">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label class="block text-sm font-medium mb-2">
-                        {{ reveal.player2_username || t('matchups.player2') }} {{ t('matchups.score') }}
+                    <div class="text-2xl text-gray-500 font-bold pt-6">:</div>
+                    <div class="text-center flex-1 max-w-32">
+                      <label class="block text-sm font-medium mb-2 text-gray-300 truncate">
+                        {{ reveal.player2_username || t('matchups.player2') }}
                       </label>
-                      <input
-                        v-model.number="editPlayer2Score"
-                        type="number"
-                        min="0"
-                        class="input-field w-full"
-                        required
-                      />
+                      <div class="relative group">
+                        <input
+                          v-model.number="editPlayer2Score"
+                          type="number"
+                          min="0"
+                          inputmode="numeric"
+                          pattern="[0-9]*"
+                          class="score-input w-full bg-gray-700 border-2 border-gray-600 rounded-lg text-center text-3xl font-bold py-4 focus:outline-none focus:border-squig-yellow transition-colors"
+                          style="font-size: 28px; min-height: 70px;"
+                          required
+                        />
+                        <button type="button" @click="editPlayer2Score++" class="score-btn-up">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                        <button type="button" @click="editPlayer2Score = Math.max(0, editPlayer2Score - 1)" class="score-btn-down">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div class="flex gap-3">
-                    <button type="submit" :disabled="resultSubmitting" class="btn-primary flex-1">
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <button type="submit" :disabled="resultSubmitting" class="btn-primary flex-1 py-3 text-base">
                       {{ t('matchups.submitEditedResult') }}
                     </button>
-                    <button type="button" @click="showEditForm = false" class="btn-secondary flex-1">
+                    <button type="button" @click="showEditForm = false" class="btn-secondary flex-1 py-3 text-base">
                       {{ t('common.cancel') }}
                     </button>
                   </div>
@@ -318,38 +405,62 @@
 
             <!-- Submit result form -->
             <div v-else-if="reveal?.can_submit_result" class="mb-6">
-              <h3 class="text-xl font-bold mb-3">{{ t('matchups.submitResult') }}</h3>
+              <h3 class="text-xl font-bold mb-4">{{ t('matchups.submitResult') }}</h3>
               <form @submit.prevent="submitResult" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium mb-2">
-                      {{ reveal.player1_username || t('matchups.player1') }} {{ t('matchups.score') }}
+                <!-- Mobile-optimized score entry -->
+                <div class="flex items-center justify-center gap-4 py-4">
+                  <div class="text-center flex-1 max-w-32">
+                    <label class="block text-sm font-medium mb-2 text-gray-300 truncate">
+                      {{ reveal.player1_username || t('matchups.player1') }}
                     </label>
-                    <input
-                      v-model.number="player1Score"
-                      type="number"
-                      min="0"
-                      class="input-field w-full"
-                      required
-                    />
+                    <div class="relative group">
+                      <input
+                        v-model.number="player1Score"
+                        type="number"
+                        min="0"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        class="score-input w-full bg-gray-700 border-2 border-gray-600 rounded-lg text-center text-3xl font-bold py-4 focus:outline-none focus:border-squig-yellow transition-colors"
+                        style="font-size: 28px; min-height: 70px;"
+                        required
+                      />
+                      <button type="button" @click="player1Score++" class="score-btn-up">
+                        <svg class="w-4 h-4 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                      </button>
+                      <button type="button" @click="player1Score = Math.max(0, player1Score - 1)" class="score-btn-down">
+                        <svg class="w-4 h-4 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium mb-2">
-                      {{ reveal.player2_username || t('matchups.player2') }} {{ t('matchups.score') }}
+                  <div class="text-2xl text-gray-500 font-bold pt-6">:</div>
+                  <div class="text-center flex-1 max-w-32">
+                    <label class="block text-sm font-medium mb-2 text-gray-300 truncate">
+                      {{ reveal.player2_username || t('matchups.player2') }}
                     </label>
-                    <input
-                      v-model.number="player2Score"
-                      type="number"
-                      min="0"
-                      class="input-field w-full"
-                      required
-                    />
+                    <div class="relative group">
+                      <input
+                        v-model.number="player2Score"
+                        type="number"
+                        min="0"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        class="score-input w-full bg-gray-700 border-2 border-gray-600 rounded-lg text-center text-3xl font-bold py-4 focus:outline-none focus:border-squig-yellow transition-colors"
+                        style="font-size: 28px; min-height: 70px;"
+                        required
+                      />
+                      <button type="button" @click="player2Score++" class="score-btn-up">
+                        <svg class="w-4 h-4 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                      </button>
+                      <button type="button" @click="player2Score = Math.max(0, player2Score - 1)" class="score-btn-down">
+                        <svg class="w-4 h-4 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div v-if="resultError" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
                   {{ resultError }}
                 </div>
-                <button type="submit" :disabled="resultSubmitting" class="btn-primary w-full">
+                <button type="submit" :disabled="resultSubmitting" class="btn-primary w-full py-4 text-lg">
                   {{ resultSubmitting ? t('matchups.submitting') : t('matchups.submitResult') }}
                 </button>
               </form>
@@ -417,6 +528,22 @@ const resultError = ref('')
 const showEditForm = ref(false)
 const editPlayer1Score = ref(0)
 const editPlayer2Score = ref(0)
+
+// Mobile section toggles
+const showMapSection = ref(true)
+const showListsSection = ref(true)
+
+// Copy list feedback
+const copiedList = ref(null)
+const copyList = async (text, listId) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedList.value = listId
+    setTimeout(() => { copiedList.value = null }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
 
 // Check if current user is a participant
 const isParticipant = computed(() => {
@@ -587,3 +714,66 @@ onMounted(() => {
   fetchMatchup()
 })
 </script>
+
+<style scoped>
+.score-input::-webkit-inner-spin-button,
+.score-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.score-input {
+  -moz-appearance: textfield;
+}
+
+.score-btn-up,
+.score-btn-down {
+  position: absolute;
+  right: 4px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4b5563;
+  border-radius: 8px;
+  color: #d1d5db;
+  opacity: 1;
+  transition: background 0.15s;
+}
+.score-btn-up:hover,
+.score-btn-down:hover,
+.score-btn-up:active,
+.score-btn-down:active {
+  background: #f59e0b;
+  color: #000;
+}
+.score-btn-up {
+  top: 4px;
+}
+.score-btn-down {
+  bottom: 4px;
+}
+.score-btn-up svg,
+.score-btn-down svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (min-width: 768px) {
+  .score-btn-up,
+  .score-btn-down {
+    width: 28px;
+    height: 28px;
+    opacity: 0;
+  }
+  .score-btn-up svg,
+  .score-btn-down svg {
+    width: 16px;
+    height: 16px;
+  }
+  .group:hover .score-btn-up,
+  .group:hover .score-btn-down {
+    opacity: 1;
+  }
+}
+</style>

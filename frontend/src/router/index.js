@@ -18,9 +18,14 @@ const routes = [
     component: () => import('../views/Register.vue'),
   },
   {
-    path: '/my-matchups',
+    path: '/matchups',
     name: 'MyMatchups',
     component: () => import('../views/MyMatchups.vue'),
+  },
+  // Redirect old URL
+  {
+    path: '/my-matchups',
+    redirect: '/matchups',
   },
   {
     path: '/settings',

@@ -1,9 +1,58 @@
 <template>
   <div class="max-w-6xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">{{ t('admin.title') }}</h1>
+    <h1 class="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{{ t('admin.title') }}</h1>
 
-    <!-- Tabs -->
-    <div class="flex border-b border-gray-700 mb-6">
+    <!-- Tabs: Menu overlay on mobile, buttons on desktop -->
+    <!-- Mobile tabs menu -->
+    <div class="md:hidden mb-4">
+      <button
+        @click="showTabsMenu = !showTabsMenu"
+        class="w-full flex items-center justify-between bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+      >
+        <span class="font-medium">{{ t(tabs.find(t => t.id === activeTab)?.label) }}</span>
+        <svg
+          class="w-5 h-5 text-gray-400 transition-transform"
+          :class="{ 'rotate-180': showTabsMenu }"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <!-- Tabs overlay menu -->
+      <Transition name="tabs-menu">
+        <div v-if="showTabsMenu" class="fixed inset-0 z-50">
+          <!-- Backdrop -->
+          <div class="fixed inset-0 bg-black/50" @click="showTabsMenu = false"></div>
+          <!-- Menu panel -->
+          <div class="fixed inset-x-4 top-1/3 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-2 space-y-1">
+              <button
+                v-for="tab in tabs"
+                :key="tab.id"
+                @click="activeTab = tab.id; showTabsMenu = false"
+                class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors"
+                :class="activeTab === tab.id ? 'bg-squig-yellow/20 text-squig-yellow' : 'hover:bg-gray-700 text-white'"
+              >
+                <span class="font-medium">{{ t(tab.label) }}</span>
+                <svg
+                  v-if="activeTab === tab.id"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+    <!-- Desktop tabs -->
+    <div class="hidden md:flex border-b border-gray-700 mb-6">
       <button
         v-for="tab in tabs"
         :key="tab.id"
@@ -32,33 +81,117 @@
     <div v-else>
       <!-- Users Tab -->
       <div v-show="activeTab === 'users'">
-        <!-- Stats -->
-        <div class="grid md:grid-cols-4 gap-4 mb-8">
-          <div class="card">
-            <h3 class="text-sm text-gray-400 mb-1">{{ t('admin.totalUsers') }}</h3>
-            <p class="text-2xl font-bold">{{ stats.total_users }}</p>
+        <!-- Stats - compact on mobile -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-6 md:mb-8">
+          <div class="card p-3 md:p-6">
+            <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ t('admin.totalUsers') }}</h3>
+            <p class="text-xl md:text-2xl font-bold">{{ stats.total_users }}</p>
           </div>
-          <div class="card">
-            <h3 class="text-sm text-gray-400 mb-1">{{ t('admin.players') }}</h3>
-            <p class="text-2xl font-bold text-blue-400">{{ stats.players }}</p>
+          <div class="card p-3 md:p-6">
+            <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ t('admin.players') }}</h3>
+            <p class="text-xl md:text-2xl font-bold text-blue-400">{{ stats.players }}</p>
           </div>
-          <div class="card">
-            <h3 class="text-sm text-gray-400 mb-1">{{ t('admin.organizers') }}</h3>
-            <p class="text-2xl font-bold text-yellow-400">{{ stats.organizers }}</p>
+          <div class="card p-3 md:p-6">
+            <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ t('admin.organizers') }}</h3>
+            <p class="text-xl md:text-2xl font-bold text-yellow-400">{{ stats.organizers }}</p>
           </div>
-          <div class="card">
-            <h3 class="text-sm text-gray-400 mb-1">{{ t('admin.admins') }}</h3>
-            <p class="text-2xl font-bold text-red-400">{{ stats.admins }}</p>
+          <div class="card p-3 md:p-6">
+            <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ t('admin.admins') }}</h3>
+            <p class="text-xl md:text-2xl font-bold text-red-400">{{ stats.admins }}</p>
           </div>
         </div>
 
         <!-- Role Error -->
-        <div v-if="roleError" class="mb-4 bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
+        <div v-if="roleError" class="mb-4 bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded text-sm">
           {{ roleError }}
         </div>
 
-        <!-- Users Table -->
-        <div class="card">
+        <!-- Users - Cards on mobile, Table on desktop -->
+        <!-- Mobile cards -->
+        <div class="md:hidden space-y-3">
+          <div
+            v-for="user in users"
+            :key="user.id"
+            class="card p-4"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="min-w-0 flex-1">
+                <p class="font-bold truncate">{{ user.username || user.email }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ user.email }}</p>
+              </div>
+              <span
+                :class="user.is_active ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'"
+                class="text-xs px-2 py-1 rounded flex-shrink-0"
+              >
+                {{ user.is_active ? t('admin.active') : t('admin.inactive') }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <button
+                @click="openRoleMenu(user)"
+                :disabled="user.updating"
+                class="flex-1 flex items-center justify-between bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
+                :class="getRoleClass(user.role)"
+              >
+                <span>{{ getRoleLabel(user.role) }}</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <span v-if="user.updating" class="text-yellow-400 text-sm">{{ t('admin.saving') }}</span>
+              <span v-else-if="user.saved" class="text-green-400 text-sm">✓</span>
+              <button
+                v-else
+                @click="confirmDeleteUser(user)"
+                class="p-2 text-red-400 hover:bg-red-900/30 rounded"
+                :disabled="user.deleting"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+            <div class="mt-2 text-xs text-gray-500">
+              {{ t('admin.created') }}: {{ formatDate(user.created_at) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Role selection overlay menu -->
+        <Transition name="tabs-menu">
+          <div v-if="roleMenuUser" class="fixed inset-0 z-50">
+            <div class="fixed inset-0 bg-black/50" @click="roleMenuUser = null"></div>
+            <div class="fixed inset-x-4 top-1/3 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden">
+              <div class="px-4 py-3 border-b border-gray-700">
+                <p class="text-sm text-gray-400">{{ t('admin.role') }}</p>
+                <p class="font-medium">{{ roleMenuUser.username || roleMenuUser.email }}</p>
+              </div>
+              <div class="p-2 space-y-1">
+                <button
+                  v-for="role in roles"
+                  :key="role.id"
+                  @click="selectRole(role.id)"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors"
+                  :class="roleMenuUser.role === role.id ? 'bg-squig-yellow/20 text-squig-yellow' : 'hover:bg-gray-700 text-white'"
+                >
+                  <span class="font-medium">{{ t(role.label) }}</span>
+                  <svg
+                    v-if="roleMenuUser.role === role.id"
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Desktop table -->
+        <div class="hidden md:block card">
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
@@ -195,13 +328,14 @@
       <!-- Matchups Tab -->
       <div v-show="activeTab === 'matchups'">
         <!-- Filter -->
-        <div class="card mb-6">
-          <div class="flex gap-4 items-center">
+        <div class="card mb-4 md:mb-6 p-3 md:p-6">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
             <label class="text-sm text-gray-400">{{ t('admin.filter') }}:</label>
             <select
               v-model="matchupFilter"
               @change="fetchMatchups"
               class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-squig-yellow"
+              style="font-size: 16px;"
             >
               <option value="all">{{ t('admin.allMatchups') }}</option>
               <option value="pending">{{ t('admin.pendingMatchups') }}</option>
@@ -210,83 +344,134 @@
           </div>
         </div>
 
-        <!-- Matchups Table -->
-        <div class="card">
-          <div v-if="matchupsLoading" class="text-center py-8">
-            <p class="text-gray-400">{{ t('common.loading') }}</p>
-          </div>
-          <div v-else-if="matchups.length === 0" class="text-center py-8">
-            <p class="text-gray-400">{{ t('admin.noMatchups') }}</p>
-          </div>
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-gray-400 border-b border-gray-700">
-                  <th class="text-left py-3 px-4">{{ t('admin.matchupId') }}</th>
-                  <th class="text-left py-3 px-4">{{ t('admin.player1') }}</th>
-                  <th class="text-left py-3 px-4">{{ t('admin.player2') }}</th>
-                  <th class="text-center py-3 px-4">{{ t('admin.status') }}</th>
-                  <th class="text-center py-3 px-4">{{ t('admin.result') }}</th>
-                  <th class="text-right py-3 px-4">{{ t('admin.created') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="matchup in matchups"
-                  :key="matchup.id"
-                  class="border-b border-gray-800 hover:bg-gray-700/50"
-                >
-                  <td class="py-3 px-4">
-                    <router-link
-                      :to="`/matchup/${matchup.name}`"
-                      class="text-squig-yellow hover:underline"
-                    >
-                      {{ matchup.name }}
-                    </router-link>
-                    <div v-if="matchup.title" class="text-xs text-gray-500">{{ matchup.title }}</div>
-                  </td>
-                  <td class="py-3 px-4">
-                    <div class="flex items-center gap-2">
-                      <span :class="matchup.player1_submitted ? 'text-green-400' : 'text-yellow-400'">
-                        {{ matchup.player1_submitted ? '✓' : '⏳' }}
-                      </span>
-                      {{ matchup.player1_username || t('admin.anonymous') }}
-                      <span v-if="matchup.is_revealed && matchup.player1_army_faction" class="text-xs text-gray-500">
-                        ({{ matchup.player1_army_faction }})
-                      </span>
-                    </div>
-                  </td>
-                  <td class="py-3 px-4">
-                    <div class="flex items-center gap-2">
-                      <span :class="matchup.player2_submitted ? 'text-green-400' : 'text-yellow-400'">
-                        {{ matchup.player2_submitted ? '✓' : '⏳' }}
-                      </span>
-                      {{ matchup.player2_username || t('admin.anonymous') }}
-                      <span v-if="matchup.is_revealed && matchup.player2_army_faction" class="text-xs text-gray-500">
-                        ({{ matchup.player2_army_faction }})
-                      </span>
-                    </div>
-                  </td>
-                  <td class="py-3 px-4 text-center">
-                    <span v-if="matchup.is_revealed" class="text-green-400">{{ t('admin.revealed') }}</span>
-                    <span v-else class="text-yellow-400">{{ t('admin.pending') }}</span>
-                    <span v-if="!matchup.is_public" class="ml-2 text-xs text-gray-500">({{ t('admin.private') }})</span>
-                  </td>
-                  <td class="py-3 px-4 text-center">
-                    <span v-if="matchup.result_status === 'confirmed'" class="text-green-400">
-                      {{ matchup.player1_score }} - {{ matchup.player2_score }}
-                    </span>
-                    <span v-else-if="matchup.result_status === 'pending_confirmation'" class="text-yellow-400">
-                      {{ matchup.player1_score }} - {{ matchup.player2_score }} ({{ t('admin.awaitingConfirm') }})
-                    </span>
-                    <span v-else class="text-gray-500">-</span>
-                  </td>
-                  <td class="py-3 px-4 text-right text-gray-400">{{ formatDate(matchup.created_at) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div v-if="matchupsLoading" class="text-center py-8">
+          <p class="text-gray-400">{{ t('common.loading') }}</p>
         </div>
+        <div v-else-if="matchups.length === 0" class="card text-center py-8">
+          <p class="text-gray-400">{{ t('admin.noMatchups') }}</p>
+        </div>
+        <template v-else>
+          <!-- Mobile cards -->
+          <div class="md:hidden space-y-3">
+            <router-link
+              v-for="matchup in matchups"
+              :key="matchup.id"
+              :to="`/matchup/${matchup.name}`"
+              class="card p-4 block hover:bg-gray-700 transition-colors"
+            >
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <p class="font-bold text-squig-yellow">{{ matchup.name }}</p>
+                  <p v-if="matchup.title" class="text-xs text-gray-500">{{ matchup.title }}</p>
+                </div>
+                <span
+                  :class="matchup.is_revealed ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400'"
+                  class="text-xs px-2 py-1 rounded"
+                >
+                  {{ matchup.is_revealed ? t('admin.revealed') : t('admin.pending') }}
+                </span>
+              </div>
+              <!-- Players -->
+              <div class="space-y-1 text-sm mb-2">
+                <div class="flex items-center gap-2">
+                  <span :class="matchup.player1_submitted ? 'text-green-400' : 'text-yellow-400'">
+                    {{ matchup.player1_submitted ? '✓' : '⏳' }}
+                  </span>
+                  <span class="truncate">{{ matchup.player1_username || t('admin.anonymous') }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span :class="matchup.player2_submitted ? 'text-green-400' : 'text-yellow-400'">
+                    {{ matchup.player2_submitted ? '✓' : '⏳' }}
+                  </span>
+                  <span class="truncate">{{ matchup.player2_username || t('admin.anonymous') }}</span>
+                </div>
+              </div>
+              <!-- Result -->
+              <div class="flex items-center justify-between text-sm">
+                <span v-if="matchup.result_status === 'confirmed'" class="text-green-400 font-bold">
+                  {{ matchup.player1_score }} - {{ matchup.player2_score }}
+                </span>
+                <span v-else-if="matchup.result_status === 'pending_confirmation'" class="text-yellow-400">
+                  {{ matchup.player1_score }} - {{ matchup.player2_score }} (pending)
+                </span>
+                <span v-else class="text-gray-500">No result</span>
+                <span class="text-xs text-gray-500">{{ formatDate(matchup.created_at) }}</span>
+              </div>
+            </router-link>
+          </div>
+
+          <!-- Desktop table -->
+          <div class="hidden md:block card">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-gray-400 border-b border-gray-700">
+                    <th class="text-left py-3 px-4">{{ t('admin.matchupId') }}</th>
+                    <th class="text-left py-3 px-4">{{ t('admin.player1') }}</th>
+                    <th class="text-left py-3 px-4">{{ t('admin.player2') }}</th>
+                    <th class="text-center py-3 px-4">{{ t('admin.status') }}</th>
+                    <th class="text-center py-3 px-4">{{ t('admin.result') }}</th>
+                    <th class="text-right py-3 px-4">{{ t('admin.created') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="matchup in matchups"
+                    :key="matchup.id"
+                    class="border-b border-gray-800 hover:bg-gray-700/50"
+                  >
+                    <td class="py-3 px-4">
+                      <router-link
+                        :to="`/matchup/${matchup.name}`"
+                        class="text-squig-yellow hover:underline"
+                      >
+                        {{ matchup.name }}
+                      </router-link>
+                      <div v-if="matchup.title" class="text-xs text-gray-500">{{ matchup.title }}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center gap-2">
+                        <span :class="matchup.player1_submitted ? 'text-green-400' : 'text-yellow-400'">
+                          {{ matchup.player1_submitted ? '✓' : '⏳' }}
+                        </span>
+                        {{ matchup.player1_username || t('admin.anonymous') }}
+                        <span v-if="matchup.is_revealed && matchup.player1_army_faction" class="text-xs text-gray-500">
+                          ({{ matchup.player1_army_faction }})
+                        </span>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center gap-2">
+                        <span :class="matchup.player2_submitted ? 'text-green-400' : 'text-yellow-400'">
+                          {{ matchup.player2_submitted ? '✓' : '⏳' }}
+                        </span>
+                        {{ matchup.player2_username || t('admin.anonymous') }}
+                        <span v-if="matchup.is_revealed && matchup.player2_army_faction" class="text-xs text-gray-500">
+                          ({{ matchup.player2_army_faction }})
+                        </span>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span v-if="matchup.is_revealed" class="text-green-400">{{ t('admin.revealed') }}</span>
+                      <span v-else class="text-yellow-400">{{ t('admin.pending') }}</span>
+                      <span v-if="!matchup.is_public" class="ml-2 text-xs text-gray-500">({{ t('admin.private') }})</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span v-if="matchup.result_status === 'confirmed'" class="text-green-400">
+                        {{ matchup.player1_score }} - {{ matchup.player2_score }}
+                      </span>
+                      <span v-else-if="matchup.result_status === 'pending_confirmation'" class="text-yellow-400">
+                        {{ matchup.player1_score }} - {{ matchup.player2_score }} ({{ t('admin.awaitingConfirm') }})
+                      </span>
+                      <span v-else class="text-gray-500">-</span>
+                    </td>
+                    <td class="py-3 px-4 text-right text-gray-400">{{ formatDate(matchup.created_at) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -327,7 +512,15 @@ const tabs = [
   { id: 'matchups', label: 'admin.matchupsTab' },
 ]
 
+const roles = [
+  { id: 'player', label: 'admin.rolePlayer' },
+  { id: 'organizer', label: 'admin.roleOrganizer' },
+  { id: 'admin', label: 'admin.roleAdmin' },
+]
+
 const activeTab = ref(route.params.tab || 'users')
+const showTabsMenu = ref(false)
+const roleMenuUser = ref(null)
 const loading = ref(true)
 const error = ref('')
 const roleError = ref('')
@@ -408,6 +601,32 @@ const fetchMatchups = async () => {
     console.error('Failed to fetch matchups:', err)
   } finally {
     matchupsLoading.value = false
+  }
+}
+
+// Role menu helpers
+const openRoleMenu = (user) => {
+  roleMenuUser.value = user
+}
+
+const selectRole = (roleId) => {
+  if (roleMenuUser.value && roleId !== roleMenuUser.value.role) {
+    roleMenuUser.value.role = roleId
+    updateRole(roleMenuUser.value)
+  }
+  roleMenuUser.value = null
+}
+
+const getRoleLabel = (role) => {
+  const found = roles.find(r => r.id === role)
+  return found ? t(found.label) : role
+}
+
+const getRoleClass = (role) => {
+  switch (role) {
+    case 'admin': return 'text-red-400'
+    case 'organizer': return 'text-yellow-400'
+    default: return 'text-blue-400'
   }
 }
 
@@ -501,3 +720,20 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.tabs-menu-enter-active,
+.tabs-menu-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.tabs-menu-enter-from,
+.tabs-menu-leave-to {
+  opacity: 0;
+}
+
+.tabs-menu-enter-to,
+.tabs-menu-leave-from {
+  opacity: 1;
+}
+</style>

@@ -34,7 +34,7 @@
       </router-link>
 
       <!-- Matchups Card -->
-      <router-link to="/my-matchups" class="card hover:bg-gray-700 transition-colors group">
+      <router-link to="/matchups" class="card hover:bg-gray-700 transition-colors group">
         <div class="text-4xl mb-4">
           <span class="text-squig-yellow">
             <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">

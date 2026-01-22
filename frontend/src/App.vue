@@ -1,17 +1,18 @@
 <template>
   <div id="app" class="min-h-screen flex flex-col">
-    <nav class="bg-gray-800 border-b border-gray-700">
-      <div class="container mx-auto px-4 py-4">
+    <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
+      <div class="container mx-auto px-3 py-1.5 md:px-4 md:py-3">
         <div class="flex items-center justify-between">
-          <router-link to="/" class="text-2xl font-bold text-squig-yellow">
+          <router-link to="/" class="text-lg md:text-2xl font-bold text-squig-yellow">
             Squig League
           </router-link>
 
-          <div class="flex items-center gap-4">
+          <!-- Desktop Navigation -->
+          <div class="hidden md:flex items-center gap-4">
             <router-link to="/leagues" class="btn-secondary">
               {{ t('nav.leagues') }}
             </router-link>
-            <router-link to="/my-matchups" class="btn-secondary">
+            <router-link to="/matchups" class="btn-secondary">
               {{ t('nav.matchups') }}
             </router-link>
             <router-link to="/ranking" class="btn-secondary">
@@ -89,26 +90,182 @@
               </router-link>
             </div>
           </div>
+
+          <!-- Mobile: Login/Register or User + Hamburger -->
+          <div class="flex md:hidden items-center gap-2">
+            <div v-if="!authStore.isAuthenticated" class="flex items-center gap-2">
+              <router-link to="/login" class="inline-flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold h-9 px-3 rounded transition-colors">
+                {{ t('nav.login') }}
+              </router-link>
+              <router-link to="/register" class="inline-flex items-center justify-center bg-squig-yellow hover:bg-yellow-500 text-black text-sm font-bold h-9 px-3 rounded transition-colors">
+                {{ t('nav.register') }}
+              </router-link>
+            </div>
+            <div v-else class="flex items-center">
+              <router-link :to="`/player/${authStore.user?.id}`" class="text-squig-yellow text-sm font-medium truncate max-w-20">
+                {{ authStore.user?.username }}
+              </router-link>
+            </div>
+            <!-- Hamburger button -->
+            <button
+              @click="showMobileMenu = !showMobileMenu"
+              class="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              aria-label="Menu"
+            >
+              <svg v-if="!showMobileMenu" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
+
       </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-8 flex-1">
+    <!-- Mobile Menu Overlay -->
+    <Transition name="mobile-menu">
+      <div
+        v-if="showMobileMenu"
+        class="md:hidden fixed inset-x-0 top-[41px] z-40"
+      >
+        <!-- Backdrop (below nav) -->
+        <div class="fixed inset-x-0 top-[41px] bottom-0 bg-black/50" @click="showMobileMenu = false"></div>
+        <!-- Menu panel -->
+        <div class="relative bg-gray-800 border-b border-gray-700 shadow-xl px-4 py-3 space-y-1">
+          <router-link
+            to="/leagues"
+            @click="showMobileMenu = false"
+            class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            {{ t('nav.leagues') }}
+          </router-link>
+          <router-link
+            to="/matchups"
+            @click="showMobileMenu = false"
+            class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            {{ t('nav.matchups') }}
+          </router-link>
+          <router-link
+            to="/ranking"
+            @click="showMobileMenu = false"
+            class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            {{ t('nav.ranking') }}
+          </router-link>
+
+          <template v-if="authStore.isAuthenticated">
+            <div class="border-t border-gray-700 my-2"></div>
+            <router-link
+              v-if="authStore.user?.role === 'admin'"
+              to="/admin/users"
+              @click="showMobileMenu = false"
+              class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors text-red-300"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              {{ t('nav.admin') }}
+            </router-link>
+            <router-link
+              :to="`/player/${authStore.user?.id}`"
+              @click="showMobileMenu = false"
+              class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {{ t('nav.profile') }}
+            </router-link>
+            <router-link
+              to="/settings"
+              @click="showMobileMenu = false"
+              class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {{ t('nav.settings') }}
+            </router-link>
+            <button
+              @click="authStore.logout(); showMobileMenu = false"
+              class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors text-red-400 w-full text-left"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              {{ t('nav.logout') }}
+            </button>
+          </template>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Navigation loading spinner -->
+    <div v-if="isNavigating" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50">
+      <div class="w-10 h-10 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <main class="container mx-auto px-4 py-8 pb-16 flex-1">
       <router-view />
     </main>
 
-    <footer class="mt-auto border-t border-gray-700 bg-gray-800 sticky bottom-0">
-      <div class="container mx-auto px-4 py-6">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-2 text-sm text-gray-400">
-          <div class="flex items-center gap-3">
+    <!-- Back to top button -->
+    <button
+      v-if="showBackToTop"
+      @click="scrollToTop"
+      class="fixed bottom-16 right-4 md:bottom-20 md:right-6 p-2 bg-gray-700 hover:bg-squig-yellow hover:text-black rounded-full shadow-lg transition-colors z-20"
+      aria-label="Back to top"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+      </svg>
+    </button>
+
+    <!-- Footer: sticky on tablet/desktop, normal on mobile -->
+    <footer class="mt-auto border-t border-gray-700 bg-gray-800 md:sticky md:bottom-0">
+      <!-- Mobile: compact footer -->
+      <div class="md:hidden">
+        <div class="container mx-auto px-4 py-2 space-y-1">
+          <div class="flex items-center justify-between text-xs text-gray-400">
             <LanguageSwitcher />
-            <span>© 2025 Ariel Ogdowski. {{ t('footer.copyright') }}</span>
+            <span v-if="stats">v{{ stats.version }}</span>
           </div>
-          <div class="flex items-center gap-3">
-            <button @click="showFeedbackInfo = true" class="hover:text-squig-yellow transition-colors">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-gray-500">© 2025 Ariel Ogdowski</span>
+            <button @click="showFeedbackInfo = true" class="text-squig-yellow">
               {{ t('footer.feedback') }}
             </button>
-            <span v-if="stats">• v{{ stats.version }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Desktop: full footer -->
+      <div class="hidden md:block">
+        <div class="container mx-auto px-4 py-4">
+          <div class="flex justify-between items-center text-sm text-gray-400">
+            <div class="flex items-center gap-3">
+              <LanguageSwitcher />
+              <span>© 2025 Ariel Ogdowski. {{ t('footer.copyright') }}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button @click="showFeedbackInfo = true" class="hover:text-squig-yellow transition-colors">
+                {{ t('footer.feedback') }}
+              </button>
+              <span v-if="stats">• v{{ stats.version }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -144,6 +301,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useLanguageStore } from './stores/language'
 import LanguageSwitcher from './components/LanguageSwitcher.vue'
@@ -151,11 +309,35 @@ import axios from 'axios'
 import packageJson from '../package.json'
 
 const { t, locale } = useI18n()
+const router = useRouter()
 const authStore = useAuthStore()
 const languageStore = useLanguageStore()
 const stats = ref(null)
 const showUserMenu = ref(false)
+const showMobileMenu = ref(false)
+const showMobileFooter = ref(false)
 const showFeedbackInfo = ref(false)
+const isNavigating = ref(false)
+const showBackToTop = ref(false)
+
+// Show loading spinner during navigation
+router.beforeEach(() => {
+  isNavigating.value = true
+})
+router.afterEach(() => {
+  isNavigating.value = false
+})
+
+// Back to top button
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const handleScroll = () => {
+  showBackToTop.value = window.scrollY > 300
+}
+
+window.addEventListener('scroll', handleScroll)
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -181,3 +363,23 @@ onMounted(() => {
   fetchStats()
 })
 </script>
+
+<style scoped>
+/* Mobile menu slide animation */
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+  transition: all 0.2s ease-out;
+}
+
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.mobile-menu-enter-to,
+.mobile-menu-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>

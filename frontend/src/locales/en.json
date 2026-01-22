@@ -144,7 +144,8 @@
     "confirmResult": "Confirm Result",
     "editResult": "Edit",
     "submitEditedResult": "Submit Edited Result",
-    "failedToSubmitResult": "Failed to submit result"
+    "failedToSubmitResult": "Failed to submit result",
+    "armyLists": "Army Lists"
   },
   "leagues": {
     "title": "Leagues",

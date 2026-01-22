@@ -1,49 +1,49 @@
 <template>
   <div class="card hover:bg-gray-700 transition-colors cursor-pointer">
-    <div class="flex items-center justify-between">
-      <div class="flex-1">
-        <div class="flex items-center gap-2 mb-2">
-          <h3 class="text-xl font-bold text-squig-yellow">
-            {{ league.name }}
-          </h3>
-          <span v-if="league.is_organizer" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
-            {{ t('leagues.organizer') }}
-          </span>
-          <span v-else-if="league.is_player" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded">
-            {{ t('leagues.playing') }}
-          </span>
-        </div>
-        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-          <div v-if="league.city || league.country" class="flex items-center gap-1 text-gray-400">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            <span class="text-white">{{ [league.city, league.country].filter(Boolean).join(', ') }}</span>
-          </div>
-          <div>
-            <span class="text-gray-400">{{ t('leagues.organizer') }}:</span>
-            <span class="text-white ml-1">{{ league.organizer_name || 'N/A' }}</span>
-          </div>
-        </div>
-      </div>
+    <!-- Header: Title + Role badge -->
+    <div class="flex flex-wrap items-center gap-2 mb-2">
+      <h3 class="text-lg md:text-xl font-bold text-squig-yellow">
+        {{ league.name }}
+      </h3>
+      <span v-if="league.is_organizer" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded flex-shrink-0">
+        {{ t('leagues.organizer') }}
+      </span>
+      <span v-else-if="league.is_player" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded flex-shrink-0">
+        {{ t('leagues.playing') }}
+      </span>
+    </div>
 
-      <div class="flex items-center gap-4">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-squig-yellow">{{ league.player_count }}</div>
-          <div class="text-xs text-gray-400">{{ t('leagues.players') }}</div>
+    <!-- Info row: Location + Organizer -->
+    <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm mb-3">
+      <div v-if="league.city || league.country" class="flex items-center gap-1 text-gray-400">
+        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <span class="text-white">{{ [league.city, league.country].filter(Boolean).join(', ') }}</span>
+      </div>
+      <div>
+        <span class="text-gray-400">{{ t('leagues.organizer') }}:</span>
+        <span class="text-white ml-1">{{ league.organizer_name || 'N/A' }}</span>
+      </div>
+    </div>
+
+    <!-- Stats row: Players count + Status -->
+    <div class="flex items-center justify-between gap-4 pt-2 border-t border-gray-700">
+      <div class="flex items-center gap-2">
+        <div class="text-xl md:text-2xl font-bold text-squig-yellow">{{ league.player_count }}</div>
+        <div class="text-xs text-gray-400">{{ t('leagues.players') }}</div>
+      </div>
+      <div class="text-right">
+        <div
+          :class="statusClass(league.status)"
+          class="px-2 md:px-3 py-1 rounded text-xs md:text-sm inline-block"
+        >
+          {{ statusText(league.status) }}
         </div>
-        <div class="text-center min-w-[120px]">
-          <div
-            :class="statusClass(league.status)"
-            class="px-3 py-1 rounded text-sm text-center"
-          >
-            {{ statusText(league.status) }}
-          </div>
-          <div v-if="phaseDate" class="text-xs text-gray-400 mt-1">
-            <template v-if="league.status === 'finished'">{{ formatDate(phaseDate) }}</template>
-            <template v-else>{{ t('leagues.ends') }} {{ formatDate(phaseDate) }}</template>
-          </div>
+        <div v-if="phaseDate" class="text-xs text-gray-400 mt-1">
+          <template v-if="league.status === 'finished'">{{ formatDate(phaseDate) }}</template>
+          <template v-else>{{ t('leagues.ends') }} {{ formatDate(phaseDate) }}</template>
         </div>
       </div>
     </div>

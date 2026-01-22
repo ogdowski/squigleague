@@ -12,9 +12,9 @@
 
     <div v-else-if="league">
       <!-- Header -->
-      <div class="flex justify-between items-start mb-6">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
-          <h1 class="text-3xl font-bold text-squig-yellow mb-2">{{ league.name }}</h1>
+          <h1 class="text-2xl md:text-3xl font-bold text-squig-yellow mb-2">{{ league.name }}</h1>
           <p v-if="league.organizer_name" class="text-sm text-gray-500">
             {{ t('leagueDetail.organizer') }}:
             <RouterLink
@@ -28,7 +28,7 @@
             {{ [league.city, league.country].filter(Boolean).join(', ') }}
           </p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
           <!-- Join League Button (prominent) -->
           <button
             v-if="league.is_registration_open && !isJoined"
@@ -58,7 +58,8 @@
             <!-- Dropdown Menu -->
             <div
               v-if="showActionsMenu"
-              class="absolute right-0 top-full mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30"
+              class="absolute right-0 sm:right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-56 max-w-[14rem] bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30"
+              style="right: 0; left: auto;"
             >
               <div class="py-1">
                 <!-- Leave League -->
@@ -167,50 +168,76 @@
       <!-- Click outside to close menu -->
       <div v-if="showActionsMenu" @click="showActionsMenu = false" class="fixed inset-0 z-20"></div>
 
-      <!-- Info Cards -->
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="card">
-          <h3 class="text-sm text-gray-400 mb-1">{{ t('leagueDetail.players') }}</h3>
-          <p class="text-2xl font-bold">{{ league.player_count }}</p>
-          <p v-if="league.qualifying_spots_per_group" class="text-xs text-gray-500 mt-1">
-            {{ t('leagueDetail.topPerGroupAdvance', { count: league.qualifying_spots_per_group }) }}
-          </p>
-        </div>
-        <div class="card">
-          <h3 class="text-sm text-gray-400 mb-1">{{ t('leagueDetail.format') }}</h3>
-          <p class="text-lg font-bold">{{ leagueFormat }}</p>
-        </div>
-        <div class="card">
-          <div class="flex items-center gap-2 mb-1">
-            <h3 class="text-sm text-gray-400">{{ t('leagueDetail.scoring') }}</h3>
-            <div class="relative group">
-              <svg class="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                <path stroke-width="2" d="M12 16v-4m0-4h.01"/>
-              </svg>
-              <div class="absolute left-0 top-6 w-72 p-3 bg-gray-800 border border-gray-600 rounded shadow-lg text-xs text-gray-300 hidden group-hover:block z-20">
-                <p class="font-semibold mb-2">{{ t('leagueDetail.howScoringWorks') }}</p>
-                <ul class="space-y-1 mb-2">
-                  <li><span class="text-green-400">{{ t('leagueDetail.win') }}:</span> {{ league.points_per_win }} {{ t('profile.pts') }}</li>
-                  <li><span class="text-yellow-400">{{ t('leagueDetail.draw') }}:</span> {{ league.points_per_draw }} {{ t('profile.pts') }}</li>
-                  <li><span class="text-red-400">{{ t('leagueDetail.loss') }}:</span> {{ league.points_per_loss }} {{ t('profile.pts') }}</li>
-                </ul>
-                <p class="mb-2">{{ t('leagueDetail.bonusExplanation') }}<br/>
-                <span class="text-gray-400">bonus = min(100, max(0, diff + 50))</span></p>
-                <p class="font-semibold mb-1">{{ t('leagueDetail.examples') }}</p>
-                <ul class="space-y-1 text-gray-400">
-                  <li>{{ t('leagueDetail.win') }} 72-68: {{ league.points_per_win }} + 54 = <span class="text-white">{{ league.points_per_win + 54 }}</span></li>
-                  <li>{{ t('leagueDetail.loss') }} 68-72: {{ league.points_per_loss }} + 46 = <span class="text-white">{{ league.points_per_loss + 46 }}</span></li>
-                  <li>{{ t('leagueDetail.draw') }} 70-70: {{ league.points_per_draw }} + 50 = <span class="text-white">{{ league.points_per_draw + 50 }}</span></li>
-                </ul>
+      <!-- Info Cards - collapsible on mobile -->
+      <div class="mb-6 md:mb-8">
+        <!-- Mobile: collapsible header -->
+        <button
+          @click="showInfoCards = !showInfoCards"
+          class="md:hidden w-full flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3 mb-2"
+        >
+          <div class="flex items-center gap-3">
+            <span class="text-lg font-bold">{{ league.player_count }}</span>
+            <span class="text-gray-400 text-sm">{{ t('leagueDetail.players') }}</span>
+            <span class="text-gray-600">•</span>
+            <span class="text-sm">{{ leagueFormat }}</span>
+          </div>
+          <svg
+            class="w-5 h-5 text-gray-400 transition-transform"
+            :class="{ 'rotate-180': showInfoCards }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <!-- Cards grid - always visible on desktop, toggleable on mobile -->
+        <div :class="{ 'hidden': !showInfoCards }" class="md:block">
+          <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div class="card p-3 md:p-6">
+              <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ t('leagueDetail.players') }}</h3>
+              <p class="text-xl md:text-2xl font-bold">{{ league.player_count }}</p>
+              <p v-if="league.qualifying_spots_per_group" class="text-xs text-gray-500 mt-1 hidden md:block">
+                {{ t('leagueDetail.topPerGroupAdvance', { count: league.qualifying_spots_per_group }) }}
+              </p>
+            </div>
+            <div class="card p-3 md:p-6">
+              <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ t('leagueDetail.format') }}</h3>
+              <p class="text-base md:text-lg font-bold">{{ leagueFormat }}</p>
+            </div>
+            <div class="card p-3 md:p-6">
+              <div class="flex items-center gap-1 md:gap-2 mb-1">
+                <h3 class="text-xs md:text-sm text-gray-400">{{ t('leagueDetail.scoring') }}</h3>
+                <div class="relative group hidden md:block">
+                  <svg class="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                    <path stroke-width="2" d="M12 16v-4m0-4h.01"/>
+                  </svg>
+                  <div class="absolute left-0 top-6 w-72 p-3 bg-gray-800 border border-gray-600 rounded shadow-lg text-xs text-gray-300 hidden group-hover:block z-20">
+                    <p class="font-semibold mb-2">{{ t('leagueDetail.howScoringWorks') }}</p>
+                    <ul class="space-y-1 mb-2">
+                      <li><span class="text-green-400">{{ t('leagueDetail.win') }}:</span> {{ league.points_per_win }} {{ t('profile.pts') }}</li>
+                      <li><span class="text-yellow-400">{{ t('leagueDetail.draw') }}:</span> {{ league.points_per_draw }} {{ t('profile.pts') }}</li>
+                      <li><span class="text-red-400">{{ t('leagueDetail.loss') }}:</span> {{ league.points_per_loss }} {{ t('profile.pts') }}</li>
+                    </ul>
+                    <p class="mb-2">{{ t('leagueDetail.bonusExplanation') }}<br/>
+                    <span class="text-gray-400">bonus = min(100, max(0, diff + 50))</span></p>
+                    <p class="font-semibold mb-1">{{ t('leagueDetail.examples') }}</p>
+                    <ul class="space-y-1 text-gray-400">
+                      <li>{{ t('leagueDetail.win') }} 72-68: {{ league.points_per_win }} + 54 = <span class="text-white">{{ league.points_per_win + 54 }}</span></li>
+                      <li>{{ t('leagueDetail.loss') }} 68-72: {{ league.points_per_loss }} + 46 = <span class="text-white">{{ league.points_per_loss + 46 }}</span></li>
+                      <li>{{ t('leagueDetail.draw') }} 70-70: {{ league.points_per_draw }} + 50 = <span class="text-white">{{ league.points_per_draw + 50 }}</span></li>
+                    </ul>
+                  </div>
+                </div>
               </div>
+              <p class="text-xs md:text-sm">W: {{ league.points_per_win }} / D: {{ league.points_per_draw }} / L: {{ league.points_per_loss }}</p>
+            </div>
+            <div class="card p-3 md:p-6">
+              <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ phaseEndLabel }}</h3>
+              <p class="text-base md:text-lg font-bold">{{ phaseEndDate }}</p>
             </div>
           </div>
-          <p class="text-sm">W: {{ league.points_per_win }} / D: {{ league.points_per_draw }} / L: {{ league.points_per_loss }}</p>
-        </div>
-        <div class="card">
-          <h3 class="text-sm text-gray-400 mb-1">{{ phaseEndLabel }}</h3>
-          <p class="text-lg font-bold">{{ phaseEndDate }}</p>
         </div>
       </div>
 
@@ -318,8 +345,57 @@
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex gap-2 mb-6 border-b border-gray-700">
+      <!-- Tabs: Menu overlay on mobile, buttons on desktop -->
+      <!-- Mobile tabs menu -->
+      <div class="md:hidden mb-4">
+        <button
+          @click="showTabsMenu = !showTabsMenu"
+          class="w-full flex items-center justify-between bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+        >
+          <span class="font-medium">{{ tabs.find(t => t.id === activeTab)?.name }}</span>
+          <svg
+            class="w-5 h-5 text-gray-400 transition-transform"
+            :class="{ 'rotate-180': showTabsMenu }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <!-- Tabs overlay menu -->
+        <Transition name="tabs-menu">
+          <div v-if="showTabsMenu" class="fixed inset-0 z-50">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black/50" @click="showTabsMenu = false"></div>
+            <!-- Menu panel -->
+            <div class="fixed inset-x-4 top-1/3 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden">
+              <div class="p-2 space-y-1">
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.id"
+                  @click="changeTab(tab.id); showTabsMenu = false"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors"
+                  :class="activeTab === tab.id ? 'bg-squig-yellow/20 text-squig-yellow' : 'hover:bg-gray-700 text-white'"
+                >
+                  <span class="font-medium">{{ tab.name }}</span>
+                  <svg
+                    v-if="activeTab === tab.id"
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
+      <!-- Desktop tabs -->
+      <div class="hidden md:flex gap-2 mb-6 border-b border-gray-700">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -547,88 +623,163 @@
         </div>
       </div>
 
-      <div v-if="activeTab === 'players'" class="card">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-gray-400 border-b border-gray-700">
-                <th class="text-left py-2 px-2">{{ t('leagueDetail.player') }}</th>
-                <th class="text-left py-2 px-2">{{ t('leagueDetail.group') }}</th>
-                <th class="text-center py-2 px-2">{{ t('leagueDetail.games') }}</th>
-                <th class="text-right py-2 px-2">{{ t('leagueDetail.points') }}</th>
-                <th v-if="showKnockoutPlacement" class="text-center py-2 px-2">{{ t('leagueDetail.knockout') }}</th>
-                <th v-if="isOrganizer && league.status !== 'finished'" class="text-center py-2 px-2">{{ t('leagueDetail.actionsColumn') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="player in sortedPlayers"
-                :key="player.id"
-                :class="[
-                  'border-b border-gray-800',
-                  player.wouldQualify ? 'bg-green-900/20' : ''
-                ]"
-              >
-                <td class="py-2 px-2">
-                  <div class="flex items-center gap-2">
-                    <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow">
-                      {{ player.username || player.discord_username }}
-                    </router-link>
-                    <span v-else>{{ player.username || player.discord_username }}</span>
-                    <!-- Army list icon -->
-                    <button
-                      v-if="hasAnyListsEnabled"
-                      @click="getPlayerArmyList(player) ? showPlayerListModal(player) : null"
-                      :class="getListIconClass(player, getCurrentListPhase)"
-                      :title="getListIconTitle(player, getCurrentListPhase)"
-                      :disabled="!getPlayerArmyList(player)"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
-                    <span v-if="player.wouldQualify" class="text-xs text-green-400" :title="t('leagueDetail.wouldAdvanceToKnockout')">Q</span>
-                  </div>
-                </td>
-                <td class="py-2 px-2">{{ player.group_name || '-' }}</td>
-                <td class="py-2 px-2 text-center text-gray-400">{{ player.games_played }}</td>
-                <td class="py-2 px-2 text-right font-bold">{{ player.total_points }}</td>
-                <td v-if="showKnockoutPlacement" class="py-2 px-2 text-center">
-                  <span v-if="player.knockout_placement" :class="placementClass(player.knockout_placement)">
-                    {{ formatPlacement(player.knockout_placement) }}
-                  </span>
-                  <span v-else class="text-gray-600">-</span>
-                </td>
-                <td v-if="isOrganizer && league.status !== 'finished'" class="py-2 px-2 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button
-                      v-if="league.status === 'group_phase' && player.group_id"
-                      @click="openChangeGroupModal(player)"
-                      class="text-blue-400 hover:text-blue-300"
-                      :title="t('leagueDetail.changeGroupTitle')"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                    </button>
-                    <button
-                      @click="openRemovePlayerModal(player)"
-                      class="text-red-400 hover:text-red-300"
-                      :title="t('leagueDetail.removePlayer')"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <div v-if="activeTab === 'players'">
+        <!-- Mobile: Cards -->
+        <div class="md:hidden space-y-2">
+          <div
+            v-for="player in sortedPlayers"
+            :key="player.id"
+            :class="[
+              'card p-3',
+              player.wouldQualify ? 'border-l-4 border-l-green-500' : ''
+            ]"
+          >
+            <!-- Row 1: Name + Points -->
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <router-link
+                  v-if="player.user_id"
+                  :to="`/player/${player.user_id}`"
+                  class="font-medium truncate hover:text-squig-yellow"
+                >
+                  {{ player.username || player.discord_username }}
+                </router-link>
+                <span v-else class="font-medium truncate">{{ player.username || player.discord_username }}</span>
+                <span v-if="player.wouldQualify" class="text-xs text-green-400 flex-shrink-0">Q</span>
+              </div>
+              <div class="text-lg font-bold text-squig-yellow flex-shrink-0 ml-2">{{ player.total_points }}</div>
+            </div>
+            <!-- Row 2: Group, Games, Actions -->
+            <div class="flex items-center justify-between text-sm text-gray-400">
+              <div class="flex items-center gap-3">
+                <span v-if="player.group_name">{{ player.group_name }}</span>
+                <span>{{ player.games_played }} {{ t('leagueDetail.games').toLowerCase() }}</span>
+                <span v-if="showKnockoutPlacement && player.knockout_placement" :class="placementClass(player.knockout_placement)">
+                  {{ formatPlacement(player.knockout_placement) }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- Army list icon -->
+                <button
+                  v-if="hasAnyListsEnabled && getPlayerArmyList(player)"
+                  @click="showPlayerListModal(player)"
+                  :class="getListIconClass(player, getCurrentListPhase)"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </button>
+                <!-- Organizer actions -->
+                <template v-if="isOrganizer && league.status !== 'finished'">
+                  <button
+                    v-if="league.status === 'group_phase' && player.group_id"
+                    @click="openChangeGroupModal(player)"
+                    class="text-blue-400 p-1"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                  </button>
+                  <button
+                    @click="openRemovePlayerModal(player)"
+                    class="text-red-400 p-1"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </div>
+          <p v-if="league?.qualifying_spots_per_group && league?.has_knockout_phase" class="text-xs text-gray-500 mt-3 px-1">
+            <span class="text-green-400">Q</span> = {{ t('leagueDetail.wouldQualify', { count: league.qualifying_spots_per_group }) }}
+          </p>
         </div>
-        <p v-if="league?.qualifying_spots_per_group && league?.has_knockout_phase" class="text-xs text-gray-500 mt-3">
-          <span class="text-green-400">Q</span> = {{ t('leagueDetail.wouldQualify', { count: league.qualifying_spots_per_group }) }}
-        </p>
+
+        <!-- Desktop: Table -->
+        <div class="hidden md:block card">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-gray-400 border-b border-gray-700">
+                  <th class="text-left py-2 px-2">{{ t('leagueDetail.player') }}</th>
+                  <th class="text-left py-2 px-2">{{ t('leagueDetail.group') }}</th>
+                  <th class="text-center py-2 px-2">{{ t('leagueDetail.games') }}</th>
+                  <th class="text-right py-2 px-2">{{ t('leagueDetail.points') }}</th>
+                  <th v-if="showKnockoutPlacement" class="text-center py-2 px-2">{{ t('leagueDetail.knockout') }}</th>
+                  <th v-if="isOrganizer && league.status !== 'finished'" class="text-center py-2 px-2">{{ t('leagueDetail.actionsColumn') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="player in sortedPlayers"
+                  :key="player.id"
+                  :class="[
+                    'border-b border-gray-800',
+                    player.wouldQualify ? 'bg-green-900/20' : ''
+                  ]"
+                >
+                  <td class="py-2 px-2">
+                    <div class="flex items-center gap-2">
+                      <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow">
+                        {{ player.username || player.discord_username }}
+                      </router-link>
+                      <span v-else>{{ player.username || player.discord_username }}</span>
+                      <button
+                        v-if="hasAnyListsEnabled"
+                        @click="getPlayerArmyList(player) ? showPlayerListModal(player) : null"
+                        :class="getListIconClass(player, getCurrentListPhase)"
+                        :title="getListIconTitle(player, getCurrentListPhase)"
+                        :disabled="!getPlayerArmyList(player)"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </button>
+                      <span v-if="player.wouldQualify" class="text-xs text-green-400" :title="t('leagueDetail.wouldAdvanceToKnockout')">Q</span>
+                    </div>
+                  </td>
+                  <td class="py-2 px-2">{{ player.group_name || '-' }}</td>
+                  <td class="py-2 px-2 text-center text-gray-400">{{ player.games_played }}</td>
+                  <td class="py-2 px-2 text-right font-bold">{{ player.total_points }}</td>
+                  <td v-if="showKnockoutPlacement" class="py-2 px-2 text-center">
+                    <span v-if="player.knockout_placement" :class="placementClass(player.knockout_placement)">
+                      {{ formatPlacement(player.knockout_placement) }}
+                    </span>
+                    <span v-else class="text-gray-600">-</span>
+                  </td>
+                  <td v-if="isOrganizer && league.status !== 'finished'" class="py-2 px-2 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      <button
+                        v-if="league.status === 'group_phase' && player.group_id"
+                        @click="openChangeGroupModal(player)"
+                        class="text-blue-400 hover:text-blue-300"
+                        :title="t('leagueDetail.changeGroupTitle')"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                      </button>
+                      <button
+                        @click="openRemovePlayerModal(player)"
+                        class="text-red-400 hover:text-red-300"
+                        :title="t('leagueDetail.removePlayer')"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-if="league?.qualifying_spots_per_group && league?.has_knockout_phase" class="text-xs text-gray-500 mt-3">
+            <span class="text-green-400">Q</span> = {{ t('leagueDetail.wouldQualify', { count: league.qualifying_spots_per_group }) }}
+          </p>
+        </div>
       </div>
 
       <!-- Knockout Tab -->
@@ -1084,6 +1235,8 @@ const changeGroupError = ref('')
 
 // Actions menu state
 const showActionsMenu = ref(false)
+const showTabsMenu = ref(false)
+const showInfoCards = ref(false)
 
 // List editing state (for organizers)
 const editingList = ref(false)
@@ -2267,3 +2420,20 @@ onMounted(async () => {
   fetchLeague()
 })
 </script>
+
+<style scoped>
+.tabs-menu-enter-active,
+.tabs-menu-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.tabs-menu-enter-from,
+.tabs-menu-leave-to {
+  opacity: 0;
+}
+
+.tabs-menu-enter-to,
+.tabs-menu-leave-from {
+  opacity: 1;
+}
+</style>

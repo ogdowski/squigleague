@@ -5,8 +5,8 @@
     <div v-else-if="match">
       <!-- Header -->
       <div class="card mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div class="text-sm sm:text-base">
             <router-link :to="`/league/${match.league_id}`" class="text-squig-yellow hover:underline">
               {{ match.league_name }}
             </router-link>
@@ -15,7 +15,7 @@
               {{ match.phase === 'knockout' ? formatKnockoutRound(match.knockout_round) : match.group_name }}
             </span>
           </div>
-          <span :class="statusClass" class="px-3 py-1 rounded text-sm">{{ statusLabel }}</span>
+          <span :class="statusClass" class="px-3 py-1 rounded text-sm self-start sm:self-auto">{{ statusLabel }}</span>
         </div>
 
         <!-- Players -->
@@ -102,27 +102,48 @@
         </div>
       </div>
 
-      <!-- Map Section -->
+      <!-- Map Section - collapsible on mobile -->
       <div class="card mb-6">
-        <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.map') }}</h2>
-        <BattlePlanDisplay
-          :map-name="match.map_name"
-          :map-image="mapImage"
-          :battle-plan="battlePlan"
-        />
+        <button
+          @click="showMapSection = !showMapSection"
+          class="w-full flex items-center justify-between text-left md:cursor-default"
+        >
+          <h2 class="text-lg md:text-xl font-bold">
+            <span class="md:hidden">{{ match.map_name || t('matchDetail.map') }}</span>
+            <span class="hidden md:inline">{{ t('matchDetail.map') }}</span>
+          </h2>
+          <svg
+            class="w-5 h-5 text-gray-400 md:hidden transition-transform"
+            :class="{ 'rotate-180': showMapSection }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div :class="{ 'hidden md:block': !showMapSection }" class="mt-4">
+          <BattlePlanDisplay
+            :map-name="match.map_name"
+            :map-image="mapImage"
+            :battle-plan="battlePlan"
+          />
+        </div>
 
         <!-- Map controls (when can edit and not confirmed) -->
         <div v-if="match.can_set_map && match.status !== 'confirmed'" class="space-y-3 mt-4">
           <p class="text-sm text-gray-400">{{ match.map_name ? t('matchDetail.changeMap') : t('matchDetail.selectMap') }}</p>
-          <div class="flex gap-3">
-            <button @click="randomizeMap" :disabled="settingMap" class="btn-primary">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button @click="randomizeMap" :disabled="settingMap" class="btn-primary py-3 sm:py-2">
               {{ settingMap ? t('matchDetail.rolling') : t('matchDetail.randomMap') }}
             </button>
-            <select v-model="selectedMap" class="flex-1 bg-gray-700 border border-gray-600 rounded px-4 py-2">
-              <option value="">{{ t('matchDetail.selectMapPlaceholder') }}</option>
-              <option v-for="m in availableMaps" :key="m" :value="m">{{ m }}</option>
-            </select>
-            <button @click="setMap" :disabled="!selectedMap || settingMap" class="btn-secondary">{{ t('matchDetail.set') }}</button>
+            <div class="flex gap-2 flex-1">
+              <select v-model="selectedMap" class="flex-1 bg-gray-700 border border-gray-600 rounded px-4 py-3 sm:py-2 text-base" style="font-size: 16px;">
+                <option value="">{{ t('matchDetail.selectMapPlaceholder') }}</option>
+                <option v-for="m in availableMaps" :key="m" :value="m">{{ m }}</option>
+              </select>
+              <button @click="setMap" :disabled="!selectedMap || settingMap" class="btn-secondary py-3 sm:py-2 px-6">{{ t('matchDetail.set') }}</button>
+            </div>
           </div>
         </div>
       </div>
@@ -177,26 +198,62 @@
         </form>
       </div>
 
-      <!-- Army Lists (shown when revealed or from league settings) -->
+      <!-- Army Lists (shown when revealed or from league settings) - collapsible on mobile -->
       <div v-if="match.lists_revealed || match.player1_army_list || match.player2_army_list" class="card mb-6">
-        <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.armyLists') }}</h2>
-        <div class="grid md:grid-cols-2 gap-6">
+        <button
+          @click="showListsSection = !showListsSection"
+          class="w-full flex items-center justify-between text-left md:cursor-default"
+        >
+          <h2 class="text-lg md:text-xl font-bold">{{ t('matchDetail.armyLists') }}</h2>
+          <svg
+            class="w-5 h-5 text-gray-400 md:hidden transition-transform"
+            :class="{ 'rotate-180': showListsSection }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div :class="{ 'hidden md:block': !showListsSection }" class="mt-4 grid md:grid-cols-2 gap-4 md:gap-6">
           <div v-if="match.player1_army_list">
-            <h3 class="font-semibold mb-2">
+            <h3 class="font-semibold mb-2 text-sm md:text-base">
               {{ match.player1_username }}
-              <span v-if="match.player1_army_faction" class="text-sm text-gray-400 font-normal ml-2">({{ match.player1_army_faction }})</span>
+              <span v-if="match.player1_army_faction" class="text-xs md:text-sm text-gray-400 font-normal ml-1">({{ match.player1_army_faction }})</span>
             </h3>
-            <div class="bg-gray-900 p-4 rounded">
-              <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ match.player1_army_list }}</pre>
+            <div class="bg-gray-900 p-3 md:p-4 rounded relative">
+              <button
+                @click="copyList(match.player1_army_list, 'p1')"
+                class="absolute top-2 right-2 p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
+              >
+                <svg v-if="copiedList !== 'p1'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <svg v-else class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+              <pre class="whitespace-pre-wrap font-mono text-xs md:text-sm text-gray-300 pr-8">{{ match.player1_army_list }}</pre>
             </div>
           </div>
           <div v-if="match.player2_army_list">
-            <h3 class="font-semibold mb-2">
+            <h3 class="font-semibold mb-2 text-sm md:text-base">
               {{ match.player2_username }}
-              <span v-if="match.player2_army_faction" class="text-sm text-gray-400 font-normal ml-2">({{ match.player2_army_faction }})</span>
+              <span v-if="match.player2_army_faction" class="text-xs md:text-sm text-gray-400 font-normal ml-1">({{ match.player2_army_faction }})</span>
             </h3>
-            <div class="bg-gray-900 p-4 rounded">
-              <pre class="whitespace-pre-wrap font-mono text-sm text-gray-300">{{ match.player2_army_list }}</pre>
+            <div class="bg-gray-900 p-3 md:p-4 rounded relative">
+              <button
+                @click="copyList(match.player2_army_list, 'p2')"
+                class="absolute top-2 right-2 p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
+              >
+                <svg v-if="copiedList !== 'p2'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <svg v-else class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+              <pre class="whitespace-pre-wrap font-mono text-xs md:text-sm text-gray-300 pr-8">{{ match.player2_army_list }}</pre>
             </div>
           </div>
         </div>
@@ -206,26 +263,60 @@
       <div v-if="match.can_edit && match.status !== 'confirmed'" class="card mb-6">
         <h2 class="text-xl font-bold mb-4">{{ t('matchDetail.submitResult') }}</h2>
         <form @submit.prevent="submitResult" class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm text-gray-400 mb-1">{{ match.player1_username }} {{ t('matchDetail.score') }}</label>
-              <input v-model.number="resultForm.player1_score" type="number" min="0" required
-                     class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-center text-xl" />
-              <p v-if="calculatedPoints.player1 !== null" class="text-sm text-squig-yellow font-semibold mt-1 text-center">
-                Tournament Score: {{ calculatedPoints.player1 }}
+          <!-- Mobile-optimized score entry -->
+          <div class="flex items-center justify-center gap-4 py-4">
+            <div class="text-center flex-1 max-w-32">
+              <label class="block text-sm text-gray-400 mb-2 truncate">{{ match.player1_username }}</label>
+              <div class="relative group">
+                <input
+                  v-model.number="resultForm.player1_score"
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  required
+                  class="score-input w-full bg-gray-700 border-2 border-gray-600 rounded-lg text-center font-bold py-4 focus:outline-none focus:border-squig-yellow transition-colors"
+                  style="font-size: 28px; min-height: 70px;"
+                />
+                <button type="button" @click="resultForm.player1_score++" class="score-btn-up">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                </button>
+                <button type="button" @click="resultForm.player1_score = Math.max(0, resultForm.player1_score - 1)" class="score-btn-down">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+              </div>
+              <p v-if="calculatedPoints.player1 !== null" class="text-sm text-squig-yellow font-semibold mt-2">
+                {{ calculatedPoints.player1 }} pts
               </p>
             </div>
-            <div>
-              <label class="block text-sm text-gray-400 mb-1">{{ match.player2_username }} {{ t('matchDetail.score') }}</label>
-              <input v-model.number="resultForm.player2_score" type="number" min="0" required
-                     class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-center text-xl" />
-              <p v-if="calculatedPoints.player2 !== null" class="text-sm text-squig-yellow font-semibold mt-1 text-center">
-                Tournament Score: {{ calculatedPoints.player2 }}
+            <div class="text-2xl text-gray-500 font-bold pt-6">:</div>
+            <div class="text-center flex-1 max-w-32">
+              <label class="block text-sm text-gray-400 mb-2 truncate">{{ match.player2_username }}</label>
+              <div class="relative group">
+                <input
+                  v-model.number="resultForm.player2_score"
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  required
+                  class="score-input w-full bg-gray-700 border-2 border-gray-600 rounded-lg text-center font-bold py-4 focus:outline-none focus:border-squig-yellow transition-colors"
+                  style="font-size: 28px; min-height: 70px;"
+                />
+                <button type="button" @click="resultForm.player2_score++" class="score-btn-up">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                </button>
+                <button type="button" @click="resultForm.player2_score = Math.max(0, resultForm.player2_score - 1)" class="score-btn-down">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+              </div>
+              <p v-if="calculatedPoints.player2 !== null" class="text-sm text-squig-yellow font-semibold mt-2">
+                {{ calculatedPoints.player2 }} pts
               </p>
             </div>
           </div>
-          <div v-if="submitError" class="text-red-400 text-sm">{{ submitError }}</div>
-          <button type="submit" :disabled="submitting" class="btn-primary w-full">
+          <div v-if="submitError" class="text-red-400 text-sm text-center">{{ submitError }}</div>
+          <button type="submit" :disabled="submitting" class="btn-primary w-full py-4 text-lg">
             {{ submitting ? t('matchDetail.submitting') : t('matchDetail.submitResult') }}
           </button>
         </form>
@@ -288,6 +379,20 @@ const armyListForm = ref({ army_list: '', army_faction: '' })
 const submittingList = ref(false)
 const armyListError = ref('')
 const armyFactions = ARMY_FACTIONS
+
+// Mobile section toggles and copy
+const showMapSection = ref(true)
+const showListsSection = ref(true)
+const copiedList = ref(null)
+const copyList = async (text, listId) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedList.value = listId
+    setTimeout(() => { copiedList.value = null }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
 
 // Check if current user is one of the players
 const isPlayer1 = computed(() => {
@@ -483,3 +588,66 @@ onMounted(async () => {
   await fetchMatch()
 })
 </script>
+
+<style scoped>
+.score-input::-webkit-inner-spin-button,
+.score-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.score-input {
+  -moz-appearance: textfield;
+}
+
+.score-btn-up,
+.score-btn-down {
+  position: absolute;
+  right: 4px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4b5563;
+  border-radius: 8px;
+  color: #d1d5db;
+  opacity: 1;
+  transition: background 0.15s;
+}
+.score-btn-up:hover,
+.score-btn-down:hover,
+.score-btn-up:active,
+.score-btn-down:active {
+  background: #f59e0b;
+  color: #000;
+}
+.score-btn-up {
+  top: 4px;
+}
+.score-btn-down {
+  bottom: 4px;
+}
+.score-btn-up svg,
+.score-btn-down svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (min-width: 768px) {
+  .score-btn-up,
+  .score-btn-down {
+    width: 28px;
+    height: 28px;
+    opacity: 0;
+  }
+  .score-btn-up svg,
+  .score-btn-down svg {
+    width: 16px;
+    height: 16px;
+  }
+  .group:hover .score-btn-up,
+  .group:hover .score-btn-down {
+    opacity: 1;
+  }
+}
+</style>

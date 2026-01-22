@@ -1,6 +1,75 @@
 <template>
-  <div class="bracket-wrapper overflow-x-auto pb-4">
-    <div class="bracket flex items-stretch" :style="{ minWidth: bracketWidth + 'px' }">
+  <div>
+    <!-- Mobile: Vertical list view -->
+    <div class="md:hidden space-y-4">
+      <div v-for="round in bracketRounds" :key="round.name" class="space-y-2">
+        <!-- Round header -->
+        <div
+          :class="[
+            'px-3 py-2 rounded font-bold text-sm',
+            round.isCurrentRound ? 'bg-orange-900/50 text-orange-400' : 'bg-gray-800 text-gray-400'
+          ]"
+        >
+          {{ round.displayName }}
+          <span v-if="round.isCurrentRound" class="text-xs ml-2">(Current)</span>
+        </div>
+        <!-- Matches -->
+        <div class="space-y-2 pl-2 border-l-2 border-gray-700">
+          <div
+            v-for="(match, matchIndex) in round.matches"
+            :key="match?.id || `mobile-placeholder-${round.name}-${matchIndex}`"
+            :class="[
+              'bg-gray-800 rounded-lg overflow-hidden',
+              match && match.status !== 'preview' ? 'cursor-pointer active:bg-gray-700' : '',
+              !round.isCurrentRound && !round.isCompleted ? 'opacity-60' : ''
+            ]"
+            @click="match && match.status !== 'preview' && $emit('match-click', match)"
+          >
+            <template v-if="match">
+              <div
+                :class="[
+                  'flex items-center justify-between px-3 py-2 border-b border-gray-700',
+                  isWinner(match, match.player1_id) ? 'bg-green-900/20' : ''
+                ]"
+              >
+                <span :class="['text-sm', isWinner(match, match.player1_id) ? 'font-bold text-green-400' : '']">
+                  {{ match.player1_username || 'TBD' }}
+                </span>
+                <span v-if="match.player1_score !== null" class="text-squig-yellow font-bold">
+                  {{ match.player1_score }}
+                </span>
+              </div>
+              <div
+                :class="[
+                  'flex items-center justify-between px-3 py-2',
+                  isWinner(match, match.player2_id) ? 'bg-green-900/20' : ''
+                ]"
+              >
+                <span :class="['text-sm', isWinner(match, match.player2_id) ? 'font-bold text-green-400' : '']">
+                  {{ match.player2_username || 'TBD' }}
+                </span>
+                <span v-if="match.player2_score !== null" class="text-squig-yellow font-bold">
+                  {{ match.player2_score }}
+                </span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="px-3 py-2 text-gray-500 text-sm border-b border-gray-700">TBD</div>
+              <div class="px-3 py-2 text-gray-500 text-sm">TBD</div>
+            </template>
+          </div>
+        </div>
+      </div>
+      <!-- Champion on mobile -->
+      <div v-if="winner" class="bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border-2 border-squig-yellow rounded-lg p-4 text-center">
+        <div class="text-2xl mb-1">🏆</div>
+        <div class="font-bold text-squig-yellow">{{ winner }}</div>
+      </div>
+    </div>
+
+    <!-- Desktop: Horizontal bracket -->
+    <div class="hidden md:block bracket-wrapper overflow-x-auto pb-4 relative">
+      <div class="bracket flex items-stretch" :style="{ minWidth: bracketWidth + 'px' }">
       <!-- Each round is a column -->
       <div
         v-for="(round, roundIndex) in bracketRounds"
@@ -146,6 +215,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>

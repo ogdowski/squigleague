@@ -12,22 +12,27 @@
           <!-- Avatar Section -->
           <div>
             <label class="block text-sm font-medium mb-2">{{ t('settings.avatar') }}</label>
-            <div class="flex items-start gap-4">
-              <div class="flex flex-col items-center gap-2">
-                <div class="w-20 h-20 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
-                  <img
-                    v-if="avatarPreview || formData.avatar_url"
-                    :src="avatarPreview || formData.avatar_url"
-                    alt="Avatar"
-                    class="w-full h-full object-cover"
-                    @error="handleAvatarError"
-                  />
-                  <div v-else class="w-full h-full flex items-center justify-center text-2xl text-gray-500">
-                    {{ formData.username?.charAt(0)?.toUpperCase() || '?' }}
-                  </div>
+            <div class="flex items-center gap-4">
+              <!-- Avatar preview -->
+              <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                <img
+                  v-if="avatarPreview || formData.avatar_url"
+                  :src="avatarPreview || formData.avatar_url"
+                  alt="Avatar"
+                  class="w-full h-full object-cover"
+                  @error="handleAvatarError"
+                />
+                <div v-else class="w-full h-full flex items-center justify-center text-2xl text-gray-500">
+                  {{ formData.username?.charAt(0)?.toUpperCase() || '?' }}
                 </div>
-                <label class="btn-secondary text-xs cursor-pointer px-3 py-1">
-                  {{ isUploadedAvatar ? t('settings.changeAvatar') : t('settings.uploadAvatar') }}
+              </div>
+              <!-- Change button and info -->
+              <div class="flex-1 min-w-0">
+                <label class="btn-secondary text-sm cursor-pointer px-4 py-2 inline-flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  {{ t('settings.changeAvatar') }}
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/gif,image/webp"
@@ -35,37 +40,31 @@
                     class="hidden"
                   />
                 </label>
-              </div>
-              <div class="flex-1">
-                <!-- Show URL input only for external URLs, not for uploaded avatars -->
-                <template v-if="!isUploadedAvatar">
-                  <input
-                    v-model="formData.avatar_url"
-                    type="url"
-                    class="input-field w-full mb-2"
-                    placeholder="https://example.com/avatar.png"
-                    :disabled="avatarFile"
-                  />
-                  <p class="text-xs text-gray-500">
-                    {{ t('settings.avatarUploadNote') }}
-                    <span v-if="hasDiscordOAuth">{{ t('settings.avatarDiscordNote') }}</span>
-                  </p>
-                </template>
-                <template v-else>
-                  <p class="text-xs text-gray-500 mb-2">
-                    {{ t('settings.avatarUploaded') }}
-                  </p>
-                </template>
-                <div v-if="avatarFile" class="mt-2 flex items-center gap-2">
-                  <span class="text-xs text-green-400">{{ avatarFile.name }}</span>
-                  <button type="button" @click="clearAvatarFile" class="text-xs text-red-400 hover:text-red-300">
-                    Cancel
+                <div v-if="avatarFile" class="mt-2 flex items-center gap-2 text-sm">
+                  <span class="text-green-400 truncate">{{ avatarFile.name }}</span>
+                  <button type="button" @click="clearAvatarFile" class="text-red-400 hover:text-red-300 flex-shrink-0">
+                    ✕
                   </button>
                 </div>
-                <div v-if="uploadingAvatar" class="mt-2 text-xs text-yellow-400">
-                  Uploading...
+                <div v-else-if="uploadingAvatar" class="mt-2 text-sm text-yellow-400">
+                  {{ t('common.uploading') || 'Uploading...' }}
                 </div>
+                <p v-else class="mt-2 text-xs text-gray-500">
+                  {{ t('settings.avatarUploadNote') }}
+                </p>
               </div>
+            </div>
+            <!-- URL input (collapsed, optional) -->
+            <div v-if="!isUploadedAvatar && !avatarFile" class="mt-3">
+              <details class="text-sm">
+                <summary class="text-gray-400 cursor-pointer hover:text-white">{{ t('settings.useUrlInstead') || 'Or use URL' }}</summary>
+                <input
+                  v-model="formData.avatar_url"
+                  type="url"
+                  class="input-field w-full mt-2"
+                  placeholder="https://example.com/avatar.png"
+                />
+              </details>
             </div>
           </div>
 
@@ -239,16 +238,9 @@
             <button
               type="submit"
               :disabled="submitting || !hasChanges"
-              class="btn-primary flex-1"
+              class="btn-primary w-full py-3"
             >
               {{ submitting ? t('common.saving') : t('common.save') }}
-            </button>
-            <button
-              type="button"
-              @click="resetForm"
-              class="btn-secondary flex-1"
-            >
-              {{ t('common.reset') }}
             </button>
           </div>
         </form>

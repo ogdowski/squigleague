@@ -1,11 +1,6 @@
 <template>
   <div class="max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-3xl font-bold">{{ t('matchups.title') }}</h1>
-      <router-link to="/matchup/create" class="btn-primary">
-        {{ t('matchups.createMatchup') }}
-      </router-link>
-    </div>
+    <h1 class="text-2xl md:text-3xl font-bold mb-6">{{ t('matchups.title') }}</h1>
 
     <!-- How It Works section -->
     <div v-if="!howItWorksHidden" class="mb-6 relative">
@@ -21,24 +16,35 @@
           </svg>
         </button>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <div class="text-2xl font-bold text-squig-yellow mb-2">1</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 flex sm:block items-center gap-4">
+          <div class="text-2xl font-bold text-squig-yellow sm:mb-2 flex-shrink-0">1</div>
           <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep1') }}</p>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <div class="text-2xl font-bold text-squig-yellow mb-2">2</div>
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 flex sm:block items-center gap-4">
+          <div class="text-2xl font-bold text-squig-yellow sm:mb-2 flex-shrink-0">2</div>
           <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep2') }}</p>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <div class="text-2xl font-bold text-squig-yellow mb-2">3</div>
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 flex sm:block items-center gap-4">
+          <div class="text-2xl font-bold text-squig-yellow sm:mb-2 flex-shrink-0">3</div>
           <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep3') }}</p>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <div class="text-2xl font-bold text-squig-yellow mb-2">4</div>
+        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 flex sm:block items-center gap-4">
+          <div class="text-2xl font-bold text-squig-yellow sm:mb-2 flex-shrink-0">4</div>
           <p class="text-sm text-gray-300">{{ t('matchups.howItWorksStep4') }}</p>
         </div>
       </div>
+      <!-- Create Matchup button under the welcome tile -->
+      <router-link to="/matchup/create" class="btn-primary w-full sm:w-auto text-center py-3">
+        {{ t('matchups.createMatchup') }}
+      </router-link>
+    </div>
+
+    <!-- Create button when welcome is hidden -->
+    <div v-if="howItWorksHidden" class="mb-6">
+      <router-link to="/matchup/create" class="btn-primary text-center">
+        {{ t('matchups.createMatchup') }}
+      </router-link>
     </div>
 
     <div v-if="loading" class="text-center py-12">

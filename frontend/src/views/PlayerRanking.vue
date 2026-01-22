@@ -22,28 +22,29 @@
         <div class="space-y-3">
           <div v-for="(army, index) in stats.top_armies.slice(0, 5)" :key="army.faction" class="flex items-center gap-3">
             <!-- Rank number -->
-            <div class="w-6 text-center font-bold text-gray-500">#{{ index + 1 }}</div>
+            <div class="w-5 md:w-6 text-center font-bold text-gray-500 text-xs md:text-base">#{{ index + 1 }}</div>
 
             <!-- Army name -->
-            <div class="w-32 md:w-48 font-medium truncate">{{ army.faction }}</div>
+            <div class="w-24 md:w-48 font-medium truncate text-sm md:text-base">{{ army.faction }}</div>
 
             <!-- Progress bar -->
-            <div class="flex-1 h-7 bg-gray-700 rounded overflow-hidden relative">
+            <div class="flex-1 h-6 md:h-7 bg-gray-700 rounded overflow-hidden relative">
               <div class="h-full flex" :style="{ width: Math.max(getArmyPercentage(army.count), 15) + '%' }">
                 <div class="h-full bg-green-600" :style="{ width: getWinPercentage(army) + '%' }"></div>
                 <div class="h-full bg-yellow-600" :style="{ width: getDrawPercentage(army) + '%' }"></div>
                 <div class="h-full bg-red-600" :style="{ width: getLossPercentage(army) + '%' }"></div>
               </div>
               <!-- W/D/L overlay -->
-              <div class="absolute inset-0 flex items-center px-2 text-xs font-medium">
+              <div class="absolute inset-0 flex items-center px-1 md:px-2 text-[10px] md:text-xs font-medium whitespace-nowrap">
                 <span class="text-white drop-shadow-md">
-                  {{ army.wins }}W / {{ army.draws }}D / {{ army.losses }}L
+                  <span class="hidden sm:inline">{{ army.wins }}W / {{ army.draws }}D / {{ army.losses }}L</span>
+                  <span class="sm:hidden">{{ army.wins }}/{{ army.draws }}/{{ army.losses }}</span>
                 </span>
               </div>
             </div>
 
             <!-- Percentage -->
-            <div class="w-12 text-right text-sm text-squig-yellow font-bold">{{ getArmyPercentage(army.count) }}%</div>
+            <div class="w-10 md:w-12 text-right text-xs md:text-sm text-squig-yellow font-bold">{{ getArmyPercentage(army.count) }}%</div>
           </div>
         </div>
       </div>

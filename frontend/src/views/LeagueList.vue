@@ -13,13 +13,13 @@
       </button>
 
       <!-- Hero -->
-      <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-squig-yellow mb-3">Squig League</h1>
-        <p class="text-lg text-gray-300 max-w-2xl mx-auto">{{ t('home.subtitle') }}</p>
+      <div class="text-center mb-6 md:mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-squig-yellow mb-2 md:mb-3">Squig League</h1>
+        <p class="text-base md:text-lg text-gray-300 max-w-2xl mx-auto px-2">{{ t('home.subtitle') }}</p>
       </div>
 
-      <!-- Feature Cards -->
-      <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <!-- Feature Cards - single column on mobile -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6">
         <a href="#leagues-section" @click.prevent="scrollToLeagues" class="card hover:bg-gray-700 transition-colors group p-4 cursor-pointer">
           <div class="flex items-center gap-3 mb-2">
             <svg class="w-8 h-8 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -30,7 +30,7 @@
           <p class="text-gray-400 text-sm">{{ t('home.leaguesDesc') }}</p>
         </a>
 
-        <router-link to="/my-matchups" class="card hover:bg-gray-700 transition-colors group p-4">
+        <router-link to="/matchups" class="card hover:bg-gray-700 transition-colors group p-4">
           <div class="flex items-center gap-3 mb-2">
             <svg class="w-8 h-8 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -52,12 +52,12 @@
       </div>
     </div>
 
-    <div id="leagues-section" class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">{{ t('leagues.title') }}</h1>
+    <div id="leagues-section" class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+      <h1 class="text-2xl md:text-3xl font-bold">{{ t('leagues.title') }}</h1>
       <router-link
         v-if="canCreateLeague"
         to="/league/create"
-        class="btn-primary"
+        class="btn-primary text-center sm:w-auto"
       >
         {{ t('leagues.newLeague') }}
       </router-link>
