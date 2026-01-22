@@ -10,28 +10,72 @@ Open-source competitive league and matchup platform for Age of Sigmar.
 ## Features
 
 ### Matchup System (Herald)
-- **Blind Army List Exchange**: Both players submit lists secretly, revealed simultaneously
-- **Battle Plan Integration**: GHB 2025/2026 missions with objectives, scoring rules, and underdog abilities
-- **Automatic Map Randomization**: Random map assignment on reveal
-- **Friendly Matchup IDs**: AoS-themed IDs (e.g., "mighty-dragon-3x7a")
+Blind army list exchange for casual 1v1 games:
+
+- **Blind Exchange**: Both players submit lists secretly, revealed simultaneously
+- **Battle Plan Integration**: GHB 2025/2026 missions with objectives and underdog abilities
+- **Auto Map Assignment**: Random mission assigned on reveal
+- **Result Tracking**: Submit scores with opponent confirmation (24h auto-confirm)
+- **Friendly IDs**: AoS-themed IDs (e.g., "mighty-dragon-3x7a")
 - **Anonymous Play**: Create matchups without registration
-- **7-Day Expiration**: Matchups automatically expire
 
 ### League System
-- **Full Tournament Management**: Create and manage competitive leagues
+Full tournament management with group and knockout phases:
+
 - **Group Phase**: Automatic group drawing, round-robin match generation
-- **Knockout Phase**: Bracket generation from group qualifiers
-- **Flexible Scoring**: Configurable points per win/draw/loss
-- **Army List Management**: Per-phase lists with freeze/reveal controls
-- **Standings & Qualification**: Automatic standings with qualification rules
-- **Player Avatars**: Profile pictures throughout the app
+- **Knockout Phase**: Bracket generation (4/8/16/32 players) from qualifiers
+- **Scoring System**: Points per match with margin bonus
+- **Army Lists**: Per-phase lists with freeze/visible controls
+- **ELO Integration**: Rating changes tracked per match
 - **Organizer Tools**: Player management, match editing, phase controls
 
+### ELO Rating System
+Global skill ratings for competitive players:
+
+- **Standard ELO**: K=32 for experienced, K=50 for new players (first 5 games)
+- **Match Tracking**: ELO before/after stored per match
+- **Global Rankings**: Leaderboard sorted by rating
+- **Configurable**: Admin can adjust K-factors via settings
+
 ### User System
-- **Registration & Authentication**: Email/password with JWT tokens
-- **OAuth Integration**: Discord login support
-- **User Profiles**: Avatar upload, settings, match history
-- **Role System**: Player, Organizer, Admin roles
+- **Authentication**: Email/password with JWT, Discord OAuth
+- **Profiles**: Avatar, location, language preference
+- **Roles**: Player, Organizer, Admin
+
+## Scoring System
+
+League matches use a base + bonus point system:
+
+| Result | Base Points | Bonus |
+|--------|-------------|-------|
+| Win    | 1000        | 0-100 |
+| Draw   | 600         | 0-100 |
+| Loss   | 200         | 0-100 |
+
+**Bonus calculation**: `min(100, max(0, score_margin + 50))`
+
+Example: Win 72-68 = 1000 + min(100, 4+50) = **1054 points**
+
+## Battle Plans
+
+12 GHB 2025/2026 missions supported:
+- Passing Seasons, Paths of the Fey, Roiling Roots, Cyclic Shifts
+- Surge of Slaughter, Linked Ley Lines, Noxious Nexus, The Liferoots
+- Bountiful Equinox, Lifecycle, Creeping Corruption, Grasp of Thorns
+
+Each includes deployment type, objectives, scoring rules, and underdog abilities.
+
+## Army Factions
+
+24 Age of Sigmar 4th Edition factions with auto-detection from army lists:
+
+**Order**: Cities of Sigmar, Daughters of Khaine, Fyreslayers, Idoneth Deepkin, Kharadron Overlords, Lumineth Realm-lords, Seraphon, Stormcast Eternals, Sylvaneth
+
+**Chaos**: Blades of Khorne, Disciples of Tzeentch, Hedonites of Slaanesh, Helsmiths of Hashut, Maggotkin of Nurgle, Skaven, Slaves to Darkness
+
+**Death**: Flesh-eater Courts, Nighthaunt, Ossiarch Bonereapers, Soulblight Gravelords
+
+**Destruction**: Gloomspite Gitz, Ironjawz, Kruleboyz, Ogor Mawtribes, Sons of Behemat
 
 ## Tech Stack
 
@@ -39,14 +83,15 @@ Open-source competitive league and matchup platform for Age of Sigmar.
 - **Framework**: FastAPI (Python 3.11)
 - **ORM**: SQLModel (SQLAlchemy + Pydantic)
 - **Database**: PostgreSQL
+- **Migrations**: Alembic
 - **Authentication**: JWT tokens, OAuth2
 
 ### Frontend
 - **Framework**: Vue 3 (Composition API)
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
-- **State Management**: Pinia
-- **Routing**: Vue Router
+- **State**: Pinia
+- **i18n**: English, Polish
 
 ### Infrastructure
 - **Containerization**: Docker & Docker Compose
@@ -57,114 +102,142 @@ Open-source competitive league and matchup platform for Age of Sigmar.
 
 ### Prerequisites
 - Docker & Docker Compose
-- Just (optional, for shortcuts)
+- Just (optional, `brew install just`)
 
 ### Local Development
 
 ```bash
-# Clone the repository
+# Clone and enter
 git clone https://github.com/yourusername/squig_league.git
 cd squig_league
 
-# Copy environment files
-cp .env.local.example .env
-
-# Start all services
-docker-compose up -d
-
-# Or using Just
+# Start services
 just up
 
-# Access the application
+# Seed test data (optional)
+just seed
+
+# Access
 open http://localhost
 ```
 
-### Useful Commands
+### Test Credentials (after `just seed`)
+- **Admin**: org1@t.co / test
+- **Players**: p1@t.co - p30@t.co / test
+
+### Commands
 
 ```bash
-# View logs
-just logs
-
-# Rebuild containers
-just build
-
-# Stop services
-just down
-
-# Run backend tests
-just test
+just up          # Start services
+just down        # Stop services
+just logs        # View logs
+just seed        # Seed test data
+just test        # Run tests
+just build       # Build images
+just migrate     # Run migrations
+just db-connect  # PostgreSQL shell
 ```
 
 ## Project Structure
 
 ```
 squig_league/
-├── backend/                 # FastAPI backend
+├── backend/
 │   ├── app/
-│   │   ├── core/           # Auth, dependencies, utilities
-│   │   ├── users/          # User management & auth
-│   │   ├── matchup/        # Blind list exchange system
-│   │   ├── league/         # League/tournament management
-│   │   ├── player/         # Player profiles
-│   │   └── admin/          # Admin endpoints
-│   ├── migrations/         # Alembic migrations
-│   └── Dockerfile
-├── frontend/               # Vue 3 frontend
+│   │   ├── core/        # Auth, config, dependencies
+│   │   ├── users/       # User management & auth
+│   │   ├── matchup/     # Blind list exchange
+│   │   ├── league/      # Tournament management
+│   │   ├── player/      # Player profiles & ELO
+│   │   ├── admin/       # Admin endpoints
+│   │   └── data/        # Maps, armies data
+│   ├── migrations/      # Alembic migrations
+│   ├── tests/           # Pytest tests
+│   └── seed_*.py        # Database seeders
+├── frontend/
 │   ├── src/
-│   │   ├── views/         # Page components
-│   │   ├── components/    # Reusable components
-│   │   ├── stores/        # Pinia state
-│   │   ├── constants/     # App constants
-│   │   └── router/        # Vue Router
-│   ├── public/
-│   │   └── assets/        # Battle plan images
-│   └── Dockerfile
-├── nginx/                  # Reverse proxy configs
-├── assets/                 # Battle plan source images
-├── docker-compose.yml      # Local development
-├── docker-compose.prod.yml # Production
-└── justfile               # Task runner commands
-```
-
-## Environment Variables
-
-### Backend
-
-```env
-DATABASE_URL=postgresql://user:pass@postgres:5432/squig_league
-SECRET_KEY=your-secret-key-here
-DISCORD_CLIENT_ID=your-discord-client-id
-DISCORD_CLIENT_SECRET=your-discord-client-secret
-```
-
-### Frontend
-
-```env
-VITE_API_URL=/api
+│   │   ├── views/       # Page components
+│   │   ├── components/  # Reusable UI
+│   │   ├── stores/      # Pinia state
+│   │   └── locales/     # i18n translations
+│   └── public/assets/   # Battle plan images
+├── nginx/               # Proxy configs
+├── docker-compose.yml   # Development
+├── docker-compose.prod.yml
+└── justfile             # Task runner
 ```
 
 ## API Endpoints
 
 ### Matchup
-- `POST /api/matchup/create` - Create new matchup
-- `GET /api/matchup/{name}` - Get matchup status
-- `POST /api/matchup/{name}/submit` - Submit army list
-- `GET /api/matchup/{name}/reveal` - Get revealed matchup
-- `GET /api/matchup/maps` - Get available battle plans
+```
+POST   /api/matchup                    Create matchup
+GET    /api/matchup/{name}             Get matchup
+POST   /api/matchup/{name}/submit      Submit army list
+GET    /api/matchup/{name}/reveal      Get revealed matchup
+POST   /api/matchup/{name}/result/submit   Submit result
+POST   /api/matchup/{name}/result/confirm  Confirm result
+GET    /api/matchup/maps               List battle plans
+```
 
 ### League
-- `GET /api/league` - List leagues
-- `POST /api/league` - Create league
-- `GET /api/league/{id}` - Get league details
-- `GET /api/league/{id}/standings` - Get group standings
-- `GET /api/league/{id}/matches` - List matches
-- `GET /api/league/{id}/matches/{match_id}` - Match details
+```
+GET    /api/league                     List leagues
+POST   /api/league                     Create league
+GET    /api/league/{id}                League details
+GET    /api/league/{id}/standings      Group standings
+GET    /api/league/{id}/matches        List matches
+POST   /api/league/{id}/matches/{id}/submit  Submit result
+POST   /api/league/{id}/groups/draw    Draw groups
+POST   /api/league/{id}/advance-knockout    Advance phase
+```
 
 ### Users
-- `POST /api/users/register` - Register
-- `POST /api/users/login` - Login
-- `GET /api/users/me` - Current user
-- `GET /api/player/{id}` - Player profile
+```
+POST   /api/auth/register              Register
+POST   /api/auth/login                 Login
+GET    /api/auth/me                    Current user
+GET    /api/player/{id}                Player profile
+GET    /api/ranking                    ELO leaderboard
+```
+
+### Admin
+```
+GET    /api/admin/users                List users
+PATCH  /api/admin/users/{id}/role      Change role
+PATCH  /api/admin/elo-settings         Update ELO config
+POST   /api/admin/recalculate-army-stats  Rebuild stats
+```
+
+## Environment Variables
+
+### Backend (.env)
+```env
+DATABASE_URL=postgresql://squig:password@postgres:5432/squigleague
+SECRET_KEY=your-secret-key
+DISCORD_CLIENT_ID=xxx
+DISCORD_CLIENT_SECRET=xxx
+```
+
+### Frontend
+```env
+VITE_API_URL=/api
+```
+
+## Database Models
+
+| Model | Purpose |
+|-------|---------|
+| `users` | Accounts with auth |
+| `oauth_accounts` | Discord/Google OAuth |
+| `player_elo` | Global ELO ratings |
+| `leagues` | Tournament records |
+| `groups` | Group phase divisions |
+| `league_players` | Participants with stats |
+| `matches` | League matches |
+| `matchups` | Blind list exchanges |
+| `army_stats` | Faction win rates |
+| `app_settings` | Global config |
 
 ## Contributing
 
