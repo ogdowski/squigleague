@@ -559,19 +559,28 @@ async def oauth_discord_callback(
         oauth_account = session.exec(statement).first()
 
         if oauth_account:
-            # Get existing user and update discord_username/avatar
+            # Update OAuth tokens (they may have expired)
+            oauth_account.access_token = token.get("access_token")
+            oauth_account.refresh_token = token.get("refresh_token")
+            oauth_account.updated_at = datetime.utcnow()
+            session.add(oauth_account)
+
+            # Get existing user and update discord_username
             user = session.get(User, oauth_account.user_id)
-            updated = False
             if discord_username and user.discord_username != discord_username:
                 user.discord_username = discord_username
-                updated = True
-            if discord_avatar_url and user.avatar_url != discord_avatar_url:
-                user.avatar_url = discord_avatar_url
-                updated = True
-            if updated:
                 session.add(user)
-                session.commit()
-                session.refresh(user)
+            # Don't overwrite avatar if user has set their own (non-Discord) avatar
+            # Only set Discord avatar on first login (when avatar_url is None)
+            # or if current avatar is already from Discord
+            is_discord_avatar = (
+                user.avatar_url and "cdn.discordapp.com" in user.avatar_url
+            )
+            if discord_avatar_url and (user.avatar_url is None or is_discord_avatar):
+                user.avatar_url = discord_avatar_url
+                session.add(user)
+            session.commit()
+            session.refresh(user)
         else:
             # Check if user exists with this email
             statement = select(User).where(User.email == email)
@@ -607,7 +616,8 @@ async def oauth_discord_callback(
                 # Update discord info for existing user linking Discord
                 if discord_username:
                     user.discord_username = discord_username
-                if discord_avatar_url:
+                # Only set avatar if user doesn't have one yet
+                if discord_avatar_url and not user.avatar_url:
                     user.avatar_url = discord_avatar_url
                 session.add(user)
                 session.commit()
