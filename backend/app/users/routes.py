@@ -246,6 +246,67 @@ async def update_current_user(
     )
 
 
+@router.post("/me/sync-discord-avatar")
+async def sync_discord_avatar(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Sync avatar from Discord account (only if logged in via Discord)."""
+    oauth_account = session.exec(
+        select(OAuthAccount).where(
+            OAuthAccount.user_id == current_user.id,
+            OAuthAccount.provider == "discord",
+        )
+    ).first()
+
+    if not oauth_account:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No Discord account linked",
+        )
+
+    async with httpx.AsyncClient() as http_client:
+        response = await http_client.get(
+            "https://discord.com/api/users/@me",
+            headers={"Authorization": f"Bearer {oauth_account.access_token}"},
+        )
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Discord token expired. Please re-login with Discord.",
+            )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Failed to fetch Discord profile",
+            )
+
+        discord_data = response.json()
+        avatar_hash = discord_data.get("avatar")
+
+        if not avatar_hash:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No avatar set on Discord account",
+            )
+
+        discord_avatar_url = f"https://cdn.discordapp.com/avatars/{oauth_account.provider_user_id}/{avatar_hash}.png?size=256"
+
+    if current_user.avatar_url and "/uploads/avatars/" in current_user.avatar_url:
+        old_filename = current_user.avatar_url.split("/")[-1]
+        old_filepath = AVATAR_DIR / old_filename
+        if old_filepath.exists():
+            old_filepath.unlink()
+
+    current_user.avatar_url = discord_avatar_url
+    session.add(current_user)
+    session.commit()
+
+    return {"avatar_url": discord_avatar_url}
+
+
 @router.post("/avatar")
 async def upload_avatar(
     file: UploadFile = File(...),

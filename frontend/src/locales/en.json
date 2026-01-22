@@ -49,6 +49,7 @@
     "avatarUrlPlaceholder": "https://example.com/avatar.png",
     "avatarUploadNote": "Upload an image (max 20MB) or enter a URL.",
     "avatarDiscordNote": "Your Discord avatar is used by default.",
+    "useDiscordAvatar": "Use Discord Avatar",
     "avatarUploaded": "Avatar uploaded. Click \"Change\" to upload a new one.",
     "language": "Language",
     "languageNote": "Choose your preferred language",
@@ -248,7 +249,8 @@
     "failedToLoad": "Failed to load user data",
     "failedToUpdate": "Failed to update settings",
     "fileTooLarge": "File too large. Maximum size is 20MB.",
-    "failedToUploadAvatar": "Failed to upload avatar"
+    "failedToUploadAvatar": "Failed to upload avatar",
+    "failedToSyncDiscordAvatar": "Failed to sync Discord avatar"
   },
   "success": {
     "settingsUpdated": "Settings updated successfully!"
