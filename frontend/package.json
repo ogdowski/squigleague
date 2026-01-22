@@ -1,6 +1,6 @@
 {
   "name": "squigleague-frontend",
-  "version": "0.4.14",
+  "version": "0.4.15",
   "type": "module",
   "scripts": {
     "dev": "vite",
