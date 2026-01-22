@@ -883,6 +883,34 @@ test-exchange:
         | python3 -m json.tool
 
 # ═══════════════════════════════════════════════
+# SEED DATA
+# ═══════════════════════════════════════════════
+
+# Seed database with test data (users, leagues, matches, ELO)
+seed:
+    @echo "🌱 Seeding database with test data..."
+    docker cp backend/seed_data.py squig-backend:/app/seed_data.py
+    docker cp backend/seed_fix_stats.py squig-backend:/app/seed_fix_stats.py
+    docker cp backend/seed_fix_elo.py squig-backend:/app/seed_fix_elo.py
+    docker cp backend/seed_fix_factions.py squig-backend:/app/seed_fix_factions.py
+    docker exec squig-backend python /app/seed_data.py
+    docker exec squig-backend python /app/seed_fix_stats.py
+    docker exec squig-backend python /app/seed_fix_elo.py
+    docker exec squig-backend python /app/seed_fix_factions.py
+    @echo "✅ Seeding complete!"
+    @echo ""
+    @echo "📋 Credentials:"
+    @echo "  Admin:   org1@t.co / test"
+    @echo "  Players: p1@t.co - p30@t.co / test"
+    @echo ""
+    @echo "📋 Leagues created:"
+    @echo "  - 8-player (finished)"
+    @echo "  - 16-player (knockout phase)"
+    @echo "  - 12-player (group phase)"
+    @echo "  - 20-player (registration)"
+    @echo "  - 6-player (no knockout, finished)"
+
+# ═══════════════════════════════════════════════
 # ADMIN ENDPOINTS
 # ═══════════════════════════════════════════════
 # Note: Admin endpoints will be added in future versions
