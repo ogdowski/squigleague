@@ -65,22 +65,32 @@
           </svg>
         </button>
       </div>
-      <!-- Zoomable image container -->
+      <!-- Zoomable image container with touch support -->
       <div
-        class="flex-1 overflow-auto flex items-center justify-center p-4"
+        ref="imageContainer"
+        class="flex-1 overflow-hidden flex items-center justify-center"
         @click.stop
+        @touchstart="onTouchStart"
+        @touchmove="onTouchMove"
+        @touchend="onTouchEnd"
       >
         <img
           :src="`/assets/battle-plans/${mapImage}`"
           :alt="mapName"
-          class="max-w-none w-auto h-auto touch-pinch-zoom"
-          :style="{ maxHeight: 'none', transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }"
+          class="max-w-none w-auto h-auto select-none"
+          :style="{
+            maxHeight: 'none',
+            transform: `translate(${panX}px, ${panY}px) scale(${zoomLevel})`,
+            transformOrigin: 'center center',
+            touchAction: 'none'
+          }"
+          draggable="false"
         />
       </div>
       <!-- Zoom controls -->
       <div class="flex items-center justify-center gap-4 p-4">
         <button
-          @click.stop="zoomLevel = Math.max(0.5, zoomLevel - 0.25)"
+          @click.stop="zoomOut"
           class="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
         >
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +99,7 @@
         </button>
         <span class="text-white text-sm min-w-16 text-center">{{ Math.round(zoomLevel * 100) }}%</span>
         <button
-          @click.stop="zoomLevel = Math.min(3, zoomLevel + 0.25)"
+          @click.stop="zoomIn"
           class="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
         >
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,7 +107,7 @@
           </svg>
         </button>
         <button
-          @click.stop="zoomLevel = 1"
+          @click.stop="resetZoom"
           class="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors"
         >
           Reset
@@ -130,6 +140,74 @@ defineProps({
 
 const showFullscreen = ref(false)
 const zoomLevel = ref(1)
+const panX = ref(0)
+const panY = ref(0)
+const imageContainer = ref(null)
+
+// Touch state
+let lastTouchDistance = 0
+let lastTouchX = 0
+let lastTouchY = 0
+let isPinching = false
+
+const getDistance = (touches) => {
+  const dx = touches[0].clientX - touches[1].clientX
+  const dy = touches[0].clientY - touches[1].clientY
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
+const onTouchStart = (e) => {
+  if (e.touches.length === 2) {
+    isPinching = true
+    lastTouchDistance = getDistance(e.touches)
+  } else if (e.touches.length === 1) {
+    isPinching = false
+    lastTouchX = e.touches[0].clientX
+    lastTouchY = e.touches[0].clientY
+  }
+}
+
+const onTouchMove = (e) => {
+  e.preventDefault()
+
+  if (e.touches.length === 2 && isPinching) {
+    // Pinch zoom
+    const distance = getDistance(e.touches)
+    const scale = distance / lastTouchDistance
+    zoomLevel.value = Math.min(4, Math.max(0.5, zoomLevel.value * scale))
+    lastTouchDistance = distance
+  } else if (e.touches.length === 1 && !isPinching && zoomLevel.value > 1) {
+    // Pan (only when zoomed in)
+    const dx = e.touches[0].clientX - lastTouchX
+    const dy = e.touches[0].clientY - lastTouchY
+    panX.value += dx
+    panY.value += dy
+    lastTouchX = e.touches[0].clientX
+    lastTouchY = e.touches[0].clientY
+  }
+}
+
+const onTouchEnd = () => {
+  isPinching = false
+}
+
+const zoomIn = () => {
+  zoomLevel.value = Math.min(4, zoomLevel.value + 0.25)
+}
+
+const zoomOut = () => {
+  zoomLevel.value = Math.max(0.5, zoomLevel.value - 0.25)
+  if (zoomLevel.value <= 1) {
+    panX.value = 0
+    panY.value = 0
+  }
+}
+
+const resetZoom = () => {
+  zoomLevel.value = 1
+  panX.value = 0
+  panY.value = 0
+}
 
 const getObjectiveClass = (type) => {
   const colors = {
