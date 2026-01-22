@@ -94,10 +94,10 @@ help:
     @echo "  just ps               - Show running containers"
     @echo ""
     @echo "Testing:"
-    @echo "  just test             - Run all unit tests"
+    @echo "  just test             - Run all unit tests in Docker"
     @echo "  just test-coverage    - Run tests with coverage report"
-    @echo "  just test-file FILE   - Run specific test file"
-    @echo "  just test-watch       - Run tests in watch mode (auto-reload)"
+    @echo "  just test-file FILE   - Run specific test file (e.g. test_elo.py)"
+    @echo "  just test-k PATTERN   - Run tests matching pattern (e.g. 'elo' or 'submit')"
     @echo ""
     @echo "Cleanup:"
     @echo "  just clean            - Stop and remove containers"
@@ -854,28 +854,25 @@ prune:
 # TESTING
 # ═══════════════════════════════════════════════
 
-# Run all unit tests
+# Run all unit tests in Docker
 test:
-    @echo "🧪 Running unit tests..."
-    python3 -m pytest backend/tests/ -v --tb=short
-    @echo "✅ Tests complete"
+    @echo "🧪 Running unit tests in Docker..."
+    docker-compose run --rm backend pytest tests/ -v --tb=short
 
 # Run tests with coverage report
 test-coverage:
     @echo "🧪 Running tests with coverage..."
-    python3 -m pytest backend/tests/ -v --cov=backend/app --cov-report=term-missing --cov-report=html
-    @echo "✅ Coverage report generated in htmlcov/"
+    docker-compose run --rm backend pytest tests/ -v --cov=app --cov-report=term-missing
 
-# Run tests in watch mode (requires pytest-watch)
-test-watch:
-    @echo "🧪 Running tests in watch mode..."
-    @echo "⚠️  Install pytest-watch: pip install pytest-watch"
-    ptw backend/tests/ -- -v --tb=short
-
-# Run specific test file or test
+# Run specific test file
 test-file FILE:
     @echo "🧪 Running tests in {{FILE}}..."
-    python3 -m pytest backend/tests/{{FILE}} -v --tb=short
+    docker-compose run --rm backend pytest tests/{{FILE}} -v --tb=short
+
+# Run specific test by name pattern
+test-k PATTERN:
+    @echo "🧪 Running tests matching '{{PATTERN}}'..."
+    docker-compose run --rm backend pytest tests/ -v --tb=short -k "{{PATTERN}}"
 
 # Create test exchange (API integration test)
 test-exchange:

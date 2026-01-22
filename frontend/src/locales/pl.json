@@ -56,7 +56,8 @@
     "cityPlaceholder": "np. Warszawa",
     "country": "Kraj",
     "countryPlaceholder": "np. Polska",
-    "organizerEmailNote": "Uwaga: Jeśli jesteś organizatorem ligi, Twój email jest zawsze widoczny na profilu."
+    "organizerEmailNote": "Uwaga: Jeśli jesteś organizatorem ligi, Twój email jest zawsze widoczny na profilu.",
+    "useUrlInstead": "Lub podaj URL"
   },
   "matchups": {
     "title": "Mecze",

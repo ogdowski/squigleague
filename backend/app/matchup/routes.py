@@ -83,90 +83,34 @@ async def create_matchup(
     )
 
 
-@router.get("/my-matchups", response_model=list[MatchupStatus])
-async def get_my_matchups(
-    session: Session = Depends(get_session),
-    current_user=Depends(get_current_user),
-):
-    """Get all matchups for the current user."""
-    results = session.scalars(
-        select(Matchup)
-        .where(
-            or_(
-                Matchup.player1_id == current_user.id,
-                Matchup.player2_id == current_user.id,
-            )
-        )
-        .order_by(Matchup.created_at.desc())
-    ).all()
+def _build_matchup_list(
+    session: Session, matchups: list, current_user_id: int | None
+) -> list[MatchupStatus]:
+    """Helper to build matchup status list with bulk user fetching."""
+    if not matchups:
+        return []
 
-    matchup_list = []
-    for matchup in results:
-        player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
-        player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
+    # Collect all user IDs
+    user_ids = set()
+    for matchup in matchups:
+        if matchup.player1_id:
+            user_ids.add(matchup.player1_id)
+        if matchup.player2_id:
+            user_ids.add(matchup.player2_id)
 
-        matchup_list.append(
-            MatchupStatus(
-                name=matchup.name,
-                title=matchup.title,
-                player1_submitted=matchup.player1_submitted,
-                player2_submitted=matchup.player2_submitted,
-                is_revealed=matchup.is_revealed,
-                is_public=matchup.is_public,
-                created_at=matchup.created_at,
-                expires_at=matchup.expires_at,
-                player1_id=matchup.player1_id,
-                player2_id=matchup.player2_id,
-                player1_username=player1.username if player1 else None,
-                player2_username=player2.username if player2 else None,
-                player1_avatar=player1.avatar_url if player1 else None,
-                player2_avatar=player2.avatar_url if player2 else None,
-                player1_army_faction=matchup.player1_army_faction,
-                player2_army_faction=matchup.player2_army_faction,
-                player1_score=matchup.player1_score,
-                player2_score=matchup.player2_score,
-                result_status=matchup.result_status,
-                result_submitted_by_id=matchup.result_submitted_by_id,
-                result_auto_confirm_at=matchup.result_auto_confirm_at,
-                can_submit_result=matchup.can_submit_result(current_user.id),
-                can_confirm_result=matchup.can_confirm_result(current_user.id),
-                result_info_message=get_result_info_message(matchup, current_user.id),
-            )
-        )
-
-    return matchup_list
-
-
-@router.get("/public", response_model=list[MatchupStatus])
-async def get_public_matchups(
-    session: Session = Depends(get_session),
-    current_user=Depends(get_current_user_optional),
-    limit: int = Query(default=50, le=100),
-):
-    """Get public completed matchups from other users."""
-    now = datetime.utcnow()
-
-    # Base query: public, revealed, not expired
-    statement = (
-        select(Matchup)
-        .where(
-            Matchup.is_public.is_(True),
-            Matchup.player1_submitted.is_(True),
-            Matchup.player2_submitted.is_(True),
-            Matchup.expires_at > now,
-        )
-        .order_by(Matchup.revealed_at.desc())
-        .limit(limit)
+    # Bulk fetch users (1 query instead of 2N)
+    users = (
+        session.scalars(select(User).where(User.id.in_(user_ids))).all()
+        if user_ids
+        else []
     )
-
-    results = session.scalars(statement).all()
+    user_map = {u.id: u for u in users}
 
     matchup_list = []
-    for matchup in results:
-        player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
-        player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
+    for matchup in matchups:
+        player1 = user_map.get(matchup.player1_id)
+        player2 = user_map.get(matchup.player2_id)
 
-        current_user_id = current_user.id if current_user else None
         matchup_list.append(
             MatchupStatus(
                 name=matchup.name,
@@ -197,6 +141,56 @@ async def get_public_matchups(
         )
 
     return matchup_list
+
+
+@router.get("/my-matchups", response_model=list[MatchupStatus])
+async def get_my_matchups(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """Get all matchups for the current user."""
+    results = list(
+        session.scalars(
+            select(Matchup)
+            .where(
+                or_(
+                    Matchup.player1_id == current_user.id,
+                    Matchup.player2_id == current_user.id,
+                )
+            )
+            .order_by(Matchup.created_at.desc())
+        ).all()
+    )
+
+    return _build_matchup_list(session, results, current_user.id)
+
+
+@router.get("/public", response_model=list[MatchupStatus])
+async def get_public_matchups(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user_optional),
+    limit: int = Query(default=50, le=100),
+):
+    """Get public completed matchups from other users."""
+    now = datetime.utcnow()
+
+    # Base query: public, revealed, not expired
+    statement = (
+        select(Matchup)
+        .where(
+            Matchup.is_public.is_(True),
+            Matchup.player1_submitted.is_(True),
+            Matchup.player2_submitted.is_(True),
+            Matchup.expires_at > now,
+        )
+        .order_by(Matchup.revealed_at.desc())
+        .limit(limit)
+    )
+
+    results = list(session.scalars(statement).all())
+    current_user_id = current_user.id if current_user else None
+
+    return _build_matchup_list(session, results, current_user_id)
 
 
 @router.get("/search-users")

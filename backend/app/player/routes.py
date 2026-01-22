@@ -13,6 +13,7 @@ from app.league.schemas import (
 )
 from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlmodel import Session, func, select
 
 router = APIRouter()
@@ -26,29 +27,6 @@ async def get_player_ranking(
     offset: int = Query(default=0, ge=0),
 ):
     """Get player ranking by ELO with optional search and global stats."""
-    # Get all league players for W/D/L stats and army info
-    all_league_players = session.scalars(select(LeaguePlayer)).all()
-
-    # Build user stats map
-    user_stats = {}  # user_id -> {wins, draws, losses, armies: Counter}
-    for lp in all_league_players:
-        if not lp.user_id:
-            continue
-        if lp.user_id not in user_stats:
-            user_stats[lp.user_id] = {
-                "wins": 0,
-                "draws": 0,
-                "losses": 0,
-                "armies": Counter(),
-            }
-        user_stats[lp.user_id]["wins"] += lp.games_won or 0
-        user_stats[lp.user_id]["draws"] += lp.games_drawn or 0
-        user_stats[lp.user_id]["losses"] += lp.games_lost or 0
-        if lp.group_army_faction:
-            user_stats[lp.user_id]["armies"][lp.group_army_faction] += 1
-        if lp.knockout_army_faction:
-            user_stats[lp.user_id]["armies"][lp.knockout_army_faction] += 1
-
     # Build query for ranking (players with games)
     query = (
         select(PlayerElo, User)
@@ -73,15 +51,61 @@ async def get_player_ranking(
     query = query.offset(offset).limit(limit)
     results = session.execute(query).all()
 
+    # Get user IDs for the current page
+    user_ids = [user.id for _, user in results]
+
+    # Aggregate stats per user from LeaguePlayer (1 query instead of loading all)
+    user_stats = {}
+    if user_ids:
+        stats_query = (
+            select(
+                LeaguePlayer.user_id,
+                func.coalesce(func.sum(LeaguePlayer.games_won), 0).label("wins"),
+                func.coalesce(func.sum(LeaguePlayer.games_drawn), 0).label("draws"),
+                func.coalesce(func.sum(LeaguePlayer.games_lost), 0).label("losses"),
+            )
+            .where(LeaguePlayer.user_id.in_(user_ids))
+            .group_by(LeaguePlayer.user_id)
+        )
+        stats_results = session.execute(stats_query).all()
+        for user_id, wins, draws, losses in stats_results:
+            user_stats[user_id] = {"wins": wins, "draws": draws, "losses": losses}
+
+        # Get most used army per user (separate query for simplicity)
+        army_query = select(
+            LeaguePlayer.user_id, LeaguePlayer.group_army_faction
+        ).where(
+            LeaguePlayer.user_id.in_(user_ids),
+            LeaguePlayer.group_army_faction.is_not(None),
+        )
+        army_results = session.execute(army_query).all()
+
+        # Also get knockout armies
+        knockout_army_query = select(
+            LeaguePlayer.user_id, LeaguePlayer.knockout_army_faction
+        ).where(
+            LeaguePlayer.user_id.in_(user_ids),
+            LeaguePlayer.knockout_army_faction.is_not(None),
+        )
+        knockout_results = session.execute(knockout_army_query).all()
+
+        # Count armies per user
+        user_armies = {}
+        for user_id, faction in army_results:
+            if user_id not in user_armies:
+                user_armies[user_id] = Counter()
+            user_armies[user_id][faction] += 1
+        for user_id, faction in knockout_results:
+            if user_id not in user_armies:
+                user_armies[user_id] = Counter()
+            user_armies[user_id][faction] += 1
+
     # Build ranking list
     ranking = []
     for idx, (elo_record, user) in enumerate(results):
-        stats_data = user_stats.get(
-            user.id, {"wins": 0, "draws": 0, "losses": 0, "armies": Counter()}
-        )
-        main_army = (
-            stats_data["armies"].most_common(1)[0][0] if stats_data["armies"] else None
-        )
+        stats_data = user_stats.get(user.id, {"wins": 0, "draws": 0, "losses": 0})
+        armies = user_armies.get(user.id, Counter()) if user_ids else Counter()
+        main_army = armies.most_common(1)[0][0] if armies else None
         ranking.append(
             {
                 "rank": offset + idx + 1,
@@ -197,15 +221,103 @@ async def get_player_profile(
     elo_games = elo_record.games_played if elo_record else 0
 
     # Get all LeaguePlayer records for this user
-    league_players = session.scalars(
-        select(LeaguePlayer).where(LeaguePlayer.user_id == user_id)
-    ).all()
+    league_players = list(
+        session.scalars(
+            select(LeaguePlayer).where(LeaguePlayer.user_id == user_id)
+        ).all()
+    )
+
+    if not league_players:
+        # No league participation - return basic profile
+        email = user.email if (user.show_email or user.role == "organizer") else None
+        return PlayerProfileResponse(
+            user_id=user.id,
+            username=user.username,
+            avatar_url=user.avatar_url,
+            city=user.city,
+            country=user.country,
+            email=email,
+            discord_username=user.discord_username,
+            elo=elo,
+            elo_games_played=elo_games,
+            total_games=0,
+            total_wins=0,
+            total_draws=0,
+            total_losses=0,
+            win_rate=0.0,
+            most_played_army=None,
+            army_stats=[],
+            leagues=[],
+        )
 
     # Build player_id -> LeaguePlayer mapping
-    player_map = {lp.id: lp for lp in league_players}
+    player_ids = [lp.id for lp in league_players]
+    league_ids = [lp.league_id for lp in league_players]
 
-    # Track army stats (games, wins, draws, losses per army)
-    army_stats_dict: dict[str, dict] = {}  # faction -> {games, wins, draws, losses}
+    # Bulk fetch all leagues (1 query instead of N)
+    leagues = session.scalars(select(League).where(League.id.in_(league_ids))).all()
+    league_map = {l.id: l for l in leagues}
+
+    # Bulk fetch all matches for this player (1 query instead of N)
+    all_matches = list(
+        session.scalars(
+            select(Match)
+            .where(
+                or_(
+                    Match.player1_id.in_(player_ids),
+                    Match.player2_id.in_(player_ids),
+                )
+            )
+            .order_by(Match.created_at.desc())
+        ).all()
+    )
+
+    # Collect all opponent player IDs
+    opponent_ids = set()
+    for match in all_matches:
+        if match.player1_id in player_ids:
+            opponent_ids.add(match.player2_id)
+        else:
+            opponent_ids.add(match.player1_id)
+
+    # Bulk fetch all opponent LeaguePlayers (1 query instead of N)
+    opponent_players = (
+        session.scalars(
+            select(LeaguePlayer).where(LeaguePlayer.id.in_(opponent_ids))
+        ).all()
+        if opponent_ids
+        else []
+    )
+    opponent_player_map = {op.id: op for op in opponent_players}
+
+    # Collect opponent user IDs and bulk fetch users
+    opponent_user_ids = {op.user_id for op in opponent_players if op.user_id}
+    opponent_users = (
+        session.scalars(select(User).where(User.id.in_(opponent_user_ids))).all()
+        if opponent_user_ids
+        else []
+    )
+    opponent_user_map = {u.id: u for u in opponent_users}
+
+    # Group matches by league_id for the player
+    matches_by_league = {}
+    for match in all_matches:
+        # Find which league_player this match belongs to
+        if match.player1_id in player_ids:
+            lp_id = match.player1_id
+        else:
+            lp_id = match.player2_id
+        # Get the league_id for this player
+        for lp in league_players:
+            if lp.id == lp_id:
+                lid = lp.league_id
+                if lid not in matches_by_league:
+                    matches_by_league[lid] = []
+                matches_by_league[lid].append((match, lp))
+                break
+
+    # Track army stats
+    army_stats_dict: dict[str, dict] = {}
 
     def add_army_result(faction: str, result: str):
         if not faction:
@@ -220,37 +332,21 @@ async def get_player_profile(
         elif result == "loss":
             army_stats_dict[faction]["losses"] += 1
 
-    # Global stats
     total_wins = 0
     total_draws = 0
     total_losses = 0
-
-    # Group by league
     leagues_data = []
 
     for league_player in league_players:
-        league = session.scalars(
-            select(League).where(League.id == league_player.league_id)
-        ).first()
+        league = league_map.get(league_player.league_id)
         if not league:
             continue
 
-        # Get matches for this league
-        statement = (
-            select(Match)
-            .where(
-                Match.league_id == league.id,
-                (Match.player1_id == league_player.id)
-                | (Match.player2_id == league_player.id),
-            )
-            .order_by(Match.created_at.desc())
-        )
-        league_matches = session.scalars(statement).all()
-
+        league_matches_data = matches_by_league.get(league.id, [])
         matches = []
-        for match in league_matches:
-            # Determine if user is player1 or player2
-            is_player1 = match.player1_id == league_player.id
+
+        for match, lp in league_matches_data:
+            is_player1 = match.player1_id == lp.id
             opponent_lp_id = match.player2_id if is_player1 else match.player1_id
 
             player_score = match.player1_score if is_player1 else match.player2_score
@@ -261,7 +357,6 @@ async def get_player_profile(
                 else match.player2_league_points
             )
 
-            # Determine result and track army stats
             result = None
             if match.status == "confirmed" and player_score is not None:
                 if player_score > opponent_score:
@@ -274,31 +369,23 @@ async def get_player_profile(
                     result = "draw"
                     total_draws += 1
 
-                # Track army faction for this match
                 army_faction = (
-                    league_player.knockout_army_faction
+                    lp.knockout_army_faction
                     if match.phase == "knockout"
-                    else league_player.group_army_faction
+                    else lp.group_army_faction
                 )
                 add_army_result(army_faction, result)
 
-            # Get opponent info
-            opponent_lp = session.scalars(
-                select(LeaguePlayer).where(LeaguePlayer.id == opponent_lp_id)
-            ).first()
+            # Get opponent info from cache
+            opponent_lp = opponent_player_map.get(opponent_lp_id)
             opponent_username = None
             if opponent_lp:
-                if opponent_lp.user_id:
-                    opp_user = session.scalars(
-                        select(User).where(User.id == opponent_lp.user_id)
-                    ).first()
-                    opponent_username = (
-                        opp_user.username if opp_user else opponent_lp.discord_username
-                    )
+                if opponent_lp.user_id and opponent_lp.user_id in opponent_user_map:
+                    opponent_username = opponent_user_map[opponent_lp.user_id].username
                 else:
                     opponent_username = opponent_lp.discord_username
 
-            # Get army lists for knockout matches
+            # Army lists for knockout
             player_army_list = None
             opponent_army_list = None
             if match.phase == "knockout":
@@ -307,7 +394,7 @@ async def get_player_profile(
                 can_see_opponent = league.knockout_lists_visible
 
                 if can_see_own:
-                    player_army_list = league_player.knockout_army_list
+                    player_army_list = lp.knockout_army_list
                 if can_see_opponent and opponent_lp:
                     opponent_army_list = opponent_lp.knockout_army_list
 
@@ -329,7 +416,6 @@ async def get_player_profile(
                 )
             )
 
-        # Knockout list visibility for profile
         is_own_profile = current_user and current_user.id == user_id
         show_knockout_list = league.knockout_lists_visible or is_own_profile
         knockout_list = league_player.knockout_army_list if show_knockout_list else None

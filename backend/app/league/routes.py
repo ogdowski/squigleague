@@ -150,25 +150,42 @@ async def list_leagues(
         .where(League.status != "cancelled")
         .order_by(League.created_at.desc())
     )
-    leagues = session.scalars(statement).all()
+    leagues = list(session.scalars(statement).all())
+
+    if not leagues:
+        return []
+
+    league_ids = [l.id for l in leagues]
+    organizer_ids = list({l.organizer_id for l in leagues})
+
+    # Bulk fetch player counts (1 query instead of N)
+    player_counts = session.execute(
+        select(LeaguePlayer.league_id, func.count(LeaguePlayer.id))
+        .where(LeaguePlayer.league_id.in_(league_ids))
+        .group_by(LeaguePlayer.league_id)
+    ).all()
+    count_map = {league_id: count for league_id, count in player_counts}
+
+    # Bulk fetch organizers (1 query instead of N)
+    organizers = session.scalars(select(User).where(User.id.in_(organizer_ids))).all()
+    organizer_map = {u.id: u for u in organizers}
+
+    # Bulk fetch user's league memberships (1 query instead of N)
+    user_league_ids = set()
+    if current_user:
+        user_memberships = session.scalars(
+            select(LeaguePlayer.league_id).where(
+                LeaguePlayer.league_id.in_(league_ids),
+                LeaguePlayer.user_id == current_user.id,
+            )
+        ).all()
+        user_league_ids = set(user_memberships)
 
     result = []
     for league in leagues:
-        player_count = get_league_player_count(session, league.id)
-
-        statement = select(User).where(User.id == league.organizer_id)
-        organizer = session.scalars(statement).first()
-
-        is_organizer = False
-        is_player = False
-
-        if current_user:
-            is_organizer = league.organizer_id == current_user.id
-            stmt = select(LeaguePlayer).where(
-                LeaguePlayer.league_id == league.id,
-                LeaguePlayer.user_id == current_user.id,
-            )
-            is_player = session.scalars(stmt).first() is not None
+        organizer = organizer_map.get(league.organizer_id)
+        is_organizer = current_user and league.organizer_id == current_user.id
+        is_player = league.id in user_league_ids
 
         result.append(
             LeagueListResponse(
@@ -181,7 +198,7 @@ async def list_leagues(
                 group_phase_end=league.group_phase_end,
                 knockout_phase_end=league.knockout_phase_end,
                 finished_at=league.finished_at,
-                player_count=player_count,
+                player_count=count_map.get(league.id, 0),
                 organizer_name=organizer.username if organizer else None,
                 is_organizer=is_organizer,
                 is_player=is_player,
@@ -547,28 +564,51 @@ async def list_players(
 ):
     """Lists players in a league."""
     # Get league to check list visibility
-    statement = select(League).where(League.id == league_id)
-    league = session.scalars(statement).first()
+    league = session.scalars(select(League).where(League.id == league_id)).first()
 
-    statement = select(LeaguePlayer).where(LeaguePlayer.league_id == league_id)
-    players = session.scalars(statement).all()
+    players = list(
+        session.scalars(
+            select(LeaguePlayer).where(LeaguePlayer.league_id == league_id)
+        ).all()
+    )
+
+    if not players:
+        return []
+
+    # Collect IDs for bulk fetching
+    user_ids = {p.user_id for p in players if p.user_id}
+    group_ids = {p.group_id for p in players if p.group_id}
+
+    # Bulk fetch users (1 query instead of N)
+    users = (
+        session.scalars(select(User).where(User.id.in_(user_ids))).all()
+        if user_ids
+        else []
+    )
+    user_map = {u.id: u for u in users}
+
+    # Bulk fetch groups (1 query instead of N)
+    groups = (
+        session.scalars(select(Group).where(Group.id.in_(group_ids))).all()
+        if group_ids
+        else []
+    )
+    group_map = {g.id: g for g in groups}
 
     result = []
     for player in players:
+        # Get user from cache
         username = None
         avatar_url = None
-        if player.user_id:
-            statement = select(User).where(User.id == player.user_id)
-            user = session.scalars(statement).first()
-            if user:
-                username = user.username
-                avatar_url = user.avatar_url
+        if player.user_id and player.user_id in user_map:
+            user = user_map[player.user_id]
+            username = user.username
+            avatar_url = user.avatar_url
 
+        # Get group from cache
         group_name = None
-        if player.group_id:
-            statement = select(Group).where(Group.id == player.group_id)
-            group = session.scalars(statement).first()
-            group_name = group.name if group else None
+        if player.group_id and player.group_id in group_map:
+            group_name = group_map[player.group_id].name
 
         # Include army lists only if visible
         group_army_list = None
@@ -965,13 +1005,19 @@ async def get_standings(
     guaranteed_per_group = knockout_size // num_groups
     extra_spots = knockout_size % num_groups
 
-    # First pass: collect all runners-up to determine who qualifies
+    # First pass: collect all runners-up and all user_ids
     runners_up = []  # (player_id, total_points, games_played, average_points, group_id)
     group_standings_data = {}
+    all_user_ids = set()
 
     for group in groups:
         players = get_group_standings(session, group.id)
         group_standings_data[group.id] = players
+
+        # Collect user_ids for bulk fetching
+        for player in players:
+            if player.user_id:
+                all_user_ids.add(player.user_id)
 
         # Collect runner-up (position after guaranteed spots)
         if extra_spots > 0 and len(players) > guaranteed_per_group:
@@ -986,6 +1032,14 @@ async def get_standings(
                 )
             )
 
+    # Bulk fetch all users (1 query instead of N)
+    users = (
+        session.scalars(select(User).where(User.id.in_(all_user_ids))).all()
+        if all_user_ids
+        else []
+    )
+    user_map = {u.id: u for u in users}
+
     # Sort runners-up and find which ones qualify
     runners_up.sort(
         key=lambda r: (-r[1], r[2], -r[3])
@@ -999,14 +1053,13 @@ async def get_standings(
 
         standings = []
         for position, player in enumerate(players, 1):
+            # Get user from cache
             username = None
             avatar_url = None
-            if player.user_id:
-                stmt = select(User).where(User.id == player.user_id)
-                user = session.scalars(stmt).first()
-                if user:
-                    username = user.username
-                    avatar_url = user.avatar_url
+            if player.user_id and player.user_id in user_map:
+                user = user_map[player.user_id]
+                username = user.username
+                avatar_url = user.avatar_url
 
             qualifies = position <= guaranteed_per_group
             qualifies_as_runner_up = (
@@ -1089,7 +1142,6 @@ async def list_matches(
         ).all()
 
         for match in pending_old:
-            # Auto-confirm the match using confirm_match_result (use submitter as confirmer)
             confirm_match_result(session, match, match.submitted_by_id)
 
     statement = select(Match).where(Match.league_id == league_id)
@@ -1097,44 +1149,68 @@ async def list_matches(
         statement = statement.where(Match.phase == phase)
     statement = statement.order_by(Match.created_at)
 
-    matches = session.scalars(statement).all()
+    matches = list(session.scalars(statement).all())
+
+    if not matches:
+        return []
+
+    # Collect all player IDs needed
+    player_ids = set()
+    for match in matches:
+        if match.player1_id:
+            player_ids.add(match.player1_id)
+        if match.player2_id:
+            player_ids.add(match.player2_id)
+
+    # Bulk fetch all LeaguePlayers (1 query instead of 2N)
+    players = session.scalars(
+        select(LeaguePlayer).where(LeaguePlayer.id.in_(player_ids))
+    ).all()
+    player_map = {p.id: p for p in players}
+
+    # Collect user IDs and group IDs
+    user_ids = {p.user_id for p in players if p.user_id}
+    group_ids = {p.group_id for p in players if p.group_id}
+
+    # Bulk fetch all Users (1 query instead of 2N)
+    users = (
+        session.scalars(select(User).where(User.id.in_(user_ids))).all()
+        if user_ids
+        else []
+    )
+    user_map = {u.id: u for u in users}
+
+    # Bulk fetch all Groups (1 query instead of N)
+    groups = (
+        session.scalars(select(Group).where(Group.id.in_(group_ids))).all()
+        if group_ids
+        else []
+    )
+    group_map = {g.id: g for g in groups}
 
     result = []
     for match in matches:
-        p1_username = None
-        p2_username = None
-        p1_avatar = None
-        p2_avatar = None
-        p1_army_faction = None
-        p2_army_faction = None
-        p1_army_list = None
-        p2_army_list = None
+        p1 = player_map.get(match.player1_id)
+        p2 = player_map.get(match.player2_id)
 
-        stmt = select(LeaguePlayer).where(LeaguePlayer.id == match.player1_id)
-        p1 = session.scalars(stmt).first()
+        # Get usernames and avatars from cached data
+        p1_username = None
+        p1_avatar = None
         if p1:
-            if p1.user_id:
-                stmt = select(User).where(User.id == p1.user_id)
-                user1 = session.scalars(stmt).first()
-                if user1:
-                    p1_username = user1.username
-                    p1_avatar = user1.avatar_url
-                else:
-                    p1_username = p1.discord_username
+            if p1.user_id and p1.user_id in user_map:
+                user1 = user_map[p1.user_id]
+                p1_username = user1.username
+                p1_avatar = user1.avatar_url
             else:
                 p1_username = p1.discord_username
 
-        stmt = select(LeaguePlayer).where(LeaguePlayer.id == match.player2_id)
-        p2 = session.scalars(stmt).first()
+        p2_username = None
+        p2_avatar = None
         if p2:
-            if p2.user_id:
-                stmt = select(User).where(User.id == p2.user_id)
-                user2 = session.scalars(stmt).first()
-                if user2:
-                    p2_username = user2.username
-                    p2_avatar = user2.avatar_url
-                else:
-                    p2_username = p2.discord_username
+            if p2.user_id and p2.user_id in user_map:
+                user2 = user_map[p2.user_id]
+                p2_username = user2.username
+                p2_avatar = user2.avatar_url
             else:
                 p2_username = p2.discord_username
 
@@ -1147,6 +1223,8 @@ async def list_matches(
             p2_army_faction = p2.knockout_army_faction if p2 else None
 
         # Determine army list visibility (only when revealed)
+        p1_army_list = None
+        p2_army_list = None
         if league:
             if match.phase == "group" and league.group_lists_visible:
                 p1_army_list = p1.group_army_list if p1 else None
@@ -1155,17 +1233,14 @@ async def list_matches(
                 p1_army_list = p1.knockout_army_list if p1 else None
                 p2_army_list = p2.knockout_army_list if p2 else None
 
-        # Get group info from player1 (both players should be in same group for group matches)
+        # Get group info from cached data
         group_id = None
         group_name = None
-        if p1 and p1.group_id:
+        if p1 and p1.group_id and p1.group_id in group_map:
             group_id = p1.group_id
-            stmt = select(Group).where(Group.id == p1.group_id)
-            group = session.scalars(stmt).first()
-            if group:
-                group_name = group.name
+            group_name = group_map[p1.group_id].name
 
-        # Per-match army lists (blind exchange) - only show if both submitted
+        # Per-match army lists (blind exchange)
         match_p1_list = None
         match_p2_list = None
         match_p1_faction = None
@@ -1176,13 +1251,12 @@ async def list_matches(
             match_p1_faction = match.player1_army_faction
             match_p2_faction = match.player2_army_faction
 
-        # Use per-match lists if available, otherwise fall back to league lists
         final_p1_list = match_p1_list if match_p1_list else p1_army_list
         final_p2_list = match_p2_list if match_p2_list else p2_army_list
         final_p1_faction = match_p1_faction if match_p1_faction else p1_army_faction
         final_p2_faction = match_p2_faction if match_p2_faction else p2_army_faction
 
-        # Determine if player has submitted a list (per-match OR required league list)
+        # Determine if player has submitted a list
         if match.phase == "knockout":
             p1_has_league_list = (
                 league
@@ -1207,7 +1281,6 @@ async def list_matches(
         p1_list_submitted = bool(match.player1_army_list) or bool(p1_has_league_list)
         p2_list_submitted = bool(match.player2_army_list) or bool(p2_has_league_list)
 
-        # Lists are revealed if per-match lists revealed OR if league lists are visible
         lists_are_revealed = match.lists_revealed
         if not lists_are_revealed and league:
             if match.phase == "knockout" and league.knockout_lists_visible:

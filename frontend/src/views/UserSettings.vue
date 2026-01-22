@@ -3,8 +3,8 @@
     <div class="card">
       <h1 class="text-3xl font-bold mb-6">{{ t('settings.title') }}</h1>
 
-      <div v-if="loading" class="text-center py-12">
-        <p class="text-xl text-gray-300">{{ t('common.loading') }}</p>
+      <div v-if="loading" class="flex justify-center py-12">
+        <div class="w-10 h-10 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
       </div>
 
       <div v-else>
@@ -57,7 +57,7 @@
             <!-- URL input (collapsed, optional) -->
             <div v-if="!isUploadedAvatar && !avatarFile" class="mt-3">
               <details class="text-sm">
-                <summary class="text-gray-400 cursor-pointer hover:text-white">{{ t('settings.useUrlInstead') || 'Or use URL' }}</summary>
+                <summary class="text-gray-400 cursor-pointer hover:text-white">{{ t('settings.useUrlInstead') }}</summary>
                 <input
                   v-model="formData.avatar_url"
                   type="url"

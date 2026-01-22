@@ -1,6 +1,8 @@
 <template>
   <div class="max-w-4xl mx-auto">
-    <div v-if="loading" class="text-center py-8">{{ t('common.loading') }}</div>
+    <div v-if="loading" class="flex justify-center py-8">
+      <div class="w-10 h-10 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
+    </div>
     <div v-else-if="error" class="text-red-500 text-center py-8">{{ error }}</div>
     <div v-else-if="profile">
       <!-- Header -->

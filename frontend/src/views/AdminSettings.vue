@@ -2,8 +2,8 @@
   <div class="max-w-2xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">{{ t('adminSettings.title') }}</h1>
 
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-xl text-gray-300">{{ t('adminSettings.loading') }}</p>
+    <div v-if="loading" class="flex justify-center py-12">
+      <div class="w-10 h-10 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
     </div>
 
     <div v-else-if="error" class="card">

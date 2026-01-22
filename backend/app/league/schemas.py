@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # ============ League Schemas ============
 
@@ -87,8 +87,7 @@ class LeagueResponse(BaseModel):
     qualifying_spots_per_group: Optional[int] = None
     total_qualifying_spots: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LeagueListResponse(BaseModel):
@@ -106,8 +105,7 @@ class LeagueListResponse(BaseModel):
     is_organizer: bool = False
     is_player: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============ Group Schemas ============
@@ -119,8 +117,7 @@ class GroupResponse(BaseModel):
     name: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GroupUpdate(BaseModel):
@@ -177,8 +174,7 @@ class LeaguePlayerResponse(BaseModel):
     knockout_list_submitted: bool = False
     knockout_placement: Optional[str] = None  # "1", "2", "top_4", "top_8", etc.
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StandingsEntry(BaseModel):
@@ -265,8 +261,7 @@ class MatchResponse(BaseModel):
     lists_revealed: bool = False
     lists_revealed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MatchDetailResponse(BaseModel):
@@ -376,8 +371,7 @@ class PlayerEloResponse(BaseModel):
     games_played: int
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EloRanking(BaseModel):

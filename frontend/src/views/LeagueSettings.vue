@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-2xl mx-auto">
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-xl text-gray-300">{{ t('common.loading') }}</p>
+    <div v-if="loading" class="flex justify-center py-12">
+      <div class="w-10 h-10 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
     </div>
 
     <div v-else-if="!canEdit" class="card">

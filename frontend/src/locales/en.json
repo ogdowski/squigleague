@@ -56,7 +56,8 @@
     "cityPlaceholder": "e.g. Warsaw",
     "country": "Country",
     "countryPlaceholder": "e.g. Poland",
-    "organizerEmailNote": "Note: If you are a league organizer, your email is always visible on your profile."
+    "organizerEmailNote": "Note: If you are a league organizer, your email is always visible on your profile.",
+    "useUrlInstead": "Or use URL"
   },
   "matchups": {
     "title": "Matchups",

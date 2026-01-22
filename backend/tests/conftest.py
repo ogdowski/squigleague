@@ -19,9 +19,18 @@ os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
 os.environ["ENVIRONMENT"] = "testing"
 os.environ["DEBUG"] = "False"
 
-from app.matchup.models import Matchup
-
 # Import all models to ensure they're registered with SQLModel metadata
+from app.league.models import (
+    AppSettings,
+    ArmyMatchupStats,
+    ArmyStats,
+    Group,
+    League,
+    LeaguePlayer,
+    Match,
+    PlayerElo,
+)
+from app.matchup.models import Matchup
 from app.users.models import OAuthAccount, User
 
 

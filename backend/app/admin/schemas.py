@@ -14,8 +14,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     last_login: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RoleUpdate(BaseModel):
@@ -74,5 +73,4 @@ class AdminMatchupResponse(BaseModel):
     player2_score: Optional[int] = None
     result_status: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
