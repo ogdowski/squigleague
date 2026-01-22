@@ -1,10 +1,9 @@
 from datetime import datetime
 
 from app.core.deps import get_current_user, get_current_user_optional
+from app.data import BATTLE_PLAN_DATA, MAP_IMAGES, MISSION_MAPS, detect_army_faction
 from app.db import get_session
-from app.league.constants import BATTLE_PLAN_DATA, MAP_IMAGES, MISSION_MAPS
 from app.league.models import League
-from app.matchup.constants import detect_army_faction
 from app.matchup.models import Matchup
 from app.matchup.schemas import (
     MatchupCreate,

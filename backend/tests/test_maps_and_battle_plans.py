@@ -1,8 +1,7 @@
 """Tests for map and battle plan functionality."""
 
 import pytest
-from app.league.constants import BATTLE_PLAN_DATA, MAP_IMAGES, MISSION_MAPS
-from app.matchup.service import draw_random_map
+from app.data import BATTLE_PLAN_DATA, MAP_IMAGES, MISSION_MAPS, draw_random_map
 
 
 class TestMissionMaps:

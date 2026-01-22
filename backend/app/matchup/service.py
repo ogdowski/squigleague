@@ -2,8 +2,14 @@ import random
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.league.constants import BATTLE_PLAN_DATA, MAP_IMAGES, MISSION_MAPS
-from app.matchup.constants import ARMY_FACTIONS, detect_army_faction
+from app.data import (
+    ARMY_FACTIONS,
+    BATTLE_PLAN_DATA,
+    MAP_IMAGES,
+    MISSION_MAPS,
+    detect_army_faction,
+    draw_random_map,
+)
 from app.matchup.models import Matchup
 from sqlmodel import Session, select
 
@@ -19,11 +25,6 @@ def get_map_image(map_name: str) -> str | None:
 def get_battle_plan_data(map_name: str) -> dict | None:
     """Get full battle plan data for a map name."""
     return BATTLE_PLAN_DATA.get(map_name)
-
-
-def draw_random_map() -> str:
-    """Draw a random map from the available maps."""
-    return random.choice(MISSION_MAPS)
 
 
 def get_army_factions() -> list[str]:
