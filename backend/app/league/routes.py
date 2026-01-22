@@ -56,6 +56,7 @@ from app.league.service import (
 )
 from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 router = APIRouter()
@@ -184,7 +185,7 @@ async def list_leagues(
     result = []
     for league in leagues:
         organizer = organizer_map.get(league.organizer_id)
-        is_organizer = current_user and league.organizer_id == current_user.id
+        is_organizer = bool(current_user and league.organizer_id == current_user.id)
         is_player = league.id in user_league_ids
 
         result.append(
