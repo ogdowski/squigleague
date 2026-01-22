@@ -148,7 +148,7 @@ const imageContainer = ref(null)
 let lastTouchDistance = 0
 let lastTouchX = 0
 let lastTouchY = 0
-let isPinching = false
+let activeTouches = 0
 
 const getDistance = (touches) => {
   const dx = touches[0].clientX - touches[1].clientX
@@ -157,11 +157,10 @@ const getDistance = (touches) => {
 }
 
 const onTouchStart = (e) => {
+  activeTouches = e.touches.length
   if (e.touches.length === 2) {
-    isPinching = true
     lastTouchDistance = getDistance(e.touches)
   } else if (e.touches.length === 1) {
-    isPinching = false
     lastTouchX = e.touches[0].clientX
     lastTouchY = e.touches[0].clientY
   }
@@ -170,14 +169,17 @@ const onTouchStart = (e) => {
 const onTouchMove = (e) => {
   e.preventDefault()
 
-  if (e.touches.length === 2 && isPinching) {
+  if (e.touches.length === 2) {
     // Pinch zoom
     const distance = getDistance(e.touches)
-    const scale = distance / lastTouchDistance
-    zoomLevel.value = Math.min(4, Math.max(0.5, zoomLevel.value * scale))
+    if (lastTouchDistance > 0) {
+      const scale = distance / lastTouchDistance
+      zoomLevel.value = Math.min(4, Math.max(0.5, zoomLevel.value * scale))
+    }
     lastTouchDistance = distance
-  } else if (e.touches.length === 1 && !isPinching && zoomLevel.value > 1) {
-    // Pan (only when zoomed in)
+    activeTouches = 2
+  } else if (e.touches.length === 1 && activeTouches === 1) {
+    // Pan - always allow when using single finger
     const dx = e.touches[0].clientX - lastTouchX
     const dy = e.touches[0].clientY - lastTouchY
     panX.value += dx
@@ -187,8 +189,13 @@ const onTouchMove = (e) => {
   }
 }
 
-const onTouchEnd = () => {
-  isPinching = false
+const onTouchEnd = (e) => {
+  activeTouches = e.touches.length
+  if (e.touches.length === 1) {
+    lastTouchX = e.touches[0].clientX
+    lastTouchY = e.touches[0].clientY
+  }
+  lastTouchDistance = 0
 }
 
 const zoomIn = () => {

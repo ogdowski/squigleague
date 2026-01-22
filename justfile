@@ -507,7 +507,7 @@ vps-update:
     just vps-sync-compose
     just vps-sync-nginx
     echo "🐳 Pulling and restarting services..."
-    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod pull && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d"
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod pull && docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans"
     echo "🔄 Running migrations..."
     ssh ${VPS_USER}@${VPS_IP} "docker exec squig-backend alembic upgrade head"
     echo "✅ Update complete! Running version: squigleague-${SQUIG_VERSION}"
