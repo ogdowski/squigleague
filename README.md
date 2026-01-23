@@ -71,15 +71,15 @@ Each includes deployment type, objectives, scoring rules, and underdog abilities
 
 ## Army Factions
 
-24 Age of Sigmar 4th Edition factions with auto-detection from army lists:
+25 Age of Sigmar 4th Edition factions with auto-detection from army lists:
 
-**Order**: Cities of Sigmar, Daughters of Khaine, Fyreslayers, Idoneth Deepkin, Kharadron Overlords, Lumineth Realm-lords, Seraphon, Stormcast Eternals, Sylvaneth
+**Order** (9): Cities of Sigmar, Daughters of Khaine, Fyreslayers, Idoneth Deepkin, Kharadron Overlords, Lumineth Realm-lords, Seraphon, Stormcast Eternals, Sylvaneth
 
-**Chaos**: Blades of Khorne, Disciples of Tzeentch, Hedonites of Slaanesh, Helsmiths of Hashut, Maggotkin of Nurgle, Skaven, Slaves to Darkness
+**Chaos** (7): Blades of Khorne, Disciples of Tzeentch, Hedonites of Slaanesh, Helsmiths of Hashut, Maggotkin of Nurgle, Skaven, Slaves to Darkness
 
-**Death**: Flesh-eater Courts, Nighthaunt, Ossiarch Bonereapers, Soulblight Gravelords
+**Death** (4): Flesh-eater Courts, Nighthaunt, Ossiarch Bonereapers, Soulblight Gravelords
 
-**Destruction**: Gloomspite Gitz, Ironjawz, Kruleboyz, Ogor Mawtribes, Sons of Behemat
+**Destruction** (5): Gloomspite Gitz, Ironjawz, Kruleboyz, Ogor Mawtribes, Sons of Behemat
 
 ## Tech Stack
 
@@ -112,8 +112,8 @@ Each includes deployment type, objectives, scoring rules, and underdog abilities
 
 ```bash
 # Clone and enter
-git clone https://github.com/yourusername/squig_league.git
-cd squig_league
+git clone https://github.com/ogdowski/squigleague.git
+cd squigleague
 
 # Start services
 just up
@@ -132,14 +132,20 @@ open http://localhost
 ### Commands
 
 ```bash
-just up          # Start services
-just down        # Stop services
-just logs        # View logs
-just seed        # Seed test data
-just test        # Run tests
-just build       # Build images
-just migrate     # Run migrations
-just db-connect  # PostgreSQL shell
+just up              # Start services
+just down            # Stop services
+just logs            # View all logs
+just logs-backend    # View backend logs only
+just seed            # Seed test data
+just test            # Run tests
+just test-k PATTERN  # Run specific test by name
+just build           # Build images
+just migrate         # Run migrations
+just db-connect      # PostgreSQL shell
+just db-reset        # Reset database (DANGER!)
+just make-admin EMAIL    # Make user admin
+just health          # Check service health
+just stats           # Container resource usage
 ```
 
 ## Project Structure
