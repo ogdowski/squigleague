@@ -167,17 +167,41 @@
               </div>
             </div>
           </div>
-          <select
-            v-model="form.knockout_size"
-            class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-          >
-            <option :value="null">{{ t('leagueSettings.autoBasedOnPlayers') }}</option>
-            <option :value="2">{{ t('leagueSettings.top2FinalOnly') }}</option>
-            <option :value="4">{{ t('leagueSettings.top4') }}</option>
-            <option :value="8">{{ t('leagueSettings.top8') }}</option>
-            <option :value="16">{{ t('leagueSettings.top16') }}</option>
-            <option :value="32">{{ t('leagueSettings.top32') }}</option>
-          </select>
+          <div class="relative">
+            <button
+              type="button"
+              @click="showKnockoutDropdown = !showKnockoutDropdown"
+              class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow flex items-center justify-between text-left"
+            >
+              <span>{{ getKnockoutLabel(form.knockout_size) }}</span>
+              <svg
+                class="w-5 h-5 text-gray-400 transition-transform"
+                :class="{ 'rotate-180': showKnockoutDropdown }"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div
+              v-if="showKnockoutDropdown"
+              class="absolute left-0 right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30 max-h-60 overflow-y-auto"
+            >
+              <button
+                v-for="option in knockoutOptions"
+                :key="option.value"
+                type="button"
+                @click="selectKnockout(option.value)"
+                :class="[
+                  'w-full text-left px-4 py-3 hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg',
+                  form.knockout_size === option.value ? 'text-squig-yellow bg-gray-700/50' : 'text-white'
+                ]"
+              >
+                {{ t(option.labelKey) }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Army Lists -->
@@ -218,6 +242,46 @@
           </div>
         </div>
 
+        <!-- Status (for finishing league) -->
+        <div v-if="league?.status !== 'registration'" class="border-t border-gray-700 pt-6">
+          <h3 class="text-lg font-semibold mb-3">{{ t('leagueSettings.leagueStatus') }}</h3>
+          <div class="relative">
+            <button
+              type="button"
+              @click="showStatusDropdown = !showStatusDropdown"
+              class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow flex items-center justify-between text-left"
+            >
+              <span>{{ getStatusLabel(form.status) }}</span>
+              <svg
+                class="w-5 h-5 text-gray-400 transition-transform"
+                :class="{ 'rotate-180': showStatusDropdown }"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div
+              v-if="showStatusDropdown"
+              class="absolute left-0 right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30"
+            >
+              <button
+                v-for="option in statusOptions"
+                :key="option.value"
+                type="button"
+                @click="selectStatus(option.value)"
+                :class="[
+                  'w-full text-left px-4 py-3 hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg',
+                  form.status === option.value ? 'text-squig-yellow bg-gray-700/50' : 'text-white'
+                ]"
+              >
+                {{ t(option.labelKey) }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Voting -->
         <div class="border-t border-gray-700 pt-6">
           <h3 class="text-lg font-semibold mb-3">{{ t('leagueSettings.voting') }}</h3>
@@ -233,19 +297,6 @@
               <span class="text-xs text-gray-500 block">{{ t('leagueSettings.enableVotingNote') }}</span>
             </label>
           </div>
-        </div>
-
-        <!-- Status (for finishing league) -->
-        <div v-if="league?.status !== 'registration'">
-          <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.leagueStatus') }}</label>
-          <select
-            v-model="form.status"
-            class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-          >
-            <option value="group_phase">{{ t('leagues.groupPhase') }}</option>
-            <option value="knockout_phase">{{ t('leagues.knockoutPhase') }}</option>
-            <option value="finished">{{ t('leagues.finished') }}</option>
-          </select>
         </div>
 
         <!-- Phase Dates (editable) -->
@@ -358,6 +409,8 @@ const saving = ref(false)
 const recalculating = ref(false)
 const cancelling = ref(false)
 const showCancelModal = ref(false)
+const showStatusDropdown = ref(false)
+const showKnockoutDropdown = ref(false)
 const error = ref('')
 const success = ref('')
 const league = ref(null)
@@ -501,6 +554,41 @@ const recalculateDates = async () => {
 const formatDateTime = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const statusOptions = [
+  { value: 'finished', labelKey: 'leagues.finished' },
+  { value: 'group_phase', labelKey: 'leagues.groupPhase' },
+  { value: 'knockout_phase', labelKey: 'leagues.knockoutPhase' },
+]
+
+const getStatusLabel = (status) => {
+  const option = statusOptions.find(o => o.value === status)
+  return option ? t(option.labelKey) : status
+}
+
+const selectStatus = (status) => {
+  form.value.status = status
+  showStatusDropdown.value = false
+}
+
+const knockoutOptions = [
+  { value: null, labelKey: 'leagueSettings.autoBasedOnPlayers' },
+  { value: 2, labelKey: 'leagueSettings.top2FinalOnly' },
+  { value: 4, labelKey: 'leagueSettings.top4' },
+  { value: 8, labelKey: 'leagueSettings.top8' },
+  { value: 16, labelKey: 'leagueSettings.top16' },
+  { value: 32, labelKey: 'leagueSettings.top32' },
+]
+
+const getKnockoutLabel = (value) => {
+  const option = knockoutOptions.find(o => o.value === value)
+  return option ? t(option.labelKey) : value
+}
+
+const selectKnockout = (value) => {
+  form.value.knockout_size = value
+  showKnockoutDropdown.value = false
 }
 
 const cancelLeague = async () => {

@@ -408,7 +408,10 @@
     "breaking": "Breaking...",
     "castYourVote": "Cast your vote",
     "alreadyVoted": "You have already voted in this category",
-    "onlyPlayersCanVote": "Only league players can vote"
+    "onlyPlayersCanVote": "Only league players can vote",
+    "votingNotStarted": "Voting hasn't started yet",
+    "votingStartsAfterLeague": "Voting will be available after the league ends",
+    "currentPhase": "Voting starts after"
   },
   "leagueCreate": {
     "title": "New League",

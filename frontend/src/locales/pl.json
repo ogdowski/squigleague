@@ -396,7 +396,7 @@
     "noVoteCategories": "Brak kategorii głosowania",
     "unknownPlayer": "Nieznany gracz",
     "bestSportName": "Nagroda Fair Play",
-    "bestSportDescription": "Zagłosuj na gracza, z którym grało Ci się najprzyjemniej - kogoś fair, przyjaznego i z kim mecze były fajne.",
+    "bestSportDescription": "Zagłosuj na gracza, z którym grało Ci się najlepiej - kogoś fair, przyjaznego i sprawiającego, że mecze były przyjemnością.",
     "organizerControls": "Panel organizatora",
     "closeVotingNote": "Po zamknięciu głosowania wyniki będą widoczne dla wszystkich graczy.",
     "closeVoting": "Zamknij głosowanie",
@@ -408,7 +408,10 @@
     "breaking": "Losowanie...",
     "castYourVote": "Oddaj swój głos",
     "alreadyVoted": "Już zagłosowałeś w tej kategorii",
-    "onlyPlayersCanVote": "Tylko uczestnicy ligi mogą głosować"
+    "onlyPlayersCanVote": "Tylko uczestnicy ligi mogą głosować",
+    "votingNotStarted": "Głosowanie jeszcze się nie rozpoczęło",
+    "votingStartsAfterLeague": "Głosowanie będzie dostępne po zakończeniu ligi",
+    "currentPhase": "Faza rozpoczęcia głosowania"
   },
   "leagueCreate": {
     "title": "Nowa liga",

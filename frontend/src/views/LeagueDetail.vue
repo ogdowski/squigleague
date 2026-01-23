@@ -304,19 +304,19 @@
       <div v-if="league.status === 'registration'" class="card mb-6">
         <h2 class="text-xl font-bold mb-4">{{ t('leagueDetail.registeredPlayers', { count: players.length }) }}</h2>
         <div v-if="players.length === 0" class="text-gray-500">{{ t('leagueDetail.noPlayersRegistered') }}</div>
-        <div v-else class="space-y-2">
-          <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-4 py-3 flex items-center gap-3">
+        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div v-for="player in players" :key="player.id" class="bg-gray-800 rounded px-3 py-2 flex items-center gap-2 min-w-0">
             <!-- Avatar thumbnail -->
-            <div v-if="player.avatar_url" class="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+            <div v-if="player.avatar_url" class="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
               <img :src="player.avatar_url" :alt="player.username" class="w-full h-full object-cover" />
             </div>
-            <div v-else class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
+            <div v-else class="w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
               {{ (player.username || player.discord_username || '?').charAt(0).toUpperCase() }}
             </div>
-            <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow flex-1 truncate">
+            <router-link v-if="player.user_id" :to="`/player/${player.user_id}`" class="hover:text-squig-yellow flex-1 truncate text-sm">
               {{ player.username || player.discord_username }}
             </router-link>
-            <span v-else class="flex-1 truncate">{{ player.username || player.discord_username }}</span>
+            <span v-else class="flex-1 truncate text-sm">{{ player.username || player.discord_username }}</span>
             <!-- Army list icon -->
             <button
               v-if="league.has_group_phase_lists"
@@ -326,7 +326,7 @@
               class="flex-shrink-0"
               :disabled="!player.group_army_list"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </button>
@@ -337,7 +337,7 @@
               class="text-red-400 hover:text-red-300 flex-shrink-0"
               :title="t('leagueDetail.removePlayer')"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -835,9 +835,26 @@
 
       <!-- Voting Tab -->
       <div v-if="activeTab === 'voting'" class="space-y-6">
-        <div v-if="loadingVoting" class="flex justify-center py-8">
-          <div class="w-8 h-8 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
+        <!-- League not finished yet -->
+        <div v-if="league.status !== 'finished'" class="card text-center py-8">
+          <div class="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-medium text-gray-300 mb-2">{{ t('leagueDetail.votingNotStarted') }}</h3>
+          <p class="text-gray-500 mb-3">{{ t('leagueDetail.votingStartsAfterLeague') }}</p>
+          <p class="text-sm text-gray-600">
+            {{ t('leagueDetail.currentPhase') }}:
+            <span class="text-gray-400">{{ statusText(league.status) }}</span>
+          </p>
         </div>
+
+        <template v-else-if="loadingVoting">
+          <div class="flex justify-center py-8">
+            <div class="w-8 h-8 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </template>
 
         <template v-else>
           <!-- Organizer Controls -->
@@ -1499,8 +1516,8 @@ const tabs = computed(() => {
   if (league.value?.has_knockout_phase) {
     baseTabs.push({ id: 'knockout', name: t('leagueDetail.knockout') })
   }
-  // Add Voting tab if voting is enabled and league is finished
-  if (league.value?.voting_enabled && league.value?.status === 'finished') {
+  // Add Voting tab if voting is enabled
+  if (league.value?.voting_enabled) {
     baseTabs.push({ id: 'voting', name: t('leagueDetail.voting') })
   }
   return baseTabs
@@ -2134,6 +2151,7 @@ const unlockMatch = async () => {
 }
 
 const fetchVoting = async () => {
+  // Only fetch voting data when league is finished
   if (!league.value?.voting_enabled || league.value?.status !== 'finished') return
 
   loadingVoting.value = true
@@ -2202,8 +2220,8 @@ const fetchLeague = async () => {
       initExpandedGroups()
     }
 
-    // Fetch voting data if enabled
-    if (league.value?.voting_enabled && league.value?.status === 'finished') {
+    // Fetch voting data if enabled (function handles status check)
+    if (league.value?.voting_enabled) {
       await fetchVoting()
     }
   } catch (err) {

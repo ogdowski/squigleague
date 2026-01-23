@@ -124,17 +124,41 @@
             </div>
           </div>
         </div>
-        <select
-          v-model="form.knockout_size"
-          class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow"
-        >
-          <option :value="null">{{ t('leagueCreate.autoBasedOnPlayers') }}</option>
-          <option :value="2">{{ t('leagueCreate.top2FinalOnly') }}</option>
-          <option :value="4">{{ t('leagueCreate.top4') }}</option>
-          <option :value="8">{{ t('leagueCreate.top8') }}</option>
-          <option :value="16">{{ t('leagueCreate.top16') }}</option>
-          <option :value="32">{{ t('leagueCreate.top32') }}</option>
-        </select>
+        <div class="relative">
+          <button
+            type="button"
+            @click="showKnockoutDropdown = !showKnockoutDropdown"
+            class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-squig-yellow flex items-center justify-between text-left"
+          >
+            <span>{{ getKnockoutLabel(form.knockout_size) }}</span>
+            <svg
+              class="w-5 h-5 text-gray-400 transition-transform"
+              :class="{ 'rotate-180': showKnockoutDropdown }"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div
+            v-if="showKnockoutDropdown"
+            class="absolute left-0 right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30 max-h-60 overflow-y-auto"
+          >
+            <button
+              v-for="option in knockoutOptions"
+              :key="option.value"
+              type="button"
+              @click="selectKnockout(option.value)"
+              :class="[
+                'w-full text-left px-4 py-3 hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg',
+                form.knockout_size === option.value ? 'text-squig-yellow bg-gray-700/50' : 'text-white'
+              ]"
+            >
+              {{ t(option.labelKey) }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Army Lists -->
@@ -236,6 +260,26 @@ const form = ref({
 
 const submitting = ref(false)
 const error = ref('')
+const showKnockoutDropdown = ref(false)
+
+const knockoutOptions = [
+  { value: null, labelKey: 'leagueCreate.autoBasedOnPlayers' },
+  { value: 2, labelKey: 'leagueCreate.top2FinalOnly' },
+  { value: 4, labelKey: 'leagueCreate.top4' },
+  { value: 8, labelKey: 'leagueCreate.top8' },
+  { value: 16, labelKey: 'leagueCreate.top16' },
+  { value: 32, labelKey: 'leagueCreate.top32' },
+]
+
+const getKnockoutLabel = (value) => {
+  const option = knockoutOptions.find(o => o.value === value)
+  return option ? t(option.labelKey) : value
+}
+
+const selectKnockout = (value) => {
+  form.value.knockout_size = value
+  showKnockoutDropdown.value = false
+}
 
 const onGroupListsChange = () => {
   if (form.value.has_group_phase_lists) {
