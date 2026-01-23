@@ -28,6 +28,10 @@ Full tournament management with group and knockout phases:
 - **Army Lists**: Per-phase lists with freeze/visible controls
 - **ELO Integration**: Rating changes tracked per match
 - **Organizer Tools**: Player management, match editing, phase controls
+- **Voting System**: Post-league awards voting (e.g., Best Sportsmanship)
+  - Anonymous voting until organizer closes
+  - Automatic tie detection with random tie-breaker option
+  - Winner displayed alongside tournament champion
 
 ### ELO Rating System
 Global skill ratings for competitive players:
@@ -190,6 +194,14 @@ GET    /api/league/{id}/matches        List matches
 POST   /api/league/{id}/matches/{id}/submit  Submit result
 POST   /api/league/{id}/groups/draw    Draw groups
 POST   /api/league/{id}/advance-knockout    Advance phase
+
+# Voting
+POST   /api/league/{id}/enable-voting  Enable voting for league
+GET    /api/league/{id}/vote-categories      List vote categories
+POST   /api/league/{id}/vote-categories/{cid}/vote    Cast vote
+GET    /api/league/{id}/vote-categories/{cid}/results Get results
+POST   /api/league/{id}/close-voting   Close voting & reveal results
+POST   /api/league/{id}/vote-categories/{cid}/break-tie  Random tie-breaker
 ```
 
 ### Users
@@ -236,6 +248,8 @@ VITE_API_URL=/api
 | `league_players` | Participants with stats |
 | `matches` | League matches |
 | `matchups` | Blind list exchanges |
+| `vote_categories` | Voting categories per league |
+| `votes` | Individual player votes |
 | `army_stats` | Faction win rates |
 | `app_settings` | Global config |
 
