@@ -175,6 +175,23 @@
         </div>
       </div>
 
+      <!-- Voting -->
+      <div class="border-t border-gray-700 pt-6">
+        <h3 class="text-lg font-semibold mb-3">{{ t('leagueCreate.voting') }}</h3>
+        <div class="flex items-center gap-3">
+          <input
+            v-model="form.voting_enabled"
+            type="checkbox"
+            id="voting_enabled"
+            class="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-squig-yellow"
+          />
+          <label for="voting_enabled" class="text-sm font-medium text-gray-300">
+            {{ t('leagueCreate.enableVoting') }}
+            <span class="text-xs text-gray-500 block">{{ t('leagueCreate.enableVotingNote') }}</span>
+          </label>
+        </div>
+      </div>
+
       <div v-if="error" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded">
         {{ error }}
       </div>
@@ -214,6 +231,7 @@ const form = ref({
   knockout_size: null,
   has_group_phase_lists: false,
   has_knockout_phase_lists: true,
+  voting_enabled: false,
 })
 
 const submitting = ref(false)
@@ -243,6 +261,7 @@ const createLeague = async () => {
       knockout_size: form.value.has_knockout_phase ? form.value.knockout_size : null,
       has_group_phase_lists: form.value.has_group_phase_lists,
       has_knockout_phase_lists: form.value.has_knockout_phase ? form.value.has_knockout_phase_lists : false,
+      voting_enabled: form.value.voting_enabled,
     }
 
     const response = await axios.post(`${API_URL}/league`, payload)

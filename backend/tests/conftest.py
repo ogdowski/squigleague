@@ -29,6 +29,8 @@ from app.league.models import (
     LeaguePlayer,
     Match,
     PlayerElo,
+    Vote,
+    VoteCategory,
 )
 from app.matchup.models import Matchup
 from app.users.models import OAuthAccount, User

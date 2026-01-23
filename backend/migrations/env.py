@@ -17,6 +17,8 @@ from app.league.models import (  # noqa: F401, E402
     LeaguePlayer,
     Match,
     PlayerElo,
+    Vote,
+    VoteCategory,
 )
 from app.matchup.models import Matchup  # noqa: F401, E402
 from app.users.models import OAuthAccount, User  # noqa: F401, E402

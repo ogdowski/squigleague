@@ -380,7 +380,35 @@
     "changeGroupTitle": "Change group",
     "editGroupName": "Edit group name",
     "saveButton": "Save",
-    "wouldAdvanceToKnockout": "Would advance to knockout"
+    "wouldAdvanceToKnockout": "Would advance to knockout",
+    "voting": "Voting",
+    "votingStatus": "Voting Status",
+    "votingOpen": "Voting Open",
+    "votingClosed": "Voting Closed",
+    "votesReceived": "Votes received",
+    "votingResults": "Results",
+    "votingWinner": "Winner",
+    "winner": "Winner",
+    "vote": "vote",
+    "votes": "votes",
+    "votingInProgress": "Voting is in progress",
+    "resultsAfterClose": "Results will be visible after voting closes",
+    "noVoteCategories": "No voting categories available",
+    "unknownPlayer": "Unknown player",
+    "bestSportName": "Best Sport",
+    "bestSportDescription": "Vote for the player you enjoyed playing against the most - someone who was fair, friendly, and made the games fun.",
+    "organizerControls": "Organizer Controls",
+    "closeVotingNote": "When you close voting, results will become visible to all players.",
+    "closeVoting": "Close Voting",
+    "closeVotingConfirm": "Are you sure you want to close voting? Results will become visible to all players and no more votes can be cast.",
+    "closing": "Closing...",
+    "tieDetected": "Tie detected!",
+    "tieNote": "Click the button to randomly select a winner from tied players.",
+    "breakTie": "Break Tie",
+    "breaking": "Breaking...",
+    "castYourVote": "Cast your vote",
+    "alreadyVoted": "You have already voted in this category",
+    "onlyPlayersCanVote": "Only league players can vote"
   },
   "leagueCreate": {
     "title": "New League",
@@ -418,7 +446,10 @@
     "knockoutPhaseListsNote": "Players submit lists after group phase ends",
     "creating": "Creating...",
     "createLeague": "Create League",
-    "failedToCreate": "Failed to create league"
+    "failedToCreate": "Failed to create league",
+    "voting": "Voting",
+    "enableVoting": "Best Sport Award",
+    "enableVotingNote": "After the league ends, players can vote for the opponent they enjoyed playing against the most"
   },
   "leagueSettings": {
     "title": "League Settings",
@@ -467,7 +498,10 @@
     "city": "City",
     "cityPlaceholder": "e.g. Warsaw or Online",
     "country": "Country",
-    "countryPlaceholder": "e.g. Poland"
+    "countryPlaceholder": "e.g. Poland",
+    "voting": "Voting",
+    "enableVoting": "Best Sport Award",
+    "enableVotingNote": "After the league ends, players can vote for the opponent they enjoyed playing against the most"
   },
   "matchDetail": {
     "loadingMatch": "Loading match...",

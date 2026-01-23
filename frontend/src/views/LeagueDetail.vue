@@ -832,6 +832,177 @@
           <p class="text-gray-300">{{ t('leagueDetail.knockoutConcluded') }}</p>
         </div>
       </div>
+
+      <!-- Voting Tab -->
+      <div v-if="activeTab === 'voting'" class="space-y-6">
+        <div v-if="loadingVoting" class="flex justify-center py-8">
+          <div class="w-8 h-8 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
+        </div>
+
+        <template v-else>
+          <!-- Organizer Controls -->
+          <div v-if="isOrganizer && !league.voting_closed_at" class="card bg-blue-900/20 border-blue-500/30">
+            <h4 class="font-medium text-blue-300 mb-3">{{ t('leagueDetail.organizerControls') }}</h4>
+            <p class="text-sm text-gray-400 mb-4">{{ t('leagueDetail.closeVotingNote') }}</p>
+            <button
+              @click="showCloseVotingModal = true"
+              :disabled="closingVoting"
+              class="btn-primary"
+            >
+              {{ closingVoting ? t('leagueDetail.closing') : t('leagueDetail.closeVoting') }}
+            </button>
+          </div>
+
+          <!-- Voting Status Card -->
+          <div class="card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">{{ t('leagueDetail.votingStatus') }}</h3>
+              <span v-if="league.voting_closed_at" class="px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-sm">
+                {{ t('leagueDetail.votingClosed') }}
+              </span>
+              <span v-else class="px-3 py-1 bg-squig-yellow/20 text-squig-yellow rounded-full text-sm">
+                {{ t('leagueDetail.votingOpen') }}
+              </span>
+            </div>
+
+            <!-- Vote count info (always visible) -->
+            <div v-for="category in voteCategories" :key="category.id" class="mb-6 last:mb-0">
+              <h4 class="font-medium text-gray-200 mb-2">{{ getCategoryName(category) }}</h4>
+              <p class="text-sm text-gray-400 mb-3">{{ getCategoryDescription(category) }}</p>
+
+              <!-- Voting Progress -->
+              <div class="mb-4">
+                <div class="flex items-center justify-between text-sm mb-1">
+                  <span class="text-gray-400">{{ t('leagueDetail.votesReceived') }}</span>
+                  <span class="text-white">
+                    {{ votingResults[category.id]?.total_votes || 0 }} / {{ players.length }}
+                    ({{ Math.round((votingResults[category.id]?.total_votes || 0) / players.length * 100) }}%)
+                  </span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                  <div
+                    class="bg-squig-yellow h-2 rounded-full transition-all duration-300"
+                    :style="{ width: `${Math.round((votingResults[category.id]?.total_votes || 0) / players.length * 100)}%` }"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Voting Form (only when voting is open and user is a player) -->
+              <div v-if="!league.voting_closed_at && currentPlayerInLeague && !userVotes[category.id]" class="bg-gray-700/50 rounded-lg p-4 mb-4">
+                <h5 class="text-sm font-medium text-gray-300 mb-3">{{ t('leagueDetail.castYourVote') }}</h5>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  <button
+                    v-for="player in votablePlayers"
+                    :key="player.id"
+                    @click="castVote(category.id, player.id)"
+                    :disabled="submittingVote"
+                    class="flex items-center gap-2 p-2 rounded-lg border border-gray-600 hover:border-squig-yellow hover:bg-squig-yellow/10 transition-colors text-left"
+                  >
+                    <img
+                      v-if="player.avatar_url"
+                      :src="player.avatar_url"
+                      class="w-8 h-8 rounded-full"
+                      :alt="player.username"
+                    />
+                    <div v-else class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-sm text-gray-400">{{ (player.username || '?')[0].toUpperCase() }}</span>
+                    </div>
+                    <span class="text-sm text-white truncate">{{ player.username }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Already voted message -->
+              <div v-if="!league.voting_closed_at && currentPlayerInLeague && userVotes[category.id]" class="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-4">
+                <div class="flex items-center gap-2 text-green-400">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>{{ t('leagueDetail.alreadyVoted') }}</span>
+                </div>
+              </div>
+
+              <!-- Not a player message -->
+              <div v-if="!league.voting_closed_at && authStore.isAuthenticated && !currentPlayerInLeague" class="text-center py-4 text-gray-500 text-sm">
+                {{ t('leagueDetail.onlyPlayersCanVote') }}
+              </div>
+
+              <!-- Results (only when voting is closed) -->
+              <div v-if="league.voting_closed_at && votingResults[category.id]?.results?.length > 0">
+                <h5 class="text-sm font-medium text-gray-300 mb-2">{{ t('leagueDetail.votingResults') }}</h5>
+
+                <!-- Tie warning for organizer -->
+                <div v-if="isOrganizer && votingResults[category.id]?.is_tied && !category.winner_id" class="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 mb-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-orange-400 font-medium">{{ t('leagueDetail.tieDetected') }}</p>
+                      <p class="text-sm text-gray-400">{{ t('leagueDetail.tieNote') }}</p>
+                    </div>
+                    <button
+                      @click="breakTie(category)"
+                      :disabled="breakingTie"
+                      class="btn-primary bg-orange-600 hover:bg-orange-700"
+                    >
+                      {{ breakingTie ? t('leagueDetail.breaking') : t('leagueDetail.breakTie') }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Winner -->
+                <div v-if="category.winner_id" class="bg-squig-yellow/10 border border-squig-yellow/30 rounded-lg p-4 mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-squig-yellow/20 rounded-full flex items-center justify-center">
+                      <svg class="w-6 h-6 text-squig-yellow" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-squig-yellow font-bold">{{ category.winner_username || t('leagueDetail.winner') }}</p>
+                      <p class="text-sm text-gray-400">{{ t('leagueDetail.votingWinner') }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Results list -->
+                <div class="space-y-2">
+                  <div
+                    v-for="(result, index) in votingResults[category.id]?.results"
+                    :key="result.player_id"
+                    class="flex items-center justify-between py-2 px-3 rounded"
+                    :class="index === 0 && !category.winner_id ? 'bg-gray-700/50' : 'bg-gray-800/50'"
+                  >
+                    <div class="flex items-center gap-3">
+                      <span class="text-gray-500 w-6">{{ index + 1 }}.</span>
+                      <img
+                        v-if="result.avatar_url"
+                        :src="result.avatar_url"
+                        class="w-8 h-8 rounded-full"
+                        :alt="result.username"
+                      />
+                      <div v-else class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                        <span class="text-sm text-gray-400">{{ (result.username || '?')[0].toUpperCase() }}</span>
+                      </div>
+                      <span class="text-white">{{ result.username || t('leagueDetail.unknownPlayer') }}</span>
+                    </div>
+                    <span class="text-gray-400">{{ result.vote_count }} {{ result.vote_count === 1 ? t('leagueDetail.vote') : t('leagueDetail.votes') }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Voting not closed yet message -->
+              <div v-else-if="!league.voting_closed_at" class="text-center py-4 text-gray-400">
+                <p>{{ t('leagueDetail.votingInProgress') }}</p>
+                <p class="text-sm mt-1">{{ t('leagueDetail.resultsAfterClose') }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- No categories -->
+          <div v-if="voteCategories.length === 0" class="card text-center py-8">
+            <p class="text-gray-400">{{ t('leagueDetail.noVoteCategories') }}</p>
+          </div>
+        </template>
+      </div>
     </div>
 
     <!-- Confirm Modals -->
@@ -882,6 +1053,16 @@
       :danger="true"
       @confirm="finishLeague"
       @cancel="showFinishLeagueModal = false"
+    />
+
+    <ConfirmModal
+      :show="showCloseVotingModal"
+      :title="t('leagueDetail.closeVoting')"
+      :message="t('leagueDetail.closeVotingConfirm')"
+      :confirmText="t('leagueDetail.closeVoting')"
+      :danger="true"
+      @confirm="closeVoting"
+      @cancel="showCloseVotingModal = false"
     />
 
     <ConfirmModal
@@ -1269,6 +1450,37 @@ const armyFactionForm = ref('')
 const armyListForm = ref('')
 const submittingList = ref(false)
 
+// Voting state
+const voteCategories = ref([])
+const votingResults = ref({})
+const loadingVoting = ref(false)
+const votingError = ref('')
+const selectedVotePlayerId = ref(null)
+const submittingVote = ref(false)
+const userVotes = ref({}) // category_id -> voted_for_id
+const showCloseVotingModal = ref(false)
+const closingVoting = ref(false)
+const breakingTie = ref(false)
+
+// Built-in category translations
+const builtInCategories = {
+  'best_sport': { nameKey: 'leagueDetail.bestSportName', descKey: 'leagueDetail.bestSportDescription' }
+}
+
+const getCategoryName = (category) => {
+  if (builtInCategories[category.name]) {
+    return t(builtInCategories[category.name].nameKey)
+  }
+  return category.name
+}
+
+const getCategoryDescription = (category) => {
+  if (builtInCategories[category.name]) {
+    return t(builtInCategories[category.name].descKey)
+  }
+  return category.description || ''
+}
+
 const showActionError = (message) => {
   actionError.value = message
   setTimeout(() => {
@@ -1287,6 +1499,10 @@ const tabs = computed(() => {
   if (league.value?.has_knockout_phase) {
     baseTabs.push({ id: 'knockout', name: t('leagueDetail.knockout') })
   }
+  // Add Voting tab if voting is enabled and league is finished
+  if (league.value?.voting_enabled && league.value?.status === 'finished') {
+    baseTabs.push({ id: 'voting', name: t('leagueDetail.voting') })
+  }
   return baseTabs
 })
 
@@ -1303,6 +1519,24 @@ const renderedDescription = computed(() => {
 const isJoined = computed(() => {
   if (!authStore.user) return false
   return players.value.some(p => p.user_id === authStore.user.id)
+})
+
+// Current player's league player record
+const currentPlayerInLeague = computed(() => {
+  if (!authStore.user) return null
+  return players.value.find(p => p.user_id === authStore.user.id)
+})
+
+// Players that can be voted for (everyone except yourself)
+const votablePlayers = computed(() => {
+  if (!currentPlayerInLeague.value) return []
+  return players.value
+    .filter(p => p.id !== currentPlayerInLeague.value.id)
+    .map(p => ({
+      id: p.id,
+      username: p.username || p.discord_username || `Player ${p.id}`,
+      avatar_url: p.avatar_url
+    }))
 })
 
 // Can player leave the league?
@@ -1899,6 +2133,55 @@ const unlockMatch = async () => {
   }
 }
 
+const fetchVoting = async () => {
+  if (!league.value?.voting_enabled || league.value?.status !== 'finished') return
+
+  loadingVoting.value = true
+  try {
+    const leagueId = league.value.id
+    const categoriesRes = await axios.get(`${API_URL}/league/${leagueId}/vote-categories`)
+    voteCategories.value = categoriesRes.data
+
+    // Fetch results for each category
+    for (const category of voteCategories.value) {
+      try {
+        const resultsRes = await axios.get(`${API_URL}/league/${leagueId}/vote-categories/${category.id}/results`)
+        votingResults.value[category.id] = resultsRes.data
+      } catch (err) {
+        // Results may be hidden, that's ok
+        votingResults.value[category.id] = null
+      }
+    }
+
+    // Check if current user has voted (by trying to vote with a dummy - will fail if already voted)
+    // We'll track this locally after voting
+  } catch (err) {
+    votingError.value = 'Failed to load voting data'
+  } finally {
+    loadingVoting.value = false
+  }
+}
+
+const castVote = async (categoryId, playerId) => {
+  submittingVote.value = true
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/vote-categories/${categoryId}/vote`, {
+      voted_for_id: playerId
+    })
+    // Mark as voted locally
+    userVotes.value[categoryId] = playerId
+    // Refresh voting data
+    await fetchVoting()
+  } catch (err) {
+    if (err.response?.data?.detail === 'You have already voted in this category') {
+      userVotes.value[categoryId] = true // Mark as voted even if we don't know for whom
+    }
+    showActionError(err.response?.data?.detail || 'Failed to cast vote')
+  } finally {
+    submittingVote.value = false
+  }
+}
+
 const fetchLeague = async () => {
   try {
     const leagueId = route.params.id
@@ -1917,6 +2200,11 @@ const fetchLeague = async () => {
     // Initialize expanded groups after data loads (only on first load)
     if (Object.keys(expandedGroups.value).length === 0) {
       initExpandedGroups()
+    }
+
+    // Fetch voting data if enabled
+    if (league.value?.voting_enabled && league.value?.status === 'finished') {
+      await fetchVoting()
     }
   } catch (err) {
     error.value = 'Failed to load league'
@@ -2319,6 +2607,46 @@ const finishLeague = async () => {
     showActionError(err.response?.data?.detail || 'Failed to finish league')
   } finally {
     actionLoading.value = false
+  }
+}
+
+const closeVoting = async () => {
+  showCloseVotingModal.value = false
+  closingVoting.value = true
+  try {
+    await axios.post(`${API_URL}/league/${league.value.id}/close-voting`)
+    await fetchLeague()
+    await fetchVoting()
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to close voting')
+  } finally {
+    closingVoting.value = false
+  }
+}
+
+const breakTie = async (category) => {
+  breakingTie.value = true
+  try {
+    // Get tied player IDs (players with the top vote count)
+    const results = votingResults.value[category.id]?.results || []
+    if (results.length < 2) return
+
+    const topVoteCount = results[0].vote_count
+    const tiedPlayerIds = results
+      .filter(r => r.vote_count === topVoteCount)
+      .map(r => r.player_id)
+
+    await axios.post(`${API_URL}/league/${league.value.id}/vote-categories/${category.id}/break-tie`, {
+      player_ids: tiedPlayerIds
+    })
+    await fetchVoting()
+    // Refresh categories to get updated winner
+    const categoriesRes = await axios.get(`${API_URL}/league/${league.value.id}/vote-categories`)
+    voteCategories.value = categoriesRes.data
+  } catch (err) {
+    showActionError(err.response?.data?.detail || 'Failed to break tie')
+  } finally {
+    breakingTie.value = false
   }
 }
 

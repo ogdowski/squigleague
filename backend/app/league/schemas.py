@@ -24,6 +24,8 @@ class LeagueCreate(BaseModel):
     # Army lists configuration
     has_group_phase_lists: bool = Field(default=False)
     has_knockout_phase_lists: bool = Field(default=True)
+    # Voting configuration
+    voting_enabled: bool = Field(default=False)
 
 
 class LeagueUpdate(BaseModel):
@@ -44,6 +46,7 @@ class LeagueUpdate(BaseModel):
     status: Optional[str] = None
     has_knockout_phase: Optional[bool] = None
     knockout_size: Optional[int] = None  # 2, 4, 8, 16, 32
+    voting_enabled: Optional[bool] = None
 
 
 class LeagueResponse(BaseModel):
@@ -86,6 +89,9 @@ class LeagueResponse(BaseModel):
     # Computed fields for display
     qualifying_spots_per_group: Optional[int] = None
     total_qualifying_spots: Optional[int] = None
+    # Voting
+    voting_enabled: bool = False
+    voting_closed_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -463,3 +469,72 @@ class PlayerProfileResponse(BaseModel):
     army_stats: list[ArmyStatEntry] = []
     # Leagues participation (matches grouped by league)
     leagues: list[ProfileLeagueResponse]
+
+
+# ============ Voting Schemas ============
+
+
+class VoteCategoryCreate(BaseModel):
+    """Create a voting category."""
+
+    name: str = Field(min_length=1, max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+
+
+class VoteCategoryResponse(BaseModel):
+    """Voting category response."""
+
+    id: int
+    league_id: int
+    name: str
+    description: Optional[str] = None
+    winner_id: Optional[int] = None
+    winner_username: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VoteCreate(BaseModel):
+    """Cast a vote."""
+
+    voted_for_id: int
+
+
+class VoteResponse(BaseModel):
+    """Vote response."""
+
+    id: int
+    category_id: int
+    voter_id: int
+    voted_for_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VoteResultEntry(BaseModel):
+    """Single entry in voting results."""
+
+    player_id: int
+    username: Optional[str] = None
+    avatar_url: Optional[str] = None
+    vote_count: int
+
+
+class VotingResultsResponse(BaseModel):
+    """Voting results for a category."""
+
+    category_id: int
+    category_name: str
+    results: list[VoteResultEntry]
+    winner_id: Optional[int] = None
+    winner_username: Optional[str] = None
+    is_tied: bool = False
+    total_votes: int = 0
+
+
+class TieBreakerRequest(BaseModel):
+    """Request to break a tie."""
+
+    player_ids: list[int] = Field(min_length=2)

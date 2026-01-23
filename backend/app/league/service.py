@@ -14,6 +14,8 @@ from app.league.models import (
     LeaguePlayer,
     Match,
     PlayerElo,
+    Vote,
+    VoteCategory,
 )
 from app.league.scoring import calculate_match_points
 from sqlmodel import Session, select
@@ -1333,3 +1335,246 @@ def compare_for_knockout_tiebreaker(
             return -1 if elo1.elo < elo2.elo else 1
 
     return 0
+
+
+# ============ Voting Operations ============
+
+
+def enable_voting_for_league(
+    session: Session,
+    league: League,
+    create_default_category: bool = True,
+) -> Optional[VoteCategory]:
+    """
+    Enables voting for a league and optionally creates the default category.
+
+    Args:
+        session: Database session
+        league: League to enable voting for
+        create_default_category: If True, creates "Best Sport" category
+
+    Returns:
+        Created VoteCategory if create_default_category is True, else None
+    """
+    league.voting_enabled = True
+    session.add(league)
+
+    category = None
+    if create_default_category:
+        category = VoteCategory(
+            league_id=league.id,
+            name="best_sport",
+            description=None,
+        )
+        session.add(category)
+
+    session.commit()
+
+    if category:
+        session.refresh(category)
+
+    return category
+
+
+def create_vote_category(
+    session: Session,
+    league_id: int,
+    name: str,
+    description: Optional[str] = None,
+) -> VoteCategory:
+    """
+    Creates a new vote category for a league.
+
+    Args:
+        session: Database session
+        league_id: ID of the league
+        name: Category name
+        description: Optional description
+
+    Returns:
+        Created VoteCategory
+    """
+    category = VoteCategory(
+        league_id=league_id,
+        name=name,
+        description=description,
+    )
+    session.add(category)
+    session.commit()
+    session.refresh(category)
+    return category
+
+
+def get_voting_results(
+    session: Session,
+    category_id: int,
+) -> dict:
+    """
+    Gets voting results for a category.
+
+    Args:
+        session: Database session
+        category_id: ID of the vote category
+
+    Returns:
+        Dict with results list, winner_id, is_tied, total_votes
+    """
+    votes = session.scalars(select(Vote).where(Vote.category_id == category_id)).all()
+
+    if not votes:
+        return {
+            "results": [],
+            "winner_id": None,
+            "is_tied": False,
+            "total_votes": 0,
+        }
+
+    # Count votes per player
+    vote_counts: dict[int, int] = {}
+    for vote in votes:
+        vote_counts[vote.voted_for_id] = vote_counts.get(vote.voted_for_id, 0) + 1
+
+    # Sort by count descending
+    sorted_results = sorted(vote_counts.items(), key=lambda x: -x[1])
+
+    # Check for tie at the top
+    is_tied = False
+    winner_id = None
+    if len(sorted_results) >= 2:
+        if sorted_results[0][1] == sorted_results[1][1]:
+            is_tied = True
+        else:
+            winner_id = sorted_results[0][0]
+    elif len(sorted_results) == 1:
+        winner_id = sorted_results[0][0]
+
+    results = [
+        {"player_id": player_id, "vote_count": count}
+        for player_id, count in sorted_results
+    ]
+
+    return {
+        "results": results,
+        "winner_id": winner_id,
+        "is_tied": is_tied,
+        "total_votes": len(votes),
+    }
+
+
+def close_voting(session: Session, league: League) -> dict:
+    """
+    Closes voting for a league and determines winners.
+
+    Args:
+        session: Database session
+        league: League to close voting for
+
+    Returns:
+        Dict with categories and their winners/ties
+    """
+    league.voting_closed_at = datetime.utcnow()
+    session.add(league)
+
+    # Get all categories for this league
+    categories = session.scalars(
+        select(VoteCategory).where(VoteCategory.league_id == league.id)
+    ).all()
+
+    category_results = []
+    for category in categories:
+        results = get_voting_results(session, category.id)
+
+        # Auto-set winner if no tie
+        if not results["is_tied"] and results["winner_id"]:
+            category.winner_id = results["winner_id"]
+            session.add(category)
+
+        category_results.append(
+            {
+                "category_id": category.id,
+                "category_name": category.name,
+                "winner_id": category.winner_id,
+                "is_tied": results["is_tied"],
+                "total_votes": results["total_votes"],
+            }
+        )
+
+    session.commit()
+
+    return {"categories": category_results}
+
+
+def break_tie_random(
+    session: Session,
+    category: VoteCategory,
+    tied_player_ids: list[int],
+) -> int:
+    """
+    Randomly breaks a tie between players.
+
+    Args:
+        session: Database session
+        category: VoteCategory to set winner for
+        tied_player_ids: List of player IDs that are tied
+
+    Returns:
+        Winner player ID
+    """
+    winner_id = random.choice(tied_player_ids)
+    category.winner_id = winner_id
+    session.add(category)
+    session.commit()
+    return winner_id
+
+
+def cast_vote(
+    session: Session,
+    category_id: int,
+    voter_id: int,
+    voted_for_id: int,
+) -> Vote:
+    """
+    Casts a vote in a category.
+
+    Args:
+        session: Database session
+        category_id: ID of the vote category
+        voter_id: ID of the voter (league_player.id)
+        voted_for_id: ID of the player being voted for (league_player.id)
+
+    Returns:
+        Created Vote
+    """
+    vote = Vote(
+        category_id=category_id,
+        voter_id=voter_id,
+        voted_for_id=voted_for_id,
+    )
+    session.add(vote)
+    session.commit()
+    session.refresh(vote)
+    return vote
+
+
+def get_player_vote(
+    session: Session,
+    category_id: int,
+    voter_id: int,
+) -> Optional[Vote]:
+    """
+    Gets a player's vote in a category if it exists.
+
+    Args:
+        session: Database session
+        category_id: ID of the vote category
+        voter_id: ID of the voter (league_player.id)
+
+    Returns:
+        Vote if exists, None otherwise
+    """
+    return session.scalars(
+        select(Vote).where(
+            Vote.category_id == category_id,
+            Vote.voter_id == voter_id,
+        )
+    ).first()

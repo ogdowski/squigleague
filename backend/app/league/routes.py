@@ -6,7 +6,15 @@ from datetime import datetime, timedelta
 from app.core.deps import get_current_user, get_current_user_optional, require_role
 from app.db import get_session
 from app.league.constants import MISSION_MAPS
-from app.league.models import Group, League, LeaguePlayer, Match, PlayerElo
+from app.league.models import (
+    Group,
+    League,
+    LeaguePlayer,
+    Match,
+    PlayerElo,
+    Vote,
+    VoteCategory,
+)
 from app.league.schemas import (
     ArmyListResponse,
     ArmyListSubmit,
@@ -32,15 +40,27 @@ from app.league.schemas import (
     PlayerEloResponse,
     PlayerRemovalResponse,
     StandingsEntry,
+    TieBreakerRequest,
+    VoteCategoryCreate,
+    VoteCategoryResponse,
+    VoteCreate,
+    VoteResponse,
+    VoteResultEntry,
+    VotingResultsResponse,
 )
 from app.league.service import (
     advance_to_next_knockout_round,
     all_round_matches_confirmed,
+    break_tie_random,
     calculate_knockout_size,
     calculate_phase_dates,
+    cast_vote,
     change_player_group,
+    close_voting,
     confirm_match_result,
+    create_vote_category,
     draw_groups,
+    enable_voting_for_league,
     generate_group_matches,
     generate_knockout_matches,
     get_allowed_knockout_sizes,
@@ -49,8 +69,10 @@ from app.league.service import (
     get_knockout_round_names,
     get_league_player_count,
     get_next_knockout_round,
+    get_player_vote,
     get_qualified_players,
     get_qualifying_info,
+    get_voting_results,
     remove_player_from_league,
     submit_match_result,
 )
@@ -117,6 +139,7 @@ async def create_league(
         knockout_size=data.knockout_size,
         has_group_phase_lists=data.has_group_phase_lists,
         has_knockout_phase_lists=data.has_knockout_phase_lists,
+        voting_enabled=data.voting_enabled,
     )
 
     # Add city/country to shared locations pool
@@ -130,6 +153,16 @@ async def create_league(
     session.add(league)
     session.commit()
     session.refresh(league)
+
+    # Auto-create default voting category if voting is enabled
+    if data.voting_enabled:
+        default_category = VoteCategory(
+            league_id=league.id,
+            name="best_sport",
+            description=None,
+        )
+        session.add(default_category)
+        session.commit()
 
     return LeagueResponse(
         **league.__dict__,
@@ -2551,3 +2584,495 @@ async def get_player_elo(
         games_played=elo.games_played,
         updated_at=elo.updated_at if elo.id else datetime.utcnow(),
     )
+
+
+# ============ Voting ============
+
+
+@router.post(
+    "/{league_id}/vote-categories",
+    response_model=VoteCategoryResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_vote_category_endpoint(
+    league_id: int,
+    data: VoteCategoryCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Creates a vote category for a league (organizer only)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if not league.voting_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is not enabled for this league",
+        )
+
+    category = create_vote_category(session, league_id, data.name, data.description)
+
+    return VoteCategoryResponse(
+        id=category.id,
+        league_id=category.league_id,
+        name=category.name,
+        description=category.description,
+        winner_id=category.winner_id,
+        winner_username=None,
+        created_at=category.created_at,
+    )
+
+
+@router.get("/{league_id}/vote-categories", response_model=list[VoteCategoryResponse])
+async def list_vote_categories(
+    league_id: int,
+    session: Session = Depends(get_session),
+):
+    """Gets all vote categories for a league."""
+    categories = session.scalars(
+        select(VoteCategory).where(VoteCategory.league_id == league_id)
+    ).all()
+
+    result = []
+    for category in categories:
+        winner_username = None
+        if category.winner_id:
+            winner_player = session.get(LeaguePlayer, category.winner_id)
+            if winner_player and winner_player.user_id:
+                winner_user = session.get(User, winner_player.user_id)
+                if winner_user:
+                    winner_username = winner_user.username
+            elif winner_player:
+                winner_username = winner_player.discord_username
+
+        result.append(
+            VoteCategoryResponse(
+                id=category.id,
+                league_id=category.league_id,
+                name=category.name,
+                description=category.description,
+                winner_id=category.winner_id,
+                winner_username=winner_username,
+                created_at=category.created_at,
+            )
+        )
+
+    return result
+
+
+@router.post(
+    "/{league_id}/vote-categories/{category_id}/vote",
+    response_model=VoteResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def cast_vote_endpoint(
+    league_id: int,
+    category_id: int,
+    data: VoteCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Casts a vote in a category (league player only, not for self)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    # Check voting is enabled
+    if not league.voting_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is not enabled for this league",
+        )
+
+    # Check league is finished
+    if league.status != "finished":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is only available after the league finishes",
+        )
+
+    # Check voting is still open
+    if league.voting_closed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is closed",
+        )
+
+    # Check category exists and belongs to this league
+    category = session.scalars(
+        select(VoteCategory).where(
+            VoteCategory.id == category_id,
+            VoteCategory.league_id == league_id,
+        )
+    ).first()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vote category not found",
+        )
+
+    # Check current user is a league player
+    voter_player = session.scalars(
+        select(LeaguePlayer).where(
+            LeaguePlayer.league_id == league_id,
+            LeaguePlayer.user_id == current_user.id,
+        )
+    ).first()
+
+    if not voter_player:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only league players can vote",
+        )
+
+    # Check not voting for self
+    if voter_player.id == data.voted_for_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot vote for yourself",
+        )
+
+    # Check voted_for player exists in this league
+    voted_for_player = session.scalars(
+        select(LeaguePlayer).where(
+            LeaguePlayer.id == data.voted_for_id,
+            LeaguePlayer.league_id == league_id,
+        )
+    ).first()
+
+    if not voted_for_player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player to vote for not found in this league",
+        )
+
+    # Check hasn't voted already
+    existing_vote = get_player_vote(session, category_id, voter_player.id)
+    if existing_vote:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already voted in this category",
+        )
+
+    vote = cast_vote(session, category_id, voter_player.id, data.voted_for_id)
+
+    return VoteResponse(
+        id=vote.id,
+        category_id=vote.category_id,
+        voter_id=vote.voter_id,
+        voted_for_id=vote.voted_for_id,
+        created_at=vote.created_at,
+    )
+
+
+@router.get(
+    "/{league_id}/vote-categories/{category_id}/results",
+    response_model=VotingResultsResponse,
+)
+async def get_voting_results_endpoint(
+    league_id: int,
+    category_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_optional),
+):
+    """
+    Gets voting results for a category.
+
+    - If voting closed: shows full results with counts
+    - If voting open and user is organizer: shows counts as preliminary
+    - If voting open and user is player: only shows if they voted
+    """
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    category = session.scalars(
+        select(VoteCategory).where(
+            VoteCategory.id == category_id,
+            VoteCategory.league_id == league_id,
+        )
+    ).first()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vote category not found",
+        )
+
+    # Get results
+    results_data = get_voting_results(session, category_id)
+
+    # Check if user can see results
+    is_organizer = bool(
+        current_user
+        and (current_user.id == league.organizer_id or current_user.role == "admin")
+    )
+    voting_closed = league.voting_closed_at is not None
+
+    # If voting not closed and not organizer, check if user voted
+    if not voting_closed and not is_organizer:
+        if current_user:
+            player = session.scalars(
+                select(LeaguePlayer).where(
+                    LeaguePlayer.league_id == league_id,
+                    LeaguePlayer.user_id == current_user.id,
+                )
+            ).first()
+
+            if player:
+                user_vote = get_player_vote(session, category_id, player.id)
+                if not user_vote:
+                    # User hasn't voted, hide detailed results but show vote count
+                    return VotingResultsResponse(
+                        category_id=category.id,
+                        category_name=category.name,
+                        results=[],
+                        winner_id=None,
+                        winner_username=None,
+                        is_tied=False,
+                        total_votes=results_data["total_votes"],
+                    )
+        else:
+            # Anonymous user, hide detailed results but show vote count
+            return VotingResultsResponse(
+                category_id=category.id,
+                category_name=category.name,
+                results=[],
+                winner_id=None,
+                winner_username=None,
+                is_tied=False,
+                total_votes=results_data["total_votes"],
+            )
+
+    # Build full results with usernames
+    results_with_info = []
+    for entry in results_data["results"]:
+        player = session.get(LeaguePlayer, entry["player_id"])
+        username = None
+        avatar_url = None
+        if player:
+            if player.user_id:
+                user = session.get(User, player.user_id)
+                if user:
+                    username = user.username
+                    avatar_url = user.avatar_url
+            else:
+                username = player.discord_username
+
+        results_with_info.append(
+            VoteResultEntry(
+                player_id=entry["player_id"],
+                username=username,
+                avatar_url=avatar_url,
+                vote_count=entry["vote_count"],
+            )
+        )
+
+    # Get winner username
+    winner_username = None
+    if category.winner_id:
+        winner_player = session.get(LeaguePlayer, category.winner_id)
+        if winner_player and winner_player.user_id:
+            winner_user = session.get(User, winner_player.user_id)
+            if winner_user:
+                winner_username = winner_user.username
+        elif winner_player:
+            winner_username = winner_player.discord_username
+
+    return VotingResultsResponse(
+        category_id=category.id,
+        category_name=category.name,
+        results=results_with_info,
+        winner_id=category.winner_id,
+        winner_username=winner_username,
+        is_tied=results_data["is_tied"],
+        total_votes=results_data["total_votes"],
+    )
+
+
+@router.post("/{league_id}/close-voting")
+async def close_voting_endpoint(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Closes voting and determines winners (organizer only)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if not league.voting_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is not enabled for this league",
+        )
+
+    if league.voting_closed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is already closed",
+        )
+
+    result = close_voting(session, league)
+
+    return {
+        "message": "Voting closed",
+        "voting_closed_at": league.voting_closed_at.isoformat(),
+        "categories": result["categories"],
+    }
+
+
+@router.post("/{league_id}/vote-categories/{category_id}/break-tie")
+async def break_tie_endpoint(
+    league_id: int,
+    category_id: int,
+    data: TieBreakerRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Randomly selects a winner from tied players (organizer only)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    category = session.scalars(
+        select(VoteCategory).where(
+            VoteCategory.id == category_id,
+            VoteCategory.league_id == league_id,
+        )
+    ).first()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vote category not found",
+        )
+
+    if category.winner_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Winner already selected for this category",
+        )
+
+    # Verify the players are actually tied
+    results = get_voting_results(session, category_id)
+    if not results["is_tied"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There is no tie to break",
+        )
+
+    # Verify all provided player_ids are in the top tied positions
+    top_vote_count = results["results"][0]["vote_count"] if results["results"] else 0
+    tied_player_ids = {
+        r["player_id"] for r in results["results"] if r["vote_count"] == top_vote_count
+    }
+
+    for pid in data.player_ids:
+        if pid not in tied_player_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Player {pid} is not in the tie",
+            )
+
+    winner_id = break_tie_random(session, category, data.player_ids)
+
+    # Get winner username
+    winner_player = session.get(LeaguePlayer, winner_id)
+    winner_username = None
+    if winner_player and winner_player.user_id:
+        winner_user = session.get(User, winner_player.user_id)
+        if winner_user:
+            winner_username = winner_user.username
+    elif winner_player:
+        winner_username = winner_player.discord_username
+
+    return {
+        "message": "Tie broken",
+        "winner_id": winner_id,
+        "winner_username": winner_username,
+    }
+
+
+@router.post("/{league_id}/enable-voting")
+async def enable_voting_endpoint(
+    league_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_organizer),
+):
+    """Enables voting for a league and creates the default category (organizer only)."""
+    league = session.scalars(select(League).where(League.id == league_id)).first()
+
+    if not league:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League not found",
+        )
+
+    if league.organizer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
+
+    if league.voting_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is already enabled",
+        )
+
+    category = enable_voting_for_league(session, league)
+
+    return {
+        "message": "Voting enabled",
+        "voting_enabled": True,
+        "default_category": (
+            {
+                "id": category.id,
+                "name": category.name,
+                "description": category.description,
+            }
+            if category
+            else None
+        ),
+    }

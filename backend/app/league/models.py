@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -99,10 +100,17 @@ class League(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     finished_at: Optional[datetime] = Field(default=None)
 
+    # Voting configuration
+    voting_enabled: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
+    voting_closed_at: Optional[datetime] = Field(default=None)
+
     # Relationships
     groups: list["Group"] = Relationship(back_populates="league")
     players: list["LeaguePlayer"] = Relationship(back_populates="league")
     matches: list["Match"] = Relationship(back_populates="league")
+    vote_categories: list["VoteCategory"] = Relationship(back_populates="league")
 
     @property
     def is_registration_open(self) -> bool:
@@ -266,10 +274,6 @@ class Match(SQLModel, table=True):
         return self.lists_revealed_at is not None
 
 
-# Re-export PlayerElo from player module for backward compatibility
-from app.player.models import PlayerElo  # noqa: E402, F401
-
-
 class AppSettings(SQLModel, table=True):
     """Global application settings."""
 
@@ -279,6 +283,11 @@ class AppSettings(SQLModel, table=True):
     key: str = Field(unique=True, index=True, max_length=50)
     value: str = Field(max_length=500)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# Re-export PlayerElo from player module for backward compatibility
+# NOTE: This import MUST come after AppSettings to avoid circular import
+from app.player.models import PlayerElo  # noqa: E402, F401
 
 
 class ArmyStats(SQLModel, table=True):
@@ -312,3 +321,38 @@ class ArmyMatchupStats(SQLModel, table=True):
     losses: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
 
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class VoteCategory(SQLModel, table=True):
+    """Category for voting in a league (e.g., Best Sportsmanship)."""
+
+    __tablename__ = "vote_categories"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    league_id: int = Field(foreign_key="leagues.id", index=True)
+    name: str = Field(max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+    winner_id: Optional[int] = Field(default=None, foreign_key="league_players.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    league: League = Relationship(back_populates="vote_categories")
+    votes: list["Vote"] = Relationship(back_populates="category")
+
+
+class Vote(SQLModel, table=True):
+    """Individual vote cast by a player in a category."""
+
+    __tablename__ = "votes"
+    __table_args__ = (
+        UniqueConstraint("category_id", "voter_id", name="uq_vote_category_voter"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    category_id: int = Field(foreign_key="vote_categories.id", index=True)
+    voter_id: int = Field(foreign_key="league_players.id", index=True)
+    voted_for_id: int = Field(foreign_key="league_players.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    category: VoteCategory = Relationship(back_populates="votes")

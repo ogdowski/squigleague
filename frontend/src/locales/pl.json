@@ -380,7 +380,35 @@
     "changeGroupTitle": "Zmień grupę",
     "editGroupName": "Edytuj nazwę grupy",
     "saveButton": "Zapisz",
-    "wouldAdvanceToKnockout": "Awansuje do pucharu"
+    "wouldAdvanceToKnockout": "Awansuje do pucharu",
+    "voting": "Głosowanie",
+    "votingStatus": "Status głosowania",
+    "votingOpen": "Głosowanie otwarte",
+    "votingClosed": "Głosowanie zamknięte",
+    "votesReceived": "Oddanych głosów",
+    "votingResults": "Wyniki",
+    "votingWinner": "Zwycięzca",
+    "winner": "Zwycięzca",
+    "vote": "głos",
+    "votes": "głosy",
+    "votingInProgress": "Głosowanie w toku",
+    "resultsAfterClose": "Wyniki będą widoczne po zamknięciu głosowania",
+    "noVoteCategories": "Brak kategorii głosowania",
+    "unknownPlayer": "Nieznany gracz",
+    "bestSportName": "Nagroda Fair Play",
+    "bestSportDescription": "Zagłosuj na gracza, z którym grało Ci się najprzyjemniej - kogoś fair, przyjaznego i z kim mecze były fajne.",
+    "organizerControls": "Panel organizatora",
+    "closeVotingNote": "Po zamknięciu głosowania wyniki będą widoczne dla wszystkich graczy.",
+    "closeVoting": "Zamknij głosowanie",
+    "closeVotingConfirm": "Czy na pewno chcesz zamknąć głosowanie? Wyniki będą widoczne dla wszystkich i nie będzie można już głosować.",
+    "closing": "Zamykanie...",
+    "tieDetected": "Wykryto remis!",
+    "tieNote": "Kliknij przycisk, aby losowo wybrać zwycięzcę spośród remisujących graczy.",
+    "breakTie": "Rozstrzygnij remis",
+    "breaking": "Losowanie...",
+    "castYourVote": "Oddaj swój głos",
+    "alreadyVoted": "Już zagłosowałeś w tej kategorii",
+    "onlyPlayersCanVote": "Tylko uczestnicy ligi mogą głosować"
   },
   "leagueCreate": {
     "title": "Nowa liga",
@@ -418,7 +446,10 @@
     "knockoutPhaseListsNote": "Gracze wysyłają listy po zakończeniu fazy grupowej",
     "creating": "Tworzenie...",
     "createLeague": "Utwórz ligę",
-    "failedToCreate": "Nie udało się utworzyć ligi"
+    "failedToCreate": "Nie udało się utworzyć ligi",
+    "voting": "Głosowanie",
+    "enableVoting": "Nagroda Fair Play",
+    "enableVotingNote": "Po zakończeniu ligi gracze mogą zagłosować na przeciwnika, z którym grało im się najprzyjemniej"
   },
   "leagueSettings": {
     "title": "Ustawienia ligi",
@@ -467,7 +498,10 @@
     "city": "Miasto",
     "cityPlaceholder": "np. Warszawa lub Online",
     "country": "Kraj",
-    "countryPlaceholder": "np. Polska"
+    "countryPlaceholder": "np. Polska",
+    "voting": "Głosowanie",
+    "enableVoting": "Nagroda Fair Play",
+    "enableVotingNote": "Po zakończeniu ligi gracze mogą zagłosować na przeciwnika, z którym grało im się najprzyjemniej"
   },
   "matchDetail": {
     "loadingMatch": "Ładowanie meczu...",

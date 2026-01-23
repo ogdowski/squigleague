@@ -218,6 +218,23 @@
           </div>
         </div>
 
+        <!-- Voting -->
+        <div class="border-t border-gray-700 pt-6">
+          <h3 class="text-lg font-semibold mb-3">{{ t('leagueSettings.voting') }}</h3>
+          <div class="flex items-center gap-3">
+            <input
+              v-model="form.voting_enabled"
+              type="checkbox"
+              id="voting_enabled"
+              class="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-squig-yellow"
+            />
+            <label for="voting_enabled" class="text-sm font-medium text-gray-300">
+              {{ t('leagueSettings.enableVoting') }}
+              <span class="text-xs text-gray-500 block">{{ t('leagueSettings.enableVotingNote') }}</span>
+            </label>
+          </div>
+        </div>
+
         <!-- Status (for finishing league) -->
         <div v-if="league?.status !== 'registration'">
           <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('leagueSettings.leagueStatus') }}</label>
@@ -359,6 +376,7 @@ const form = ref({
   knockout_size: null,
   has_group_phase_lists: false,
   has_knockout_phase_lists: true,
+  voting_enabled: false,
   status: '',
   group_phase_end: '',
   knockout_phase_end: '',
@@ -416,6 +434,7 @@ const fetchLeague = async () => {
       knockout_size: response.data.knockout_size,
       has_group_phase_lists: response.data.has_group_phase_lists,
       has_knockout_phase_lists: response.data.has_knockout_phase_lists,
+      voting_enabled: response.data.voting_enabled || false,
       status: response.data.status,
       group_phase_end: toLocalDatetime(response.data.group_phase_end),
       knockout_phase_end: toLocalDatetime(response.data.knockout_phase_end),
@@ -447,6 +466,7 @@ const saveSettings = async () => {
       knockout_size: form.value.has_knockout_phase ? form.value.knockout_size : null,
       has_group_phase_lists: form.value.has_group_phase_lists,
       has_knockout_phase_lists: form.value.has_knockout_phase ? form.value.has_knockout_phase_lists : false,
+      voting_enabled: form.value.voting_enabled,
       status: form.value.status,
       group_phase_end: form.value.group_phase_end ? new Date(form.value.group_phase_end).toISOString() : null,
       knockout_phase_end: form.value.knockout_phase_end ? new Date(form.value.knockout_phase_end).toISOString() : null,

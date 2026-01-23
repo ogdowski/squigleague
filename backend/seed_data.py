@@ -83,6 +83,8 @@ def main():
         # Clear tables using raw SQL to avoid import issues
         print("\nClearing existing data...")
         for table in [
+            "votes",
+            "vote_categories",
             "matches",
             "league_players",
             "groups",
@@ -189,19 +191,21 @@ def main():
             elos[u2_id]["k_games"] += 1
             return e1, e1 + c1, e2, e2 + c2
 
-        # ======= LEAGUE 1: 8 players, finished =======
-        print("\nCreating 8-player FINISHED league...")
+        # ======= LEAGUE 1: 8 players, finished, WITH VOTING =======
+        print("\nCreating 8-player FINISHED league with voting...")
         session.exec(
             text(
                 f"""
-            INSERT INTO leagues (name, description, organizer_id, city, country, registration_end, 
+            INSERT INTO leagues (name, description, organizer_id, city, country, registration_end,
                 group_phase_start, group_phase_end, knockout_phase_start, knockout_phase_end,
                 status, group_phase_ended, finished_at, min_players, max_players, min_group_size, max_group_size,
-                has_knockout_phase, knockout_size, current_knockout_round, has_group_phase_lists, created_at)
-            VALUES ('8-Player League (Finished)', 'Small league, 2 groups of 4', {org1.id}, 'Warsaw', 'Poland',
+                has_knockout_phase, knockout_size, current_knockout_round, has_group_phase_lists,
+                voting_enabled, created_at)
+            VALUES ('8-Player League (Finished)', 'Small league with voting enabled', {org1.id}, 'Warsaw', 'Poland',
                 NOW() - interval '60 days', NOW() - interval '55 days', NOW() - interval '30 days',
                 NOW() - interval '25 days', NOW() - interval '5 days',
-                'finished', true, NOW() - interval '5 days', 8, 8, 4, 4, true, 4, 'final', true, NOW())
+                'finished', true, NOW() - interval '5 days', 8, 8, 4, 4, true, 4, 'final', true,
+                true, NOW())
         """
             )
         )
@@ -312,6 +316,49 @@ def main():
         session.commit()
 
         print(f"  Created league with 8 players, all group matches played")
+
+        # Add voting category and votes for league 1
+        print("  Adding voting category and votes...")
+        session.exec(
+            text(
+                f"""
+            INSERT INTO vote_categories (league_id, name, description, created_at)
+            VALUES ({league1_id}, 'best_sport', NULL, NOW())
+        """
+            )
+        )
+        session.commit()
+        category1_id = session.exec(
+            text(f"SELECT id FROM vote_categories WHERE league_id = {league1_id}")
+        ).first()[0]
+
+        # Get league player IDs for voting
+        lp1_ids_list = list(lp1_map.values())
+
+        # Cast some votes (5 out of 8 players voted)
+        # Player 0 votes for Player 1
+        # Player 1 votes for Player 2
+        # Player 2 votes for Player 1 (Player 1 now has 2 votes)
+        # Player 3 votes for Player 1 (Player 1 now has 3 votes)
+        # Player 4 votes for Player 2 (Player 2 now has 2 votes)
+        vote_pairs = [
+            (lp1_ids_list[0]["lpid"], lp1_ids_list[1]["lpid"]),  # p1 votes for p2
+            (lp1_ids_list[1]["lpid"], lp1_ids_list[2]["lpid"]),  # p2 votes for p3
+            (lp1_ids_list[2]["lpid"], lp1_ids_list[1]["lpid"]),  # p3 votes for p2
+            (lp1_ids_list[3]["lpid"], lp1_ids_list[1]["lpid"]),  # p4 votes for p2
+            (lp1_ids_list[4]["lpid"], lp1_ids_list[2]["lpid"]),  # p5 votes for p3
+        ]
+        for voter_id, voted_for_id in vote_pairs:
+            session.exec(
+                text(
+                    f"""
+                INSERT INTO votes (category_id, voter_id, voted_for_id, created_at)
+                VALUES ({category1_id}, {voter_id}, {voted_for_id}, NOW())
+            """
+                )
+            )
+        session.commit()
+        print(f"  Added vote category and 5 votes (voting still open)")
 
         # ======= LEAGUE 2: 16 players, knockout phase =======
         print("\nCreating 16-player KNOCKOUT league...")
@@ -678,10 +725,10 @@ def main():
             session.exec(
                 text(
                     f"""
-                INSERT INTO matchups (name, player1_id, player2_id, player1_submitted, player2_submitted, 
-                    player1_list, player2_list, created_at)
-                VALUES ('{name}', {p1}, {p2}, {str(sub1).lower()}, {str(sub2).lower()}, 
-                    {f"'{list1}'" if list1 else 'NULL'}, {f"'{list2}'" if list2 else 'NULL'}, NOW())
+                INSERT INTO matchups (name, player1_id, player2_id, player1_submitted, player2_submitted,
+                    player1_list, player2_list, is_public, created_at)
+                VALUES ('{name}', {p1}, {p2}, {str(sub1).lower()}, {str(sub2).lower()},
+                    {f"'{list1}'" if list1 else 'NULL'}, {f"'{list2}'" if list2 else 'NULL'}, true, NOW())
             """
                 )
             )
@@ -704,7 +751,7 @@ def main():
         print("=" * 60)
         print("\nCredentials: org1 / p1-p30 : test")
         print("\nLeagues:")
-        print("  - 8-player (finished)")
+        print("  - 8-player (finished, voting enabled with 5 votes)")
         print("  - 16-player (knockout phase)")
         print("  - 12-player (group phase)")
         print("  - 20-player (registration)")
