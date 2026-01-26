@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     DISCORD_CLIENT_SECRET: Optional[str] = None
 
     # Application
-    SQUIG_VERSION: str = "0.4.15"
+    SQUIG_VERSION: str = "0.4.16"
     APP_NAME: str = "SquigLeague"
 
     # Admin
