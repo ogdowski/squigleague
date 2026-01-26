@@ -12,6 +12,7 @@ from app.matchup.schemas import (
     MatchupReveal,
     MatchupStatus,
     MatchupSubmit,
+    MatchupTitleUpdate,
     ResultResponse,
     ResultSubmit,
 )
@@ -78,7 +79,6 @@ async def create_matchup(
     return MatchupCreateResponse(
         name=matchup.name,
         link=f"/matchup/{matchup.name}",
-        expires_at=matchup.expires_at,
     )
 
 
@@ -110,6 +110,18 @@ def _build_matchup_list(
         player1 = user_map.get(matchup.player1_id)
         player2 = user_map.get(matchup.player2_id)
 
+        # Only show army factions when both players have submitted (revealed)
+        player1_faction = matchup.player1_army_faction if matchup.is_revealed else None
+        player2_faction = matchup.player2_army_faction if matchup.is_revealed else None
+
+        # Player1 can cancel if player2 hasn't submitted yet
+        can_cancel = (
+            current_user_id is not None
+            and current_user_id == matchup.player1_id
+            and not matchup.player2_submitted
+            and not matchup.is_cancelled
+        )
+
         matchup_list.append(
             MatchupStatus(
                 name=matchup.name,
@@ -118,16 +130,16 @@ def _build_matchup_list(
                 player2_submitted=matchup.player2_submitted,
                 is_revealed=matchup.is_revealed,
                 is_public=matchup.is_public,
+                is_cancelled=matchup.is_cancelled,
                 created_at=matchup.created_at,
-                expires_at=matchup.expires_at,
                 player1_id=matchup.player1_id,
                 player2_id=matchup.player2_id,
                 player1_username=player1.username if player1 else None,
                 player2_username=player2.username if player2 else None,
                 player1_avatar=player1.avatar_url if player1 else None,
                 player2_avatar=player2.avatar_url if player2 else None,
-                player1_army_faction=matchup.player1_army_faction,
-                player2_army_faction=matchup.player2_army_faction,
+                player1_army_faction=player1_faction,
+                player2_army_faction=player2_faction,
                 player1_score=matchup.player1_score,
                 player2_score=matchup.player2_score,
                 result_status=matchup.result_status,
@@ -135,6 +147,7 @@ def _build_matchup_list(
                 result_auto_confirm_at=matchup.result_auto_confirm_at,
                 can_submit_result=matchup.can_submit_result(current_user_id),
                 can_confirm_result=matchup.can_confirm_result(current_user_id),
+                can_cancel=can_cancel,
                 result_info_message=get_result_info_message(matchup, current_user_id),
             )
         )
@@ -171,16 +184,14 @@ async def get_public_matchups(
     limit: int = Query(default=50, le=100),
 ):
     """Get public completed matchups from other users."""
-    now = datetime.utcnow()
-
-    # Base query: public, revealed, not expired
+    # Base query: public, revealed, not cancelled
     statement = (
         select(Matchup)
         .where(
             Matchup.is_public.is_(True),
             Matchup.player1_submitted.is_(True),
             Matchup.player2_submitted.is_(True),
-            Matchup.expires_at > now,
+            Matchup.is_cancelled.is_(False),
         )
         .order_by(Matchup.revealed_at.desc())
         .limit(limit)
@@ -255,18 +266,12 @@ async def get_stats(session: Session = Depends(get_session)):
     )
     completed_count = session.execute(completed_statement).scalar_one()
 
-    # Count expired matchups
-    now = datetime.utcnow()
-    expired_statement = select(func.count(Matchup.id)).where(Matchup.expires_at < now)
-    expired_count = session.execute(expired_statement).scalar_one()
-
     # Count leagues created
     leagues_statement = select(func.count(League.id))
     leagues_count = session.execute(leagues_statement).scalar_one()
 
     return {
         "exchanges_completed": completed_count,
-        "exchanges_expired": expired_count,
         "leagues_created": leagues_count,
         "version": "0.4.15",
     }
@@ -289,12 +294,6 @@ async def get_matchup_status(
             detail="Matchup not found",
         )
 
-    if matchup.is_expired:
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="Matchup has expired",
-        )
-
     # Fetch player info if they exist
     player1 = session.get(User, matchup.player1_id) if matchup.player1_id else None
     player2 = session.get(User, matchup.player2_id) if matchup.player2_id else None
@@ -309,6 +308,19 @@ async def get_matchup_status(
 
     current_user_id = current_user.id if current_user else None
 
+    # Only show army factions when both players have submitted (revealed)
+    # This prevents leaking army choice before blind exchange is complete
+    player1_faction = matchup.player1_army_faction if matchup.is_revealed else None
+    player2_faction = matchup.player2_army_faction if matchup.is_revealed else None
+
+    # Player1 can cancel if player2 hasn't submitted yet
+    can_cancel = (
+        current_user_id is not None
+        and current_user_id == matchup.player1_id
+        and not matchup.player2_submitted
+        and not matchup.is_cancelled
+    )
+
     return MatchupStatus(
         name=matchup.name,
         title=matchup.title,
@@ -316,16 +328,16 @@ async def get_matchup_status(
         player2_submitted=matchup.player2_submitted,
         is_revealed=matchup.is_revealed,
         is_public=matchup.is_public,
+        is_cancelled=matchup.is_cancelled,
         created_at=matchup.created_at,
-        expires_at=matchup.expires_at,
         player1_id=matchup.player1_id,
         player2_id=matchup.player2_id,
         player1_username=player1.username if player1 else None,
         player2_username=player2.username if player2 else None,
         player1_avatar=player1.avatar_url if player1 else None,
         player2_avatar=player2.avatar_url if player2 else None,
-        player1_army_faction=matchup.player1_army_faction,
-        player2_army_faction=matchup.player2_army_faction,
+        player1_army_faction=player1_faction,
+        player2_army_faction=player2_faction,
         player1_score=matchup.player1_score,
         player2_score=matchup.player2_score,
         result_status=matchup.result_status,
@@ -333,6 +345,7 @@ async def get_matchup_status(
         result_auto_confirm_at=matchup.result_auto_confirm_at,
         can_submit_result=matchup.can_submit_result(current_user_id),
         can_confirm_result=matchup.can_confirm_result(current_user_id),
+        can_cancel=can_cancel,
         result_info_message=get_result_info_message(matchup, current_user_id),
     )
 
@@ -344,7 +357,7 @@ async def toggle_matchup_public(
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
-    """Toggle matchup public visibility. Only participants can do this."""
+    """Toggle matchup public visibility. Participants can do this at any time."""
     statement = select(Matchup).where(Matchup.name == matchup_name)
     matchup = session.scalars(statement).first()
 
@@ -368,6 +381,89 @@ async def toggle_matchup_public(
     return {"message": "Visibility updated", "is_public": matchup.is_public}
 
 
+@router.patch("/{matchup_name}/title")
+async def update_matchup_title(
+    matchup_name: str,
+    data: MatchupTitleUpdate,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """Update matchup title. Only participants can do this before result is confirmed."""
+    statement = select(Matchup).where(Matchup.name == matchup_name)
+    matchup = session.scalars(statement).first()
+
+    if not matchup:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Matchup not found",
+        )
+
+    # Check if user is a participant
+    if matchup.player1_id != current_user.id and matchup.player2_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only participants can change matchup title",
+        )
+
+    # Cannot change title after result is confirmed
+    if matchup.result_status == "confirmed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change title after result is confirmed",
+        )
+
+    matchup.title = data.title
+    session.add(matchup)
+    session.commit()
+
+    return {"message": "Title updated", "title": matchup.title}
+
+
+@router.post("/{matchup_name}/cancel")
+async def cancel_matchup(
+    matchup_name: str,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """Cancel a matchup. Only player1 can cancel before player2 submits."""
+    statement = select(Matchup).where(Matchup.name == matchup_name)
+    matchup = session.scalars(statement).first()
+
+    if not matchup:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Matchup not found",
+        )
+
+    # Only player1 can cancel
+    if matchup.player1_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the matchup creator can cancel",
+        )
+
+    # Cannot cancel if player2 already submitted
+    if matchup.player2_submitted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot cancel after opponent has submitted their list",
+        )
+
+    # Cannot cancel if already cancelled
+    if matchup.is_cancelled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Matchup is already cancelled",
+        )
+
+    matchup.is_cancelled = True
+    matchup.cancelled_at = datetime.utcnow()
+    session.add(matchup)
+    session.commit()
+
+    return {"message": "Matchup cancelled"}
+
+
 @router.post("/{matchup_name}/submit")
 async def submit_army_list(
     matchup_name: str,
@@ -386,18 +482,33 @@ async def submit_army_list(
             detail="Matchup not found",
         )
 
-    if matchup.is_expired:
+    if matchup.is_cancelled:
         raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="Matchup has expired",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This matchup has been cancelled",
         )
 
     # Determine if this is player1 or player2
     is_player1 = False
-    if current_user and matchup.player1_id == current_user.id:
+    current_user_id = current_user.id if current_user else None
+
+    if current_user_id and matchup.player1_id == current_user_id:
+        # Current user is player1
         is_player1 = True
+    elif current_user_id and matchup.player2_id == current_user_id:
+        # Current user is assigned player2
+        is_player1 = False
+    elif matchup.player2_id is not None:
+        # Player2 slot is assigned to a specific user - only they can submit
+        if not current_user_id or current_user_id != matchup.player2_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This matchup has an assigned opponent. Only they can submit their list.",
+            )
     elif not matchup.player1_submitted:
+        # No player2 assigned and player1 hasn't submitted - this would be player1
         is_player1 = True
+    # else: no player2 assigned and player1 submitted - anyone can be player2
 
     try:
         matchup = submit_list(
@@ -405,7 +516,7 @@ async def submit_army_list(
             submission.army_list,
             is_player1,
             session,
-            user_id=current_user.id if current_user else None,
+            user_id=current_user_id,
             army_faction=submission.army_faction,
         )
     except ValueError as err:
@@ -504,12 +615,6 @@ async def submit_matchup_result(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Matchup not found",
-        )
-
-    if matchup.is_expired:
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="Matchup has expired",
         )
 
     try:

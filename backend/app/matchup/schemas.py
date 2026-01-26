@@ -32,8 +32,8 @@ class MatchupStatus(BaseModel):
     player2_submitted: bool
     is_revealed: bool
     is_public: bool = True
+    is_cancelled: bool = False
     created_at: datetime
-    expires_at: Optional[datetime] = None
     player1_id: Optional[int] = None
     player2_id: Optional[int] = None
     player1_username: Optional[str] = None
@@ -51,6 +51,7 @@ class MatchupStatus(BaseModel):
     # Permissions for current user
     can_submit_result: bool = False
     can_confirm_result: bool = False
+    can_cancel: bool = False
     # Info message for anonymous users
     result_info_message: Optional[str] = None
 
@@ -61,6 +62,12 @@ class MatchupPublicToggle(BaseModel):
     """Schema for toggling matchup public visibility."""
 
     is_public: bool
+
+
+class MatchupTitleUpdate(BaseModel):
+    """Schema for updating matchup title."""
+
+    title: Optional[str] = Field(default=None, max_length=100)
 
 
 class MatchupReveal(BaseModel):
@@ -107,7 +114,6 @@ class MatchupCreateResponse(BaseModel):
 
     name: str
     link: str
-    expires_at: Optional[datetime] = None
 
 
 class ResultSubmit(BaseModel):

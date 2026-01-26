@@ -181,13 +181,6 @@ Created with Sigdex: sigdex.io"
           </div>
         </div>
 
-        <div>
-          <h2 class="text-xl font-bold mb-3">{{ t('matchups.expires') }}</h2>
-          <p class="text-gray-300">
-            {{ formatDate(matchup.expires_at) }}
-          </p>
-        </div>
-
         <div class="flex gap-4">
           <router-link
             :to="`/matchup/${matchup.name}`"
@@ -332,7 +325,4 @@ const reset = () => {
   searchResults.value = []
 }
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleString()
-}
 </script>

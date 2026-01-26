@@ -75,7 +75,6 @@ def session_fixture():
             player2_list=None,
             map_name="Age of Sigmar Mission 1",
             created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=7),
         )
         session.add(test_matchup)
         session.commit()
@@ -96,3 +95,24 @@ def client_fixture(session: Session):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(name="test_user")
+def test_user_fixture(session: Session):
+    """Get the seeded test user from the database"""
+    from sqlmodel import select
+
+    statement = select(User).where(User.username == "Alakhaine")
+    user = session.scalars(statement).first()
+    return user
+
+
+@pytest.fixture(name="auth_headers")
+def auth_headers_fixture(client: TestClient):
+    """Get authentication headers for the test user"""
+    response = client.post(
+        "/auth/login",
+        json={"email": "alakhaine@dundrafts.com", "password": "FinFan11"},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

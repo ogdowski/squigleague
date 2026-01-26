@@ -350,8 +350,7 @@ const fetchStats = async () => {
     // Fallback to package.json version
     stats.value = {
       version: packageJson.version,
-      exchanges_completed: 0,
-      exchanges_expired: 0
+      exchanges_completed: 0
     }
   }
 }

@@ -44,7 +44,6 @@ class TestMatchupCreation:
         data = response.json()
         assert "name" in data
         assert "link" in data
-        assert "expires_at" in data
     
     def test_create_matchup_anonymous(self):
         """Test anonymous user can create matchup."""

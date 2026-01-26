@@ -200,12 +200,6 @@ class TestMixedAuthWorkflow:
 class TestErrorRecoveryWorkflow:
     """Test error handling and recovery scenarios."""
 
-    def test_expired_matchup_handling(self):
-        """Test accessing expired matchup returns proper error."""
-        # This test requires a way to create an already-expired matchup
-        # or mock the current time. Skipping for now.
-        pass
-    
     def test_duplicate_submission_handling(self):
         """Test that player 2 cannot submit twice."""
         timestamp = int(time.time())

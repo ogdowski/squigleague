@@ -59,19 +59,16 @@ class Matchup(SQLModel, table=True):
 
     # Metadata
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    # expires_at kept for backwards compatibility but no longer enforced
-    expires_at: Optional[datetime] = Field(default=None)
     revealed_at: Optional[datetime] = None
+
+    # Cancellation
+    is_cancelled: bool = Field(default=False)
+    cancelled_at: Optional[datetime] = None
 
     @property
     def is_revealed(self) -> bool:
         """Check if matchup is revealed (both lists submitted)."""
         return self.player1_submitted and self.player2_submitted
-
-    @property
-    def is_expired(self) -> bool:
-        """Matchups no longer expire."""
-        return False
 
     @property
     def has_result(self) -> bool:

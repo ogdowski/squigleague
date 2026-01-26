@@ -10,18 +10,70 @@
       </div>
     </div>
 
+    <!-- Cancelled matchup message -->
+    <div v-else-if="matchup && matchup.is_cancelled" class="card">
+      <div class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
+        {{ t('matchups.matchupCancelled') }}
+      </div>
+      <h1 class="text-2xl font-bold mb-2">
+        {{ matchup.title || t('matchups.matchupTitle') + ': ' + matchup.name }}
+      </h1>
+      <p class="text-gray-400">ID: {{ matchup.name }}</p>
+    </div>
+
     <div v-else-if="matchup">
       <div class="card mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <div>
-            <h1 class="text-2xl md:text-3xl font-bold">
-              {{ matchup.title || t('matchups.matchupTitle') + ': ' + matchup.name }}
-            </h1>
+          <div class="flex-1">
+            <!-- Title display mode -->
+            <div v-if="!editingTitle" class="flex items-center gap-2">
+              <h1 class="text-2xl md:text-3xl font-bold">
+                {{ matchup.title || t('matchups.matchupTitle') + ': ' + matchup.name }}
+              </h1>
+              <button
+                v-if="canEditMatchup"
+                @click="startEditTitle"
+                class="p-1 text-gray-400 hover:text-squig-yellow transition-colors"
+                :title="t('common.edit')"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            </div>
+            <!-- Title edit mode -->
+            <div v-else class="flex items-center gap-2">
+              <input
+                v-model="editTitleValue"
+                type="text"
+                maxlength="100"
+                class="input-field text-xl md:text-2xl font-bold flex-1"
+                :placeholder="t('matchups.titlePlaceholder') || 'Enter title...'"
+                @keyup.enter="saveTitle"
+                @keyup.escape="cancelEditTitle"
+              />
+              <button
+                @click="saveTitle"
+                :disabled="savingTitle"
+                class="p-2 text-green-400 hover:text-green-300 transition-colors"
+                :title="t('common.save')"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+              <button
+                @click="cancelEditTitle"
+                class="p-2 text-gray-400 hover:text-gray-300 transition-colors"
+                :title="t('common.cancel')"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <p v-if="matchup.title" class="text-sm text-gray-400">ID: {{ matchup.name }}</p>
           </div>
-          <span class="text-sm text-gray-400">
-            {{ t('matchups.expires') }}: {{ formatDate(matchup.expires_at) }}
-          </span>
         </div>
 
         <!-- Player status tiles - only show when not revealed -->
@@ -97,6 +149,57 @@
           {{ t('matchups.yourListSubmitted') }}
         </div>
         <p class="text-gray-300 mt-4">{{ t('matchups.waitingForOpponent') }}</p>
+
+        <!-- Share link -->
+        <div class="mt-6 pt-4 border-t border-gray-700">
+          <label class="block text-sm font-medium mb-2">{{ t('matchups.shareLink') }}</label>
+          <div class="flex gap-2">
+            <input
+              :value="matchupUrl"
+              readonly
+              class="input-field flex-1 font-mono text-sm"
+            />
+            <button
+              @click="copyMatchupUrl"
+              class="btn-secondary whitespace-nowrap"
+            >
+              {{ urlCopied ? t('matchups.copied') : t('matchups.copy') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Public visibility toggle -->
+        <div class="mt-6 pt-4 border-t border-gray-700">
+          <div class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isPublicToggleWaiting"
+              :checked="matchup.is_public"
+              @change="togglePublic"
+              class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
+            />
+            <label for="isPublicToggleWaiting" class="text-sm text-gray-300">
+              {{ t('matchups.showInPublicList') }}
+            </label>
+          </div>
+        </div>
+
+        <!-- Cancel button for player1 -->
+        <div v-if="matchup.can_cancel" class="mt-4 pt-4 border-t border-gray-700">
+          <button
+            @click="openCancelModal"
+            class="btn-secondary text-red-400 hover:text-red-300 hover:border-red-500"
+          >
+            {{ t('matchups.cancelMatchup') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Message for users blocked by assigned opponent -->
+      <div v-if="isBlockedByAssignedOpponent" class="card">
+        <div class="bg-yellow-900/30 border border-yellow-500 text-yellow-200 px-4 py-3 rounded">
+          {{ t('matchups.assignedOpponentOnly') }}
+        </div>
       </div>
 
       <!-- Submit form for user who hasn't submitted yet -->
@@ -140,6 +243,22 @@
             {{ submitting ? t('matchups.submitting') : t('matchups.submitList') }}
           </button>
         </form>
+
+        <!-- Public visibility toggle for participants -->
+        <div v-if="isParticipant" class="mt-6 pt-6 border-t border-gray-700">
+          <div class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isPublicToggleSubmit"
+              :checked="matchup.is_public"
+              @change="togglePublic"
+              class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-squig-yellow focus:ring-squig-yellow"
+            />
+            <label for="isPublicToggleSubmit" class="text-sm text-gray-300">
+              {{ t('matchups.showInPublicList') }}
+            </label>
+          </div>
+        </div>
       </div>
 
       <!-- Revealed matchup section -->
@@ -474,7 +593,7 @@
             </div>
           </div>
 
-          <!-- Public visibility toggle (only for participants) -->
+          <!-- Public visibility toggle (for participants at any time) -->
           <div v-if="isParticipant" class="mt-6 pt-6 border-t border-gray-700">
             <div class="flex items-center gap-3">
               <input
@@ -489,6 +608,28 @@
               </label>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="card max-w-md mx-4">
+        <h3 class="text-xl font-bold mb-4">{{ t('matchups.cancelMatchup') }}</h3>
+        <p class="text-gray-300 mb-6">
+          {{ t('matchups.confirmCancel') }}
+        </p>
+        <div class="flex gap-4">
+          <button @click="closeCancelModal" class="flex-1 btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            @click="cancelMatchup"
+            :disabled="cancelling"
+            class="flex-1 btn-primary bg-red-600 hover:bg-red-700"
+          >
+            {{ cancelling ? t('matchups.cancelling') : t('matchups.confirmCancelButton') }}
+          </button>
         </div>
       </div>
     </div>
@@ -545,6 +686,23 @@ const copyList = async (text, listId) => {
   }
 }
 
+// Matchup URL for sharing
+const matchupUrl = computed(() => {
+  return `${window.location.origin}/matchup/${route.params.name}`
+})
+
+const urlCopied = ref(false)
+
+const copyMatchupUrl = async () => {
+  try {
+    await navigator.clipboard.writeText(matchupUrl.value)
+    urlCopied.value = true
+    setTimeout(() => { urlCopied.value = false }, 2000)
+  } catch (err) {
+    console.error('Failed to copy URL:', err)
+  }
+}
+
 // Check if current user is a participant
 const isParticipant = computed(() => {
   if (!authStore.isAuthenticated || !authStore.user || !matchup.value) {
@@ -553,6 +711,69 @@ const isParticipant = computed(() => {
   const username = authStore.user.username
   return matchup.value.player1_username === username || matchup.value.player2_username === username
 })
+
+// Check if user can edit matchup (participant and result not confirmed)
+const canEditMatchup = computed(() => {
+  if (!isParticipant.value || !matchup.value) return false
+  return matchup.value.result_status !== 'confirmed'
+})
+
+// Title editing
+const editingTitle = ref(false)
+const editTitleValue = ref('')
+const savingTitle = ref(false)
+
+const startEditTitle = () => {
+  editTitleValue.value = matchup.value?.title || ''
+  editingTitle.value = true
+}
+
+const cancelEditTitle = () => {
+  editingTitle.value = false
+  editTitleValue.value = ''
+}
+
+const saveTitle = async () => {
+  if (!matchup.value) return
+  savingTitle.value = true
+  try {
+    await axios.patch(`${API_URL}/matchup/${route.params.name}/title`, {
+      title: editTitleValue.value || null
+    })
+    matchup.value.title = editTitleValue.value || null
+    editingTitle.value = false
+  } catch (err) {
+    console.error('Failed to save title:', err)
+  } finally {
+    savingTitle.value = false
+  }
+}
+
+// Matchup cancellation
+const cancelling = ref(false)
+const showCancelModal = ref(false)
+
+const openCancelModal = () => {
+  showCancelModal.value = true
+}
+
+const closeCancelModal = () => {
+  showCancelModal.value = false
+}
+
+const cancelMatchup = async () => {
+  if (!matchup.value) return
+  cancelling.value = true
+  try {
+    await axios.post(`${API_URL}/matchup/${route.params.name}/cancel`)
+    matchup.value.is_cancelled = true
+    showCancelModal.value = false
+  } catch (err) {
+    console.error('Failed to cancel matchup:', err)
+  } finally {
+    cancelling.value = false
+  }
+}
 
 // Check if current user has already submitted their list
 const hasUserSubmitted = computed(() => {
@@ -578,7 +799,34 @@ const canSubmitList = computed(() => {
   if (hasUserSubmitted.value) {
     return false
   }
+  // If player2 is assigned to a specific user, only they can submit
+  if (matchup.value.player2_id && !matchup.value.player2_submitted) {
+    // Player2 slot is taken by a registered user
+    if (!authStore.isAuthenticated) {
+      return false // Anonymous users can't submit
+    }
+    const currentUsername = authStore.user?.username
+    // Only assigned player2 or player1 can submit
+    if (currentUsername !== matchup.value.player2_username &&
+        currentUsername !== matchup.value.player1_username) {
+      return false
+    }
+  }
   return true
+})
+
+// Check if user is blocked from submitting because opponent is assigned
+const isBlockedByAssignedOpponent = computed(() => {
+  if (!matchup.value || matchup.value.is_revealed) return false
+  if (matchup.value.player2_id && !matchup.value.player2_submitted) {
+    if (!authStore.isAuthenticated) return true
+    const currentUsername = authStore.user?.username
+    if (currentUsername !== matchup.value.player2_username &&
+        currentUsername !== matchup.value.player1_username) {
+      return true
+    }
+  }
+  return false
 })
 
 // Build battle plan object from reveal data (comes from API)
@@ -603,8 +851,6 @@ const fetchMatchup = async () => {
   } catch (err) {
     if (err.response?.status === 404) {
       error.value = t('matchups.matchupNotFound')
-    } else if (err.response?.status === 410) {
-      error.value = t('matchups.matchupExpired')
     } else {
       error.value = t('matchups.failedToLoad')
     }
