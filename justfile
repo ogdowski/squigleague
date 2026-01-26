@@ -739,6 +739,137 @@ vps-make-organizer EMAIL:
     echo "✅ Done! User needs to refresh/re-login."
 
 # ═══════════════════════════════════════════════
+# DATABASE BACKUPS (VPS)
+# ═══════════════════════════════════════════════
+
+# Create database backup on VPS
+vps-db-backup:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    echo "💾 Creating database backup on VPS..."
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && ./scripts/backup-db.sh"
+
+# List backups on VPS
+vps-db-backups:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    echo "📦 Backups on VPS:"
+    ssh ${VPS_USER}@${VPS_IP} "ls -lh ~/squig_league/backups/ 2>/dev/null || echo 'No backups found'"
+
+# Download latest backup from VPS
+vps-db-download:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    mkdir -p backups
+    echo "⬇️  Downloading latest backup from VPS..."
+    LATEST=$(ssh ${VPS_USER}@${VPS_IP} "ls -t ~/squig_league/backups/backup_*.sql.gz 2>/dev/null | head -1")
+    if [ -n "$LATEST" ]; then
+        scp ${VPS_USER}@${VPS_IP}:"$LATEST" backups/
+        echo "✅ Downloaded: $(basename $LATEST)"
+    else
+        echo "❌ No backups found on VPS"
+    fi
+
+# Full backup setup: deploy scripts + setup cron
+vps-backup-setup:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    echo "🚀 Setting up backups on VPS..."
+    echo ""
+    echo "📤 Step 1: Deploying scripts..."
+    scp scripts/backup-db.sh ${VPS_USER}@${VPS_IP}:~/squig_league/scripts/
+    scp scripts/backup-db-remote.sh ${VPS_USER}@${VPS_IP}:~/squig_league/scripts/
+    ssh ${VPS_USER}@${VPS_IP} "chmod +x ~/squig_league/scripts/backup-db*.sh"
+    echo ""
+    echo "⏰ Step 2: Setting up cron (daily at 2:00 AM)..."
+    ssh ${VPS_USER}@${VPS_IP} "(crontab -l 2>/dev/null | grep -v 'backup-db.sh'; echo '0 2 * * * /root/squig_league/scripts/backup-db.sh >> /var/log/squig-backup.log 2>&1') | crontab -"
+    echo ""
+    echo "🧪 Step 3: Running test backup..."
+    ssh ${VPS_USER}@${VPS_IP} "cd ~/squig_league && ./scripts/backup-db.sh"
+    echo ""
+    echo "✅ Backup setup complete!"
+    echo "   - Daily backups at 2:00 AM"
+    echo "   - Keeps last 5 backups"
+    echo "   - Use 'just vps-db-backups' to list"
+
+# Deploy backup scripts to VPS
+vps-backup-deploy:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    echo "📤 Deploying backup scripts to VPS..."
+    scp scripts/backup-db.sh ${VPS_USER}@${VPS_IP}:~/squig_league/scripts/
+    scp scripts/backup-db-remote.sh ${VPS_USER}@${VPS_IP}:~/squig_league/scripts/
+    ssh ${VPS_USER}@${VPS_IP} "chmod +x ~/squig_league/scripts/backup-db*.sh"
+    echo "✅ Scripts deployed"
+
+# Setup cron job for daily backups on VPS
+vps-backup-cron-setup:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    echo "⏰ Setting up daily backup cron on VPS..."
+    ssh ${VPS_USER}@${VPS_IP} "chmod +x ~/squig_league/scripts/backup-db.sh && \
+        (crontab -l 2>/dev/null | grep -v 'backup-db.sh'; echo '0 2 * * * /root/squig_league/scripts/backup-db.sh >> /var/log/squig-backup.log 2>&1') | crontab -"
+    echo "✅ Cron job added: daily at 2:00 AM"
+    ssh ${VPS_USER}@${VPS_IP} "crontab -l | grep backup"
+
+# Restore database from backup on VPS
+vps-db-restore FILE:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    echo "⚠️  Restoring database on VPS from {{FILE}}"
+    echo "This will overwrite current production data!"
+    read -p "Are you sure? (yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        echo "Cancelled"
+        exit 1
+    fi
+    echo "🔄 Restoring..."
+    ssh ${VPS_USER}@${VPS_IP} "gunzip -c ~/squig_league/backups/{{FILE}} | docker exec -i squig-postgres psql -U squig squigleague"
+    echo "✅ Database restored"
+
+# Show backup cron status on VPS
+vps-backup-cron-status:
+    #!/usr/bin/env bash
+    set -a
+    if [ -f .env.prod ]; then
+        source .env.prod
+    fi
+    set +a
+    echo "⏰ Backup cron jobs on VPS:"
+    ssh ${VPS_USER}@${VPS_IP} "crontab -l 2>/dev/null | grep -E 'backup|squig' || echo 'No backup cron jobs found'"
+    echo ""
+    echo "📜 Recent backup log:"
+    ssh ${VPS_USER}@${VPS_IP} "tail -20 /var/log/squig-backup.log 2>/dev/null || echo 'No log file yet'"
+
+# ═══════════════════════════════════════════════
 # SSL CERTIFICATES
 # ═══════════════════════════════════════════════
 
