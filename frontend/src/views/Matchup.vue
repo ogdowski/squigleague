@@ -48,7 +48,7 @@
                 type="text"
                 maxlength="100"
                 class="input-field text-xl md:text-2xl font-bold flex-1"
-                :placeholder="t('matchups.titlePlaceholder') || 'Enter title...'"
+                :placeholder="t('matchups.matchupTitlePlaceholder')"
                 @keyup.enter="saveTitle"
                 @keyup.escape="cancelEditTitle"
               />
