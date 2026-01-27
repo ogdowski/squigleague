@@ -154,7 +154,11 @@
     "editResult": "Edit",
     "submitEditedResult": "Submit Edited Result",
     "failedToSubmitResult": "Failed to submit result",
-    "armyLists": "Army Lists"
+    "armyLists": "Army Lists",
+    "shareResult": "Share Result",
+    "share": "Share",
+    "downloadImage": "Download Image",
+    "generating": "Generating..."
   },
   "leagues": {
     "title": "Leagues",

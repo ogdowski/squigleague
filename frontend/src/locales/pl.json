@@ -154,7 +154,11 @@
     "editResult": "Edytuj",
     "submitEditedResult": "Wyślij poprawiony wynik",
     "failedToSubmitResult": "Nie udało się podać wyniku",
-    "armyLists": "Listy armii"
+    "armyLists": "Listy armii",
+    "shareResult": "Udostępnij wynik",
+    "share": "Udostępnij",
+    "downloadImage": "Pobierz grafikę",
+    "generating": "Generowanie..."
   },
   "leagues": {
     "title": "Ligi",

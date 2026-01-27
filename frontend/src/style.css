@@ -4,7 +4,10 @@
 
 @layer base {
   body {
-    @apply bg-gray-900 text-white;
+    @apply text-white;
+    background: linear-gradient(180deg, #0a0d12 0%, #111827 50%, #0a0d12 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
     /* Prevent horizontal scroll on mobile */
     overflow-x: hidden;
   }

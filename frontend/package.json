@@ -10,6 +10,7 @@
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.6.5",
+    "html2canvas": "^1.4.1",
     "marked": "^17.0.1",
     "pinia": "^2.1.7",
     "vue": "^3.4.15",

@@ -427,6 +427,16 @@
                   <p class="text-sm text-gray-400">{{ reveal.player2_username || t('matchups.player2') }}</p>
                 </div>
               </div>
+              <!-- Share button -->
+              <button
+                @click="openShareModal"
+                class="mt-4 btn-secondary w-full flex items-center justify-center gap-2"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                {{ t('matchups.shareResult') }}
+              </button>
             </div>
 
             <!-- Pending confirmation -->
@@ -612,6 +622,81 @@
       </div>
     </div>
 
+    <!-- Hidden card for rendering (full size, off-screen) -->
+    <div v-if="showShareModal" style="position: fixed; left: -9999px; top: 0;">
+      <MatchupShareCard
+        ref="shareCardRef"
+        :map-name="reveal?.map_name || ''"
+        :player1-name="reveal?.player1_username || t('matchups.player1')"
+        :player1-avatar="player1AvatarDataUrl || reveal?.player1_avatar"
+        :player1-faction="reveal?.player1_army_faction || ''"
+        :player1-score="reveal?.player1_score || 0"
+        :player2-name="reveal?.player2_username || t('matchups.player2')"
+        :player2-avatar="player2AvatarDataUrl || reveal?.player2_avatar"
+        :player2-faction="reveal?.player2_army_faction || ''"
+        :player2-score="reveal?.player2_score || 0"
+      />
+    </div>
+
+    <!-- Share Modal -->
+    <div v-if="showShareModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div class="bg-gray-800 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+          <h3 class="text-lg font-bold">{{ t('matchups.shareResult') }}</h3>
+          <button @click="closeShareModal" class="text-gray-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Preview (scaled down) -->
+        <div class="p-4 flex justify-center">
+          <MatchupShareCard
+            v-if="reveal"
+            :size="400"
+            :map-name="reveal.map_name"
+            :player1-name="reveal.player1_username || t('matchups.player1')"
+            :player1-avatar="player1AvatarDataUrl || reveal.player1_avatar"
+            :player1-faction="reveal.player1_army_faction || ''"
+            :player1-score="reveal.player1_score"
+            :player2-name="reveal.player2_username || t('matchups.player2')"
+            :player2-avatar="player2AvatarDataUrl || reveal.player2_avatar"
+            :player2-faction="reveal.player2_army_faction || ''"
+            :player2-score="reveal.player2_score"
+          />
+        </div>
+
+        <!-- Action buttons -->
+        <div class="p-4 border-t border-gray-700 space-y-3">
+          <!-- Native share (mobile) -->
+          <button
+            v-if="canNativeShare"
+            @click="nativeShare"
+            :disabled="shareLoading"
+            class="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            {{ shareLoading ? t('matchups.generating') : t('matchups.share') }}
+          </button>
+
+          <!-- Download -->
+          <button
+            @click="downloadImage"
+            :disabled="shareLoading"
+            class="btn-secondary w-full flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {{ shareLoading ? t('matchups.generating') : t('matchups.downloadImage') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Cancel Confirmation Modal -->
     <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="card max-w-md mx-4">
@@ -642,7 +727,9 @@ import { useRoute, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
+import html2canvas from 'html2canvas'
 import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
+import MatchupShareCard from '@/components/MatchupShareCard.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -753,6 +840,35 @@ const saveTitle = async () => {
 const cancelling = ref(false)
 const showCancelModal = ref(false)
 
+// Share functionality
+const showShareModal = ref(false)
+const shareCardRef = ref(null)
+const shareLoading = ref(false)
+const canNativeShare = computed(() => {
+  return typeof navigator !== 'undefined' && navigator.share && navigator.canShare
+})
+
+// Pre-fetched avatars as data URLs to avoid CORS issues
+const player1AvatarDataUrl = ref(null)
+const player2AvatarDataUrl = ref(null)
+
+const fetchImageAsDataUrl = async (url) => {
+  if (!url) return null
+  try {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch (err) {
+    console.error('Failed to fetch image:', err)
+    return null
+  }
+}
+
 const openCancelModal = () => {
   showCancelModal.value = true
 }
@@ -772,6 +888,90 @@ const cancelMatchup = async () => {
     console.error('Failed to cancel matchup:', err)
   } finally {
     cancelling.value = false
+  }
+}
+
+// Share functions
+const openShareModal = async () => {
+  showShareModal.value = true
+
+  // Pre-fetch avatars as data URLs to avoid CORS issues with html2canvas
+  if (reveal.value?.player1_avatar && !player1AvatarDataUrl.value) {
+    player1AvatarDataUrl.value = await fetchImageAsDataUrl(reveal.value.player1_avatar)
+  }
+  if (reveal.value?.player2_avatar && !player2AvatarDataUrl.value) {
+    player2AvatarDataUrl.value = await fetchImageAsDataUrl(reveal.value.player2_avatar)
+  }
+}
+
+const closeShareModal = () => {
+  showShareModal.value = false
+}
+
+const generateImage = async () => {
+  if (!shareCardRef.value?.cardRef) return null
+
+  const cardElement = shareCardRef.value.cardRef
+  const canvas = await html2canvas(cardElement, {
+    scale: 1,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#111827'
+  })
+
+  return canvas
+}
+
+const downloadImage = async () => {
+  shareLoading.value = true
+  try {
+    const canvas = await generateImage()
+    if (!canvas) return
+
+    const link = document.createElement('a')
+    link.download = `matchup-${matchup.value?.name || 'result'}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  } catch (err) {
+    console.error('Failed to generate image:', err)
+  } finally {
+    shareLoading.value = false
+  }
+}
+
+const nativeShare = async () => {
+  shareLoading.value = true
+  try {
+    const canvas = await generateImage()
+    if (!canvas) return
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        shareLoading.value = false
+        return
+      }
+
+      const file = new File([blob], `matchup-${matchup.value?.name || 'result'}.png`, {
+        type: 'image/png'
+      })
+
+      const shareData = {
+        files: [file],
+        title: t('matchups.matchResult'),
+        text: `${reveal.value?.player1_username || t('matchups.player1')} ${reveal.value?.player1_score} - ${reveal.value?.player2_score} ${reveal.value?.player2_username || t('matchups.player2')}`
+      }
+
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
+      } else {
+        // Fallback to download
+        await downloadImage()
+      }
+      shareLoading.value = false
+    }, 'image/png')
+  } catch (err) {
+    console.error('Failed to share:', err)
+    shareLoading.value = false
   }
 }
 
@@ -1022,4 +1222,5 @@ onMounted(() => {
     opacity: 1;
   }
 }
+
 </style>
