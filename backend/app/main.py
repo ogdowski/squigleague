@@ -93,6 +93,7 @@ async def root():
 
 # Import and include routers
 from app.admin.routes import router as admin_router
+from app.bsdata.routes import router as bsdata_router
 from app.league.routes import router as league_router
 from app.matchup.routes import router as matchup_router
 from app.player.routes import router as player_router
@@ -103,6 +104,7 @@ app.include_router(matchup_router, prefix="/matchup", tags=["Matchup"])
 app.include_router(league_router, prefix="/league", tags=["League"])
 app.include_router(player_router, prefix="/player", tags=["Player"])
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])
+app.include_router(bsdata_router, tags=["BSData"])
 
 # Serve uploaded files (directory created by Dockerfile)
 try:

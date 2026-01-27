@@ -242,7 +242,10 @@
         <div class="container mx-auto px-4 py-2 space-y-1">
           <div class="flex items-center justify-between text-xs text-gray-400">
             <LanguageSwitcher />
-            <span v-if="stats">v{{ stats.version }}</span>
+            <div class="flex items-center gap-2">
+              <span v-if="bsDataStatus" class="text-gray-500">BSData: {{ bsDataStatus.commit_short }}</span>
+              <span v-if="stats">v{{ stats.version }}</span>
+            </div>
           </div>
           <div class="flex items-center justify-between text-xs">
             <span class="text-gray-500">© 2025 Ariel Ogdowski</span>
@@ -264,6 +267,7 @@
               <button @click="showFeedbackInfo = true" class="hover:text-squig-yellow transition-colors">
                 {{ t('footer.feedback') }}
               </button>
+              <span v-if="bsDataStatus" class="text-gray-500">• BSData: {{ bsDataStatus.commit_short }}</span>
               <span v-if="stats">• v{{ stats.version }}</span>
             </div>
           </div>
@@ -313,6 +317,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const languageStore = useLanguageStore()
 const stats = ref(null)
+const bsDataStatus = ref(null)
 const showUserMenu = ref(false)
 const showMobileMenu = ref(false)
 const showMobileFooter = ref(false)
@@ -355,11 +360,21 @@ const fetchStats = async () => {
   }
 }
 
+const fetchBSDataStatus = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/bsdata/status`)
+    bsDataStatus.value = response.data
+  } catch (error) {
+    // BSData not synced yet, ignore
+  }
+}
+
 onMounted(() => {
   // Sync vue-i18n locale with language store
   locale.value = languageStore.currentLocale
   authStore.initAuth()
   fetchStats()
+  fetchBSDataStatus()
 })
 </script>
 

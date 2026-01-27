@@ -473,6 +473,99 @@
           </div>
         </template>
       </div>
+
+      <!-- Data Tab (BSData) -->
+      <div v-show="activeTab === 'data'">
+        <div v-if="bsDataLoading" class="text-center py-8">
+          <p class="text-gray-400">{{ t('common.loading') }}</p>
+        </div>
+        <template v-else>
+          <!-- Sync Status Card -->
+          <div class="card mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-bold mb-2">BSData Status</h3>
+                <div v-if="bsDataStatus" class="text-sm space-y-1">
+                  <p><span class="text-gray-400">Commit:</span> <code class="text-squig-yellow">{{ bsDataStatus.commit_short }}</code></p>
+                  <p><span class="text-gray-400">Last sync:</span> {{ formatDate(bsDataStatus.last_sync) }}</p>
+                  <p><span class="text-gray-400">Factions:</span> {{ bsDataStatus.factions_count }} | <span class="text-gray-400">Units:</span> {{ bsDataStatus.units_count }}</p>
+                </div>
+                <p v-else class="text-gray-500 text-sm">No sync data available</p>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="triggerBSDataSync(false)"
+                  :disabled="bsSyncing"
+                  class="btn-secondary text-sm px-4 py-2"
+                >
+                  {{ bsSyncing ? 'Syncing...' : 'Sync' }}
+                </button>
+                <button
+                  @click="triggerBSDataSync(true)"
+                  :disabled="bsSyncing"
+                  class="btn-secondary text-sm px-4 py-2"
+                >
+                  {{ bsSyncing ? 'Syncing...' : 'Force Full Sync' }}
+                </button>
+              </div>
+            </div>
+            <!-- Sync Result -->
+            <div v-if="bsSyncResult" class="mt-4 p-3 rounded text-sm" :class="bsSyncResult.error ? 'bg-red-900/30 text-red-300' : 'bg-green-900/30 text-green-300'">
+              <p v-if="bsSyncResult.error">Error: {{ bsSyncResult.error }}</p>
+              <template v-else>
+                <p>Sync completed ({{ bsSyncResult.sync_type }})</p>
+                <p>Commit: {{ bsSyncResult.commit_short }} | Factions: {{ bsSyncResult.factions_count }} | Units: {{ bsSyncResult.units_count }}</p>
+              </template>
+            </div>
+          </div>
+
+          <!-- Battle Tactic Cards -->
+          <div class="card mb-6">
+            <h3 class="text-lg font-bold mb-4">Battle Tactic Cards ({{ bsBattleTactics.length }})</h3>
+            <div v-if="bsBattleTactics.length === 0" class="text-gray-500 text-center py-4">
+              No battle tactics synced yet.
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <span v-for="card in bsBattleTactics" :key="card.id" class="bg-gray-800 px-3 py-1 rounded text-sm">
+                {{ card.name }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Factions List -->
+          <div class="card">
+            <h3 class="text-lg font-bold mb-4">Factions ({{ bsDataFactions.length }})</h3>
+            <div v-if="bsDataFactions.length === 0" class="text-gray-500 text-center py-4">
+              No factions synced yet. Run a sync first.
+            </div>
+            <div v-else class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-gray-400 border-b border-gray-700">
+                    <th class="text-left py-2 px-3">Faction</th>
+                    <th class="text-left py-2 px-3">Grand Alliance</th>
+                    <th class="text-right py-2 px-3">Units</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="faction in bsDataFactions" :key="faction.id" class="border-b border-gray-800 hover:bg-gray-700/50">
+                    <td class="py-2 px-3">{{ faction.name }}</td>
+                    <td class="py-2 px-3">
+                      <span :class="{
+                        'text-blue-400': faction.grand_alliance === 'Order',
+                        'text-red-400': faction.grand_alliance === 'Chaos',
+                        'text-purple-400': faction.grand_alliance === 'Death',
+                        'text-green-400': faction.grand_alliance === 'Destruction',
+                      }">{{ faction.grand_alliance }}</span>
+                    </td>
+                    <td class="py-2 px-3 text-right">{{ faction.units_count }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
+      </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -510,6 +603,7 @@ const tabs = [
   { id: 'users', label: 'admin.usersTab' },
   { id: 'settings', label: 'admin.settingsTab' },
   { id: 'matchups', label: 'admin.matchupsTab' },
+  { id: 'data', label: 'admin.dataTab' },
 ]
 
 const roles = [
@@ -549,6 +643,14 @@ const matchups = ref([])
 const matchupsLoading = ref(false)
 const matchupFilter = ref('all')
 
+// BSData state
+const bsDataStatus = ref(null)
+const bsDataFactions = ref([])
+const bsBattleTactics = ref([])
+const bsDataLoading = ref(false)
+const bsSyncing = ref(false)
+const bsSyncResult = ref(null)
+
 // Delete modal
 const deleteModal = ref({
   show: false,
@@ -560,6 +662,9 @@ watch(activeTab, (newTab) => {
   router.replace({ params: { tab: newTab } })
   if (newTab === 'matchups' && matchups.value.length === 0) {
     fetchMatchups()
+  }
+  if (newTab === 'data' && !bsDataStatus.value) {
+    fetchBSData()
   }
 })
 
@@ -601,6 +706,41 @@ const fetchMatchups = async () => {
     console.error('Failed to fetch matchups:', err)
   } finally {
     matchupsLoading.value = false
+  }
+}
+
+const fetchBSData = async () => {
+  bsDataLoading.value = true
+  try {
+    const [statusRes, factionsRes, tacticsRes] = await Promise.all([
+      axios.get(`${API_URL}/bsdata/status`),
+      axios.get(`${API_URL}/bsdata/factions`),
+      axios.get(`${API_URL}/bsdata/battle-tactics`),
+    ])
+    bsDataStatus.value = statusRes.data
+    bsDataFactions.value = factionsRes.data
+    bsBattleTactics.value = tacticsRes.data
+  } catch (err) {
+    console.error('Failed to fetch BSData:', err)
+  } finally {
+    bsDataLoading.value = false
+  }
+}
+
+const triggerBSDataSync = async (forceFull = false) => {
+  bsSyncing.value = true
+  bsSyncResult.value = null
+  try {
+    const response = await axios.post(`${API_URL}/bsdata/sync`, null, {
+      params: { force_full: forceFull }
+    })
+    bsSyncResult.value = response.data
+    // Refresh data after sync
+    await fetchBSData()
+  } catch (err) {
+    bsSyncResult.value = { error: err.response?.data?.detail || 'Sync failed' }
+  } finally {
+    bsSyncing.value = false
   }
 }
 

@@ -41,6 +41,9 @@ COPY --chown=appuser:appuser . .
 # Create uploads directory with proper permissions
 RUN mkdir -p /app/uploads/avatars && chown -R appuser:appuser /app/uploads
 
+# Create BSData directory for downloaded files
+RUN mkdir -p /app/bsdata && chown -R appuser:appuser /app/bsdata
+
 # Switch to non-root user
 USER appuser
 
