@@ -12,7 +12,7 @@
       <!-- Mobile: stacked layout, Desktop: horizontal -->
       <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <!-- Player 1 -->
-        <div class="flex items-center gap-2 min-w-0 flex-1">
+        <div class="flex items-center gap-2 min-w-0">
           <img
             v-if="displayLeftAvatar"
             :src="displayLeftAvatar"
@@ -31,7 +31,7 @@
         </div>
 
         <!-- Score / vs -->
-        <div class="flex items-center justify-center sm:justify-start gap-2 py-1 sm:py-0">
+        <div class="flex items-center gap-2 py-1 sm:py-0">
           <span v-if="match.player1_score !== null" class="text-xl sm:text-2xl font-bold text-squig-yellow">
             {{ displayLeftScore }} - {{ displayRightScore }}
           </span>
@@ -39,7 +39,7 @@
         </div>
 
         <!-- Player 2 -->
-        <div class="flex items-center gap-2 min-w-0 flex-1">
+        <div class="flex items-center gap-2 min-w-0">
           <svg v-if="rightListStatus" class="w-4 h-4 flex-shrink-0 sm:order-first" :class="rightListStatus === 'revealed' ? 'text-white' : 'text-squig-yellow'" fill="currentColor" viewBox="0 0 24 24">
             <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
           </svg>
