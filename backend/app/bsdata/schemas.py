@@ -288,3 +288,90 @@ class SyncResultResponse(BaseModel):
     message: Optional[str] = None
     error: Optional[str] = None
     status: Optional[str] = None
+
+
+# =============================================================================
+# Manifestation Lore
+# =============================================================================
+
+
+class ManifestationLoreResponse(BaseModel):
+    id: int
+    name: str
+    faction_id: Optional[int] = None
+    manifestations: list[ManifestationResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
+# Army of Renown (with battle traits)
+# =============================================================================
+
+
+class AoRBattleTraitResponse(BaseModel):
+    id: int
+    name: str
+    effect: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ArmyOfRenownWithTraits(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    battle_traits: list[AoRBattleTraitResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
+# Regiment of Renown (with units)
+# =============================================================================
+
+
+class RoRUnitResponse(BaseModel):
+    id: int
+    unit_name: str
+    quantity: int = 1
+
+    class Config:
+        from_attributes = True
+
+
+class RegimentOfRenownWithUnits(BaseModel):
+    id: int
+    name: str
+    points: Optional[int] = None
+    grand_alliances: Optional[str] = None
+    description: Optional[str] = None
+    units: list[RoRUnitResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
+# Faction Full (all data)
+# =============================================================================
+
+
+class FactionFull(BaseModel):
+    id: int
+    name: str
+    grand_alliance_name: str
+    battle_traits: list[BattleTraitResponse] = []
+    heroic_traits: list[HeroicTraitResponse] = []
+    artefacts: list[ArtefactResponse] = []
+    units: list[UnitListItem] = []
+    spell_lores: list[SpellLoreResponse] = []
+    manifestation_lores: list[ManifestationLoreResponse] = []
+    armies_of_renown: list[ArmyOfRenownWithTraits] = []
+    regiments_of_renown: list[RegimentOfRenownWithUnits] = []
+
+    class Config:
+        from_attributes = True

@@ -3,6 +3,7 @@
 from typing import Optional
 
 from app.bsdata.models import (
+    AoRBattleTrait,
     ArmyOfRenown,
     Artefact,
     BattleTacticCard,
@@ -13,7 +14,9 @@ from app.bsdata.models import (
     GrandAlliance,
     HeroicTrait,
     Manifestation,
+    ManifestationLore,
     RegimentOfRenown,
+    RoRUnit,
     Spell,
     SpellLore,
     Unit,
@@ -21,19 +24,26 @@ from app.bsdata.models import (
     Weapon,
 )
 from app.bsdata.schemas import (
+    AoRBattleTraitResponse,
     ArmyOfRenownDetail,
     ArmyOfRenownListItem,
+    ArmyOfRenownWithTraits,
     ArtefactResponse,
     BattleTacticCardResponse,
     BattleTraitResponse,
     CoreAbilityResponse,
     FactionDetail,
+    FactionFull,
     FactionListItem,
     GrandAllianceResponse,
     HeroicTraitResponse,
+    ManifestationLoreResponse,
     ManifestationResponse,
     RegimentOfRenownResponse,
+    RegimentOfRenownWithUnits,
+    RoRUnitResponse,
     SpellLoreResponse,
+    SpellResponse,
     SyncResultResponse,
     SyncStatusResponse,
     UnitAbilityResponse,
@@ -204,6 +214,152 @@ async def list_faction_artefacts(
         .order_by(Artefact.name)
     ).all()
     return artefacts
+
+
+@router.get(
+    "/factions/{faction_id}/spell-lores", response_model=list[SpellLoreResponse]
+)
+async def list_faction_spell_lores(
+    faction_id: int,
+    session: Session = Depends(get_session),
+):
+    """List spell lores for a faction."""
+    lores = session.exec(
+        select(SpellLore)
+        .where(SpellLore.faction_id == faction_id)
+        .order_by(SpellLore.name)
+    ).all()
+
+    result = []
+    for lore in lores:
+        spells = session.exec(
+            select(Spell).where(Spell.lore_id == lore.id).order_by(Spell.name)
+        ).all()
+        result.append(
+            SpellLoreResponse(
+                id=lore.id,
+                name=lore.name,
+                faction_id=lore.faction_id,
+                spells=spells,
+            )
+        )
+    return result
+
+
+@router.get(
+    "/factions/{faction_id}/manifestation-lores",
+    response_model=list[ManifestationLoreResponse],
+)
+async def list_faction_manifestation_lores(
+    faction_id: int,
+    session: Session = Depends(get_session),
+):
+    """List manifestation lores for a faction."""
+    lores = session.exec(
+        select(ManifestationLore)
+        .where(ManifestationLore.faction_id == faction_id)
+        .order_by(ManifestationLore.name)
+    ).all()
+
+    result = []
+    for lore in lores:
+        manifestations = session.exec(
+            select(Manifestation)
+            .where(Manifestation.lore_id == lore.id)
+            .order_by(Manifestation.name)
+        ).all()
+        result.append(
+            ManifestationLoreResponse(
+                id=lore.id,
+                name=lore.name,
+                faction_id=lore.faction_id,
+                manifestations=[
+                    ManifestationResponse.model_validate(m) for m in manifestations
+                ],
+            )
+        )
+    return result
+
+
+@router.get(
+    "/factions/{faction_id}/armies-of-renown",
+    response_model=list[ArmyOfRenownWithTraits],
+)
+async def list_faction_armies_of_renown(
+    faction_id: int,
+    session: Session = Depends(get_session),
+):
+    """List armies of renown for a faction."""
+    armies = session.exec(
+        select(ArmyOfRenown)
+        .where(ArmyOfRenown.faction_id == faction_id)
+        .order_by(ArmyOfRenown.name)
+    ).all()
+
+    result = []
+    for aor in armies:
+        traits = session.exec(
+            select(AoRBattleTrait).where(AoRBattleTrait.army_of_renown_id == aor.id)
+        ).all()
+        result.append(
+            ArmyOfRenownWithTraits(
+                id=aor.id,
+                name=aor.name,
+                description=aor.description,
+                battle_traits=[
+                    AoRBattleTraitResponse.model_validate(t) for t in traits
+                ],
+            )
+        )
+    return result
+
+
+@router.get("/manifestation-lores", response_model=list[ManifestationLoreResponse])
+async def list_manifestation_lores(session: Session = Depends(get_session)):
+    """List universal manifestation lores (not faction-specific)."""
+    lores = session.exec(
+        select(ManifestationLore)
+        .where(ManifestationLore.faction_id == None)
+        .order_by(ManifestationLore.name)
+    ).all()
+
+    result = []
+    for lore in lores:
+        manifestations = session.exec(
+            select(Manifestation)
+            .where(Manifestation.lore_id == lore.id)
+            .order_by(Manifestation.name)
+        ).all()
+        result.append(
+            ManifestationLoreResponse(
+                id=lore.id,
+                name=lore.name,
+                faction_id=lore.faction_id,
+                manifestations=[
+                    ManifestationResponse.model_validate(m) for m in manifestations
+                ],
+            )
+        )
+
+    # Include orphan manifestations
+    orphans = session.exec(
+        select(Manifestation)
+        .where(Manifestation.lore_id == None)
+        .order_by(Manifestation.name)
+    ).all()
+    if orphans:
+        result.append(
+            ManifestationLoreResponse(
+                id=0,
+                name="Endless Spells & Invocations",
+                faction_id=None,
+                manifestations=[
+                    ManifestationResponse.model_validate(m) for m in orphans
+                ],
+            )
+        )
+
+    return result
 
 
 @router.get("/units", response_model=list[UnitListItem])

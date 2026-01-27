@@ -73,6 +73,22 @@ const routes = [
     name: 'MatchDetail',
     component: () => import('../views/MatchDetail.vue'),
   },
+  // Rules routes
+  {
+    path: '/rules',
+    name: 'Rules',
+    component: () => import('../views/Rules.vue'),
+  },
+  {
+    path: '/rules/:factionSlug',
+    name: 'RulesFaction',
+    component: () => import('../views/Rules.vue'),
+  },
+  {
+    path: '/rules/:factionSlug/:unitSlug',
+    name: 'RulesUnit',
+    component: () => import('../views/Rules.vue'),
+  },
   // Player routes
   {
     path: '/ranking',
