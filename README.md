@@ -9,13 +9,14 @@ Open-source competitive league and matchup platform for Age of Sigmar.
 
 ## Features
 
-### Matchup System (Herald)
+### Matchup System
 Blind army list exchange for casual 1v1 games:
 
 - **Blind Exchange**: Both players submit lists secretly, revealed simultaneously
 - **Battle Plan Integration**: GHB 2025/2026 missions with objectives and underdog abilities
 - **Auto Map Assignment**: Random mission assigned on reveal
 - **Result Tracking**: Submit scores with opponent confirmation (24h auto-confirm)
+- **Share Results**: Generate shareable images (1080x1080) with avatars, scores, and mission for social media
 - **Friendly IDs**: AoS-themed IDs (e.g., "mighty-dragon-3x7a")
 - **Anonymous Play**: Create matchups without registration
 
@@ -45,6 +46,11 @@ Global skill ratings for competitive players:
 - **Authentication**: Email/password with JWT, Discord OAuth
 - **Profiles**: Avatar, location, language preference
 - **Roles**: Player, Organizer, Admin
+
+### UI/UX
+- **Dark Theme**: Gradient background with consistent styling
+- **Mobile-First**: Responsive design optimized for mobile play
+- **Social Sharing**: Generate branded images for X, Facebook, Instagram
 
 ## Scoring System
 
@@ -96,6 +102,7 @@ Each includes deployment type, objectives, scoring rules, and underdog abilities
 - **Styling**: Tailwind CSS
 - **State**: Pinia
 - **i18n**: English, Polish
+- **Image Generation**: html2canvas for shareable result graphics
 
 ### Infrastructure
 - **Containerization**: Docker & Docker Compose
@@ -182,12 +189,19 @@ squig_league/
 ### Matchup
 ```
 POST   /api/matchup                    Create matchup
-GET    /api/matchup/{name}             Get matchup
+GET    /api/matchup/{name}             Get matchup status
 POST   /api/matchup/{name}/submit      Submit army list
-GET    /api/matchup/{name}/reveal      Get revealed matchup
-POST   /api/matchup/{name}/result/submit   Submit result
+GET    /api/matchup/{name}/reveal      Get revealed matchup with lists
+POST   /api/matchup/{name}/result      Submit result
 POST   /api/matchup/{name}/result/confirm  Confirm result
+POST   /api/matchup/{name}/result/edit     Edit pending result
+POST   /api/matchup/{name}/cancel      Cancel matchup
+PATCH  /api/matchup/{name}/title       Update title
+PATCH  /api/matchup/{name}/public      Toggle public visibility
+GET    /api/matchup/my-matchups        List user's matchups
+GET    /api/matchup/public             List public matchups
 GET    /api/matchup/maps               List battle plans
+GET    /api/matchup/armies             List army factions
 ```
 
 ### League
