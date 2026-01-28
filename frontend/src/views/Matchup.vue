@@ -93,6 +93,54 @@
             Both lists have been submitted! The matchup is revealed.
           </div>
 
+          <!-- Played On Date Section -->
+          <div class="mb-6 bg-gray-900 p-4 rounded">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-squig-yellow">Game Date</h3>
+              <button 
+                @click="editingDate = !editingDate" 
+                class="text-sm text-blue-400 hover:text-blue-300"
+              >
+                {{ editingDate ? 'Cancel' : 'Edit Date' }}
+              </button>
+            </div>
+            
+            <div v-if="!editingDate" class="text-gray-300">
+              <p class="text-sm text-gray-400">Played on:</p>
+              <p class="text-lg">{{ formatDate(reveal.played_on) }}</p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div>
+                <label class="block text-sm font-medium mb-2 text-gray-300">
+                  Update game date
+                </label>
+                <input
+                  v-model="newPlayedOn"
+                  type="datetime-local"
+                  :max="getCurrentDateTime()"
+                  class="input-field w-full"
+                />
+              </div>
+              
+              <div v-if="dateError" class="bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded text-sm">
+                {{ dateError }}
+              </div>
+              
+              <div v-if="dateSuccess" class="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded text-sm">
+                Date updated successfully!
+              </div>
+
+              <button
+                @click="updatePlayedOn"
+                :disabled="updatingDate"
+                class="btn-primary"
+              >
+                {{ updatingDate ? 'Updating...' : 'Update Date' }}
+              </button>
+            </div>
+          </div>
+
           <div class="mb-8">
             <h2 class="text-2xl font-bold mb-4 text-squig-yellow">Map Assignment</h2>
             <div class="bg-gray-900 p-6 rounded">
@@ -190,6 +238,12 @@ const submitting = ref(false)
 const submitError = ref('')
 const submitSuccess = ref(false)
 
+const editingDate = ref(false)
+const newPlayedOn = ref('')
+const updatingDate = ref(false)
+const dateError = ref('')
+const dateSuccess = ref(false)
+
 const fetchMatchup = async () => {
   try {
     const response = await axios.get(`${API_URL}/matchup/${route.params.name}`)
@@ -248,6 +302,47 @@ const submitList = async () => {
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleString()
+}
+
+const getCurrentDateTime = () => {
+  // Return current datetime in format required by datetime-local input
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+const updatePlayedOn = async () => {
+  dateError.value = ''
+  dateSuccess.value = false
+  updatingDate.value = true
+
+  try {
+    // Convert local datetime to ISO format
+    const playedOnDate = new Date(newPlayedOn.value).toISOString()
+    
+    await axios.patch(
+      `${API_URL}/matchup/${route.params.name}/date`,
+      { played_on: playedOnDate }
+    )
+
+    dateSuccess.value = true
+    // Refresh reveal data to show updated date
+    await fetchReveal()
+    
+    // Close edit form after successful update
+    setTimeout(() => {
+      editingDate.value = false
+      dateSuccess.value = false
+    }, 2000)
+  } catch (err) {
+    dateError.value = err.response?.data?.detail || 'Failed to update date'
+  } finally {
+    updatingDate.value = false
+  }
 }
 
 const getObjectiveClass = (type) => {

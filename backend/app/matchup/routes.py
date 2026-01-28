@@ -9,6 +9,7 @@ from app.matchup.schemas import (
     MatchupReveal,
     MatchupStatus,
     MatchupSubmit,
+    MatchupUpdateDate,
 )
 from app.matchup.service import get_battle_plan_data, get_map_image, submit_list
 from app.users.models import User
@@ -83,6 +84,7 @@ async def get_my_matchups(
                 is_revealed=matchup.is_revealed,
                 created_at=matchup.created_at,
                 expires_at=matchup.expires_at,
+                played_on=matchup.played_on,
                 player1_username=player1.username if player1 else None,
                 player2_username=player2_username,
             )
@@ -155,6 +157,7 @@ async def get_matchup_status(
         is_revealed=matchup.is_revealed,
         created_at=matchup.created_at,
         expires_at=matchup.expires_at,
+        played_on=matchup.played_on,
         player1_username=player1_username,
         player2_username=player2_username,
     )
@@ -260,6 +263,50 @@ async def reveal_matchup(
         underdog_ability=battle_plan.get("underdog_ability") if battle_plan else None,
         objective_types=battle_plan.get("objective_types") if battle_plan else None,
         revealed_at=matchup.revealed_at,
+        played_on=matchup.played_on,
         player1_username=player1_username,
         player2_username=player2_username,
     )
+
+
+@router.patch("/{matchup_name}/date")
+async def update_played_on_date(
+    matchup_name: str,
+    date_update: MatchupUpdateDate,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user_optional),
+):
+    """Update the played_on date for a matchup."""
+    statement = select(Matchup).where(Matchup.name == matchup_name)
+    matchup = session.exec(statement).first()
+
+    if not matchup:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Matchup not found",
+        )
+
+    # Validate the date is not in the future
+    if date_update.played_on > datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="played_on cannot be in the future",
+        )
+
+    # Validate the date is not before created_at
+    if date_update.played_on < matchup.created_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="played_on cannot be before matchup creation date",
+        )
+
+    # Update the played_on date
+    matchup.played_on = date_update.played_on
+    session.add(matchup)
+    session.commit()
+    session.refresh(matchup)
+
+    return {
+        "message": "played_on date updated successfully",
+        "played_on": matchup.played_on,
+    }

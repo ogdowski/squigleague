@@ -40,6 +40,10 @@
                 <span class="text-gray-400">Expires:</span>
                 <span class="text-white ml-2">{{ formatDate(matchup.expires_at) }}</span>
               </div>
+              <div v-if="matchup.is_revealed">
+                <span class="text-gray-400">Played:</span>
+                <span class="text-white ml-2">{{ formatDate(matchup.played_on) }}</span>
+              </div>
             </div>
             <div v-if="matchup.player1_username || matchup.player2_username" class="flex gap-4 text-sm">
               <div v-if="matchup.player1_username">

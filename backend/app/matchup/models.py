@@ -39,6 +39,7 @@ class Matchup(SQLModel, table=True):
         default_factory=lambda: datetime.utcnow() + timedelta(days=90)  # 3 months
     )
     revealed_at: Optional[datetime] = None
+    played_on: datetime = Field(default_factory=datetime.utcnow)
 
     @property
     def is_revealed(self) -> bool:

@@ -25,6 +25,7 @@ class MatchupStatus(BaseModel):
     is_revealed: bool
     created_at: datetime
     expires_at: datetime
+    played_on: datetime
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
 
@@ -46,11 +47,28 @@ class MatchupReveal(BaseModel):
     underdog_ability: Optional[str] = None
     objective_types: Optional[list[str]] = None
     revealed_at: datetime
+    played_on: datetime
     player1_username: Optional[str] = None
     player2_username: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class MatchupUpdateDate(BaseModel):
+    """Schema for updating matchup played_on date."""
+
+    played_on: datetime = Field(
+        ...,
+        description="Date when the matchup was played (cannot be in future)"
+    )
+
+    @property
+    def validate_date(self):
+        """Validate that played_on is not in the future."""
+        if self.played_on > datetime.utcnow():
+            raise ValueError("played_on cannot be in the future")
+        return self.played_on
 
 
 class MatchupCreateResponse(BaseModel):
