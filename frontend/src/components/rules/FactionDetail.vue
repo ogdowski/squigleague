@@ -286,14 +286,16 @@ const groupedUnits = computed(() => {
 })
 
 const getUnitCategory = (unit) => {
-  const keywords = (unit.keywords || '').toUpperCase()
+  const keywordsList = Array.isArray(unit.keywords)
+    ? unit.keywords.map(keyword => keyword.toUpperCase())
+    : []
 
-  const isHero = keywords.includes('HERO')
-  const isInfantry = keywords.includes('INFANTRY')
-  const isCavalry = keywords.includes('CAVALRY')
-  const isMonster = keywords.includes('MONSTER')
-  const isBeast = keywords.includes('BEAST')
-  const isWarMachine = keywords.includes('WAR MACHINE')
+  const isHero = keywordsList.some(keyword => keyword.includes('HERO'))
+  const isInfantry = keywordsList.includes('INFANTRY')
+  const isCavalry = keywordsList.includes('CAVALRY')
+  const isMonster = keywordsList.includes('MONSTER')
+  const isBeast = keywordsList.includes('BEAST')
+  const isWarMachine = keywordsList.includes('WAR MACHINE')
 
   if (isHero) {
     if (isInfantry) return 'Hero Infantry'
@@ -314,10 +316,12 @@ const getUnitCategory = (unit) => {
 // Main keywords to display on unit cards
 const mainKeywordsList = ['HERO', 'INFANTRY', 'CAVALRY', 'MONSTER', 'BEAST', 'WAR MACHINE', 'WIZARD', 'PRIEST', 'UNIQUE', 'TOTEM', 'CHAMPION', 'MUSICIAN', 'STANDARD BEARER', 'FLY', 'WARD']
 
-const getMainKeywords = (keywordsString) => {
-  if (!keywordsString) return []
-  const keywords = keywordsString.split(',').map(k => k.trim().toUpperCase())
-  return keywords.filter(k => mainKeywordsList.some(main => k.includes(main)))
+const getMainKeywords = (keywords) => {
+  if (!keywords) return []
+  const keywordsList = Array.isArray(keywords) ? keywords : []
+  return keywordsList
+    .map(keyword => keyword.toUpperCase())
+    .filter(keyword => mainKeywordsList.some(main => keyword.includes(main)))
 }
 
 const toggleSection = (key) => {

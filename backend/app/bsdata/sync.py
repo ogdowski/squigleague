@@ -1,6 +1,7 @@
 """BSData synchronization service using GitHub API (no git required)."""
 
 import io
+import json
 import logging
 import tarfile
 from datetime import datetime
@@ -338,12 +339,17 @@ class BSDataSync:
 
         points_data = self.parser.parse_faction_main_catalog(main_cat)
         points_map = points_data.get("points", {})
+        reinforced_units = points_data.get("reinforced_units", set())
+        notes_map = points_data.get("notes", {})
 
         if lib_cat and lib_cat.exists():
             lib_data = self.parser.parse_library_catalog(lib_cat)
 
             for unit_data in lib_data.get("units", []):
-                unit_data["points"] = points_map.get(unit_data["name"])
+                unit_name = unit_data["name"]
+                unit_data["points"] = points_map.get(unit_name)
+                unit_data["can_be_reinforced"] = unit_name in reinforced_units
+                unit_data["notes"] = notes_map.get(unit_name)
                 unit_stats = self._upsert_unit(faction_id, unit_data)
                 stats["units"] += 1
                 stats["weapons"] += unit_stats.get("weapons", 0)
@@ -398,6 +404,9 @@ class BSDataSync:
         stats = {"weapons": 0, "abilities": 0}
 
         bsdata_id = unit_data.get("bsdata_id", "")
+        keywords_list = unit_data.get("keywords", [])
+        keywords_json = json.dumps(keywords_list) if keywords_list else None
+
         existing = self.session.exec(
             select(Unit).where(Unit.bsdata_id == bsdata_id)
         ).first()
@@ -409,6 +418,13 @@ class BSDataSync:
             existing.health = unit_data.get("health", existing.health)
             existing.save = unit_data.get("save", existing.save)
             existing.control = unit_data.get("control", existing.control)
+            existing.keywords = keywords_json
+            existing.base_size = unit_data.get("base_size", existing.base_size)
+            existing.unit_size = unit_data.get("unit_size", existing.unit_size)
+            existing.can_be_reinforced = unit_data.get(
+                "can_be_reinforced", existing.can_be_reinforced
+            )
+            existing.notes = unit_data.get("notes", existing.notes)
             unit = existing
         else:
             unit = Unit(
@@ -420,6 +436,11 @@ class BSDataSync:
                 health=unit_data.get("health"),
                 save=unit_data.get("save"),
                 control=unit_data.get("control"),
+                keywords=keywords_json,
+                base_size=unit_data.get("base_size"),
+                unit_size=unit_data.get("unit_size"),
+                can_be_reinforced=unit_data.get("can_be_reinforced", False),
+                notes=unit_data.get("notes"),
             )
             self.session.add(unit)
             self.session.flush()
@@ -481,6 +502,9 @@ class BSDataSync:
             )
             existing.effect = ability_data.get("effect", existing.effect)
             existing.keywords = ability_data.get("keywords", existing.keywords)
+            existing.timing = ability_data.get("timing", existing.timing)
+            existing.declare = ability_data.get("declare", existing.declare)
+            existing.color = ability_data.get("color", existing.color)
         else:
             ability = UnitAbility(
                 unit_id=unit_id,
@@ -489,6 +513,9 @@ class BSDataSync:
                 ability_type=ability_data.get("ability_type", "passive"),
                 effect=ability_data.get("effect"),
                 keywords=ability_data.get("keywords"),
+                timing=ability_data.get("timing"),
+                declare=ability_data.get("declare"),
+                color=ability_data.get("color"),
             )
             self.session.add(ability)
 

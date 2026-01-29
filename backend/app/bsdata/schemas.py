@@ -1,9 +1,10 @@
 """Pydantic schemas for BSData API."""
 
+import json
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 # =============================================================================
 # Grand Alliance & Faction
@@ -68,6 +69,20 @@ class UnitAbilityResponse(BaseModel):
     name: str
     ability_type: str
     effect: Optional[str] = None
+    keywords: Optional[list[str]] = None
+    timing: Optional[str] = None
+    declare: Optional[str] = None
+    color: Optional[str] = None
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def parse_keywords_json(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return value
 
     class Config:
         from_attributes = True
@@ -82,6 +97,21 @@ class UnitListItem(BaseModel):
     health: Optional[int] = None
     save: Optional[str] = None
     control: Optional[int] = None
+    keywords: Optional[list[str]] = None
+    base_size: Optional[str] = None
+    unit_size: Optional[int] = None
+    can_be_reinforced: bool = False
+    notes: Optional[str] = None
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def parse_keywords_json(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return value
 
     class Config:
         from_attributes = True
@@ -98,9 +128,23 @@ class UnitDetail(BaseModel):
     health: Optional[int] = None
     save: Optional[str] = None
     control: Optional[int] = None
-    keywords: Optional[str] = None
+    keywords: Optional[list[str]] = None
+    base_size: Optional[str] = None
+    unit_size: Optional[int] = None
+    can_be_reinforced: bool = False
+    notes: Optional[str] = None
     weapons: list[WeaponResponse] = []
     abilities: list[UnitAbilityResponse] = []
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def parse_keywords_json(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return value
 
     class Config:
         from_attributes = True

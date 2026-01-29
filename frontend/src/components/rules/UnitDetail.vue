@@ -3,7 +3,7 @@
     <!-- Two column layout -->
     <div class="flex gap-6">
       <!-- Left column - Battle Profile -->
-      <div class="flex-shrink-0 w-32">
+      <div class="flex-shrink-0 w-44">
         <UnitStatCircle
           :move="unit.move"
           :health="unit.health"
@@ -12,39 +12,25 @@
           :ward="wardValue"
         />
         <!-- Battle Profile card (collapsible) -->
-        <div class="card mt-4 overflow-hidden">
-          <button
-            @click="showBattleProfile = !showBattleProfile"
-            class="w-full flex items-center justify-between p-3 text-left"
-          >
-            <h4 class="text-xs font-bold text-gray-400">Battle Profile</h4>
-            <svg
-              :class="['w-4 h-4 text-gray-500 transition-transform', showBattleProfile ? 'rotate-180' : '']"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <div v-if="showBattleProfile" class="px-3 pb-3 space-y-1 text-sm">
-            <div class="flex justify-between">
-              <span class="text-gray-500">Move</span>
-              <span class="font-bold">{{ unit.move || '-' }}</span>
+        <div class="card mt-3 overflow-hidden">
+          <h4 class="text-xs font-bold text-gray-400 px-2 pt-2">Battle Profile</h4>
+          <div class="px-2 pb-2 pt-1 space-y-1 text-sm">
+            <div v-if="unit.unit_size" class="flex justify-between">
+              <span class="text-gray-500">Unit Size</span>
+              <span class="font-bold">{{ unit.unit_size }}</span>
+            </div>
+            <div v-if="unit.base_size" class="flex justify-between">
+              <span class="text-gray-500">Base</span>
+              <span class="font-bold text-xs whitespace-pre-line text-right">{{ unit.base_size }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">Health</span>
-              <span class="font-bold">{{ unit.health || '-' }}</span>
+              <span class="text-gray-500">Reinforced</span>
+              <span :class="['font-bold', unit.can_be_reinforced ? 'text-green-400' : 'text-gray-500']">
+                {{ unit.can_be_reinforced ? 'Yes' : 'No' }}
+              </span>
             </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500">Save</span>
-              <span class="font-bold text-squig-yellow">{{ unit.save || '-' }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500">Control</span>
-              <span class="font-bold">{{ unit.control || '-' }}</span>
-            </div>
-            <div v-if="wardValue" class="flex justify-between">
-              <span class="text-gray-500">Ward</span>
-              <span class="font-bold text-purple-400">{{ wardValue }}</span>
+            <div v-if="unit.notes" class="pt-1">
+              <p class="text-xs text-gray-400 italic whitespace-pre-wrap">{{ unit.notes }}</p>
             </div>
           </div>
         </div>
@@ -76,64 +62,46 @@
       <div v-if="unit.weapons?.length" class="card">
         <h3 class="font-bold text-squig-yellow mb-4">{{ t('rules.weapons') }}</h3>
 
-        <!-- Melee Weapons -->
-        <div v-if="meleeWeapons.length" class="mb-4">
-          <h4 class="text-sm text-gray-400 mb-2">{{ t('rules.meleeWeapons') }}</h4>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-left text-gray-400 border-b border-gray-700">
-                  <th class="py-2 pr-4">{{ t('rules.weapon') }}</th>
-                  <th class="py-2 px-2 text-center">Atk</th>
-                  <th class="py-2 px-2 text-center">Hit</th>
-                  <th class="py-2 px-2 text-center">Wnd</th>
-                  <th class="py-2 px-2 text-center">Rnd</th>
-                  <th class="py-2 px-2 text-center">Dmg</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="weapon in meleeWeapons" :key="weapon.id" class="border-b border-gray-700/50">
-                  <td class="py-2 pr-4 font-medium">{{ weapon.name }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.attacks }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.hit }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.wound }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.rend || '-' }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.damage }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Ranged Weapons -->
-        <div v-if="rangedWeapons.length">
-          <h4 class="text-sm text-gray-400 mb-2">{{ t('rules.rangedWeapons') }}</h4>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-left text-gray-400 border-b border-gray-700">
-                  <th class="py-2 pr-4">{{ t('rules.weapon') }}</th>
-                  <th class="py-2 px-2 text-center">Rng</th>
-                  <th class="py-2 px-2 text-center">Atk</th>
-                  <th class="py-2 px-2 text-center">Hit</th>
-                  <th class="py-2 px-2 text-center">Wnd</th>
-                  <th class="py-2 px-2 text-center">Rnd</th>
-                  <th class="py-2 px-2 text-center">Dmg</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="weapon in rangedWeapons" :key="weapon.id" class="border-b border-gray-700/50">
-                  <td class="py-2 pr-4 font-medium">{{ weapon.name }}</td>
-                  <td class="py-2 px-2 text-center">{{ formatRange(weapon.range) }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.attacks }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.hit }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.wound }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.rend || '-' }}</td>
-                  <td class="py-2 px-2 text-center">{{ weapon.damage }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-400 border-b border-gray-700">
+                <th class="py-2 pr-4">{{ t('rules.weapon') }}</th>
+                <th class="py-2 px-2 text-center">Rng</th>
+                <th class="py-2 px-2 text-center">Atk</th>
+                <th class="py-2 px-2 text-center">Hit</th>
+                <th class="py-2 px-2 text-center">Wnd</th>
+                <th class="py-2 px-2 text-center">Rnd</th>
+                <th class="py-2 px-2 text-center">Dmg</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="meleeWeapons.length" class="border-b border-gray-600">
+                <td colspan="7" class="py-1 text-xs text-gray-500 font-medium">{{ t('rules.meleeWeapons') }}</td>
+              </tr>
+              <tr v-for="weapon in meleeWeapons" :key="weapon.id" class="border-b border-gray-700/50">
+                <td class="py-2 pr-4 font-medium">{{ weapon.name }}</td>
+                <td class="py-2 px-2 text-center text-gray-500">-</td>
+                <td class="py-2 px-2 text-center">{{ weapon.attacks }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.hit }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.wound }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.rend || '-' }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.damage }}</td>
+              </tr>
+              <tr v-if="rangedWeapons.length" class="border-b border-gray-600">
+                <td colspan="7" class="py-1 text-xs text-gray-500 font-medium">{{ t('rules.rangedWeapons') }}</td>
+              </tr>
+              <tr v-for="weapon in rangedWeapons" :key="weapon.id" class="border-b border-gray-700/50">
+                <td class="py-2 pr-4 font-medium">{{ weapon.name }}</td>
+                <td class="py-2 px-2 text-center">{{ formatRange(weapon.range) }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.attacks }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.hit }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.wound }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.rend || '-' }}</td>
+                <td class="py-2 px-2 text-center">{{ weapon.damage }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -146,11 +114,11 @@
             :key="ability.id"
             class="bg-gray-700/50 rounded-lg overflow-hidden"
           >
-            <!-- Phase indicator bar -->
+            <!-- Phase indicator bar (using BSData color) -->
             <div
-              :class="['px-3 py-1 text-xs font-medium', getPhaseBarClass(ability)]"
+              :class="['px-3 py-1 text-xs font-medium', getColorBarClass(ability.color)]"
             >
-              {{ getPhaseLabel(ability) }}
+              {{ ability.timing || getPhaseFromColor(ability.color) || ability.ability_type }}
             </div>
             <!-- Ability content -->
             <div class="p-4">
@@ -163,6 +131,7 @@
                   {{ ability.ability_type }}
                 </span>
               </div>
+              <p v-if="ability.declare" class="text-sm text-gray-400 mb-2 italic">{{ ability.declare }}</p>
               <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ ability.effect }}</p>
             </div>
           </div>
@@ -175,13 +144,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UnitStatCircle from './UnitStatCircle.vue'
 
 const { t } = useI18n()
 
-const showBattleProfile = ref(true)
 
 const props = defineProps({
   unit: {
@@ -198,12 +166,12 @@ const rangedWeapons = computed(() => {
   return props.unit.weapons?.filter(weapon => weapon.weapon_type === 'ranged') || []
 })
 
-// Extract ward value from keywords (e.g., "Ward (5+)" or "Ward (6+)")
+// Extract ward value from keywords (e.g., "WARD (5+)" or "WARD (6+)")
 const wardValue = computed(() => {
-  const keywords = props.unit.keywords || ''
-  const wardMatch = keywords.match(/Ward\s*\((\d+\+?)\)/i)
-  if (wardMatch) {
-    return wardMatch[1]
+  const keywordsList = Array.isArray(props.unit.keywords) ? props.unit.keywords : []
+  for (const keyword of keywordsList) {
+    const wardMatch = keyword.match(/Ward\s*\((\d+\+?)\)/i)
+    if (wardMatch) return wardMatch[1]
   }
   // Also check abilities for ward
   const abilities = props.unit.abilities || []
@@ -228,66 +196,53 @@ const getAbilityTypeClass = (type) => {
     'passive': 'bg-blue-900/50 text-blue-300',
     'activated': 'bg-green-900/50 text-green-300',
     'reaction': 'bg-orange-900/50 text-orange-300',
+    'spell': 'bg-purple-900/50 text-purple-300',
+    'prayer': 'bg-amber-900/50 text-amber-300',
+    'command': 'bg-cyan-900/50 text-cyan-300',
   }
   return classes[type?.toLowerCase()] || 'bg-gray-700 text-gray-300'
 }
 
-// Detect phase from ability effect text or type
-const detectPhase = (ability) => {
-  const text = ((ability.effect || '') + ' ' + (ability.name || '')).toLowerCase()
-  const type = (ability.ability_type || '').toLowerCase()
-
-  if (type === 'passive' || text.includes('passive')) return 'passive'
-  if (text.includes('hero phase')) return 'hero'
-  if (text.includes('combat phase') || text.includes('fight phase')) return 'combat'
-  if (text.includes('shooting phase')) return 'shooting'
-  if (text.includes('movement phase') || text.includes('move phase')) return 'movement'
-  if (text.includes('charge phase')) return 'charge'
-  if (text.includes('end phase') || text.includes('end of')) return 'end'
-  if (text.includes('deployment') || text.includes('deploy')) return 'deployment'
-  if (text.includes('start of') || text.includes('beginning of')) return 'start'
-  if (type === 'reaction') return 'reaction'
-
-  return 'passive'
+// Map BSData color to phase name (fallback when timing is null)
+const getPhaseFromColor = (color) => {
+  const phases = {
+    'Yellow': 'Hero Phase',
+    'Red': 'Combat Phase',
+    'Blue': 'Shooting Phase',
+    'Green': 'Movement Phase',
+    'Purple': 'End Phase',
+    'Orange': 'Charge Phase',
+    'Gray': 'Passive',
+    'Grey': 'Passive',
+    'Black': 'Passive',
+    'Teal': 'Deployment',
+    'Cyan': 'Any Phase',
+  }
+  return phases[color] || null
 }
 
-const getPhaseBarClass = (ability) => {
-  const phase = detectPhase(ability)
+// Map BSData color attribute to Tailwind classes
+const getColorBarClass = (color) => {
   const classes = {
-    'hero': 'bg-yellow-600 text-yellow-100',
-    'combat': 'bg-red-700 text-red-100',
-    'shooting': 'bg-blue-600 text-blue-100',
-    'movement': 'bg-gray-600 text-gray-200',
-    'charge': 'bg-orange-600 text-orange-100',
-    'end': 'bg-purple-700 text-purple-100',
-    'deployment': 'bg-gray-900 text-gray-300',
-    'start': 'bg-green-700 text-green-100',
-    'reaction': 'bg-orange-500 text-orange-100',
-    'passive': 'bg-gray-700 text-gray-300',
+    'Yellow': 'bg-yellow-600 text-yellow-100',
+    'Red': 'bg-red-700 text-red-100',
+    'Blue': 'bg-blue-600 text-blue-100',
+    'Green': 'bg-green-700 text-green-100',
+    'Purple': 'bg-purple-700 text-purple-100',
+    'Orange': 'bg-orange-600 text-orange-100',
+    'Gray': 'bg-gray-600 text-gray-200',
+    'Grey': 'bg-gray-600 text-gray-200',
+    'Black': 'bg-gray-800 text-gray-300',
+    'White': 'bg-gray-200 text-gray-800',
+    'Teal': 'bg-teal-700 text-teal-100',
+    'Cyan': 'bg-cyan-700 text-cyan-100',
   }
-  return classes[phase] || classes['passive']
-}
-
-const getPhaseLabel = (ability) => {
-  const phase = detectPhase(ability)
-  const labels = {
-    'hero': 'Hero Phase',
-    'combat': 'Combat Phase',
-    'shooting': 'Shooting Phase',
-    'movement': 'Movement Phase',
-    'charge': 'Charge Phase',
-    'end': 'End Phase',
-    'deployment': 'Deployment',
-    'start': 'Start of Turn',
-    'reaction': 'Reaction',
-    'passive': 'Passive',
-  }
-  return labels[phase] || 'Passive'
+  return classes[color] || 'bg-gray-700 text-gray-300'
 }
 
 // Keywords to show as tags
 const unitKeywords = computed(() => {
   if (!props.unit.keywords) return []
-  return props.unit.keywords.split(',').map(k => k.trim()).filter(k => k)
+  return Array.isArray(props.unit.keywords) ? props.unit.keywords : []
 })
 </script>

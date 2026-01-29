@@ -59,6 +59,10 @@ class Unit(SQLModel, table=True):
     save: Optional[str] = Field(default=None, max_length=10)
     control: Optional[int] = None
     keywords: Optional[str] = None  # JSON array
+    base_size: Optional[str] = None
+    unit_size: Optional[int] = None
+    can_be_reinforced: bool = Field(default=False)
+    notes: Optional[str] = None
 
     faction: Faction = Relationship(back_populates="units")
     weapons: list["Weapon"] = Relationship(back_populates="unit")
@@ -95,9 +99,12 @@ class UnitAbility(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     unit_id: int = Field(foreign_key="bsdata_units.id", index=True)
     name: str = Field(max_length=200)
-    ability_type: str = Field(max_length=30)  # "passive", "activated", "reaction"
+    ability_type: str = Field(max_length=30)  # "passive", "activated", "spell", etc.
     effect: Optional[str] = None
     keywords: Optional[str] = None  # JSON array
+    timing: Optional[str] = None
+    declare: Optional[str] = None
+    color: Optional[str] = Field(default=None, max_length=30)
 
     unit: Unit = Relationship(back_populates="abilities")
 

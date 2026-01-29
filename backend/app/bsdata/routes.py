@@ -165,6 +165,11 @@ async def list_faction_units(
             health=unit.health,
             save=unit.save,
             control=unit.control,
+            keywords=unit.keywords,
+            base_size=unit.base_size,
+            unit_size=unit.unit_size,
+            can_be_reinforced=unit.can_be_reinforced,
+            notes=unit.notes,
         )
         for unit in units
     ]
@@ -392,6 +397,11 @@ async def list_units(
             health=unit.health,
             save=unit.save,
             control=unit.control,
+            keywords=unit.keywords,
+            base_size=unit.base_size,
+            unit_size=unit.unit_size,
+            can_be_reinforced=unit.can_be_reinforced,
+            notes=unit.notes,
         )
         for unit, faction_name in results
     ]
@@ -422,6 +432,10 @@ async def get_unit(unit_id: int, session: Session = Depends(get_session)):
         save=unit.save,
         control=unit.control,
         keywords=unit.keywords,
+        base_size=unit.base_size,
+        unit_size=unit.unit_size,
+        can_be_reinforced=unit.can_be_reinforced,
+        notes=unit.notes,
         weapons=[WeaponResponse.model_validate(weapon) for weapon in weapons],
         abilities=[
             UnitAbilityResponse.model_validate(ability) for ability in abilities
@@ -455,6 +469,11 @@ async def search_units(
             health=unit.health,
             save=unit.save,
             control=unit.control,
+            keywords=unit.keywords,
+            base_size=unit.base_size,
+            unit_size=unit.unit_size,
+            can_be_reinforced=unit.can_be_reinforced,
+            notes=unit.notes,
         )
         for unit, faction_name in results
     ]

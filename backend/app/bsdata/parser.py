@@ -272,13 +272,15 @@ class BSDataParser:
         return result
 
     def parse_faction_main_catalog(self, cat_path: Path) -> dict:
-        """Parse main faction catalog for points costs."""
+        """Parse main faction catalog for points costs, reinforcement, and notes."""
         tree = ET.parse(cat_path)
         root = tree.getroot()
 
         points_map = {}
+        reinforced_units = set()
+        notes_map = {}
 
-        # Find all cost entries
+        # Find all cost entries and battle profile metadata
         for entry in root.findall(".//bs:entryLink", NS):
             entry_name = entry.get("name", "")
             for cost in entry.findall(".//bs:cost[@name='pts']", NS):
@@ -288,6 +290,23 @@ class BSDataParser:
                         points_map[entry_name] = points
                 except (ValueError, TypeError):
                     pass
+
+            # Check for Reinforced child entryLink
+            for child_link in entry.findall(".//bs:entryLink", NS):
+                if child_link.get("name") == "Reinforced":
+                    reinforced_units.add(entry_name)
+                    break
+
+            # Extract notes from error modifiers
+            for modifier in entry.findall(".//bs:modifier", NS):
+                if modifier.get("field") == "error" and modifier.get("type") == "add":
+                    note_text = modifier.get("value", "")
+                    if note_text and entry_name:
+                        existing_notes = notes_map.get(entry_name, "")
+                        if existing_notes:
+                            notes_map[entry_name] = f"{existing_notes}\n{note_text}"
+                        else:
+                            notes_map[entry_name] = note_text
 
         for entry in root.findall(".//bs:selectionEntry", NS):
             entry_name = entry.get("name", "")
@@ -299,7 +318,11 @@ class BSDataParser:
                 except (ValueError, TypeError):
                     pass
 
-        return {"points": points_map}
+        return {
+            "points": points_map,
+            "reinforced_units": reinforced_units,
+            "notes": notes_map,
+        }
 
     def _parse_unit_entry(self, unit_entry: ET.Element) -> Optional[dict]:
         """Parse a complete unit selectionEntry including weapons and abilities."""
@@ -353,6 +376,37 @@ class BSDataParser:
             except ValueError:
                 pass
 
+        # Extract keywords from categoryLink elements
+        keywords = []
+        for cat_link in unit_entry.findall("bs:categoryLinks/bs:categoryLink", NS):
+            keyword_name = cat_link.get("name", "")
+            if keyword_name and keyword_name != "Legends":
+                keywords.append(keyword_name)
+
+        # Extract base_size and unit_size from model selectionEntry
+        base_size = None
+        unit_size = None
+        for model_entry in unit_entry.findall(
+            "bs:selectionEntries/bs:selectionEntry[@type='model']", NS
+        ):
+            # Base size from <rule name="Base Size"><description>
+            for rule in model_entry.findall(".//bs:rule", NS):
+                if rule.get("name") == "Base Size":
+                    desc = rule.find("bs:description", NS)
+                    if desc is not None and desc.text:
+                        base_size = desc.text.strip()
+                    break
+
+            # Unit size from model constraint min value
+            for constraint in model_entry.findall("bs:constraints/bs:constraint", NS):
+                if constraint.get("type") == "min":
+                    try:
+                        unit_size = int(constraint.get("value", 0))
+                    except (ValueError, TypeError):
+                        pass
+                    break
+            break  # Only process first model entry
+
         # Find weapons throughout the unit entry (including nested selectionEntries)
         weapons = []
         seen_weapon_ids = set()
@@ -375,24 +429,23 @@ class BSDataParser:
                 weapons.append(weapon)
                 seen_weapon_ids.add(weapon["bsdata_id"])
 
-        # Find abilities at the unit entry level (in profiles element)
+        # Find abilities throughout the unit entry (direct children and nested)
         abilities = []
         seen_ability_ids = set()
 
-        # Check profiles directly under unit entry
-        for profiles_elem in unit_entry.findall("bs:profiles", NS):
-            for ability_profile in profiles_elem.findall(
-                "bs:profile[@typeId='{}']".format(PROFILE_TYPE_ABILITY_PASSIVE), NS
-            ):
-                ability = self._parse_ability_profile(ability_profile, NS, "passive")
-                if ability and ability["bsdata_id"] not in seen_ability_ids:
-                    abilities.append(ability)
-                    seen_ability_ids.add(ability["bsdata_id"])
+        ability_type_map = {
+            PROFILE_TYPE_ABILITY_PASSIVE: "passive",
+            PROFILE_TYPE_ABILITY_ACTIVATED: "activated",
+            PROFILE_TYPE_ABILITY_SPELL: "spell",
+            PROFILE_TYPE_ABILITY_PRAYER: "prayer",
+            PROFILE_TYPE_ABILITY_COMMAND: "command",
+        }
 
-            for ability_profile in profiles_elem.findall(
-                "bs:profile[@typeId='{}']".format(PROFILE_TYPE_ABILITY_ACTIVATED), NS
+        for profile_type_id, ability_type in ability_type_map.items():
+            for ability_profile in unit_entry.findall(
+                ".//bs:profile[@typeId='{}']".format(profile_type_id), NS
             ):
-                ability = self._parse_ability_profile(ability_profile, NS, "activated")
+                ability = self._parse_ability_profile(ability_profile, NS, ability_type)
                 if ability and ability["bsdata_id"] not in seen_ability_ids:
                     abilities.append(ability)
                     seen_ability_ids.add(ability["bsdata_id"])
@@ -404,6 +457,9 @@ class BSDataParser:
             "health": health,
             "save": save,
             "control": control,
+            "keywords": keywords,
+            "base_size": base_size,
+            "unit_size": unit_size,
             "weapons": weapons,
             "abilities": abilities,
         }
@@ -486,6 +542,17 @@ class BSDataParser:
 
         effect = get_characteristic_by_name(profile, "Effect", ns)
         keywords = get_characteristic_by_name(profile, "Keywords", ns)
+        timing = get_characteristic_by_name(profile, "Timing", ns)
+        declare = get_characteristic_by_name(profile, "Declare", ns)
+
+        # Extract Color from attributes (uses same namespace prefix)
+        color = None
+        ns_prefix = list(ns.keys())[0]
+        ns_uri = ns[ns_prefix]
+        for attr in profile.findall(f"{{{ns_uri}}}attributes/{{{ns_uri}}}attribute"):
+            if attr.get("name") == "Color" and attr.text:
+                color = attr.text.strip()
+                break
 
         return {
             "name": name,
@@ -493,6 +560,9 @@ class BSDataParser:
             "ability_type": ability_type,
             "effect": effect,
             "keywords": keywords,
+            "timing": timing,
+            "declare": declare,
+            "color": color,
         }
 
     def _parse_manifestation_profile(
