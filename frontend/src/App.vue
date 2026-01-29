@@ -364,8 +364,8 @@ const mobileTitle = computed(() => {
   if (path.startsWith('/players') || path.startsWith('/player')) return t('nav.ranking')
   if (path.startsWith('/admin')) return t('nav.admin')
   if (path.startsWith('/settings')) return t('nav.settings')
-  if (path.startsWith('/login')) return t('nav.login')
-  if (path.startsWith('/register')) return t('nav.register')
+  if (path.startsWith('/login')) return ''
+  if (path.startsWith('/register')) return ''
   return ''
 })
 const languageStore = useLanguageStore()
