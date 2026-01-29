@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-7xl mx-auto">
     <!-- BSData info panel -->
-    <div v-if="!infoPanelHidden && !selectedFaction && !selectedUnit && !selectedManifestationLore" class="mb-6 bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+    <div v-if="!infoPanelHidden && !selectedFaction && !selectedUnit && !selectedManifestationLore && !selectedManifestation" class="mb-6 bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-start gap-3">
           <svg class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,8 +94,106 @@
 
     <!-- Content -->
     <template v-else>
-      <!-- Manifestation Lore Detail View -->
-      <div v-if="selectedManifestationLore">
+      <!-- Manifestation Detail View (unit-like) -->
+      <div v-if="selectedManifestation">
+        <button
+          @click="goBack"
+          class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          {{ t('common.back') }}
+        </button>
+
+        <!-- Desktop layout -->
+        <div class="hidden lg:flex gap-6">
+          <!-- Stats circle -->
+          <div class="flex-shrink-0">
+            <div class="w-36 h-36 rounded-full border-4 border-squig-yellow flex flex-col items-center justify-center bg-gray-800/50">
+              <div class="text-center">
+                <div class="text-2xl font-bold text-squig-yellow">{{ selectedManifestation.health || '-' }}</div>
+                <div class="text-[10px] text-gray-400 uppercase tracking-wider">Health</div>
+              </div>
+              <div class="flex gap-4 mt-1">
+                <div class="text-center">
+                  <div class="text-sm font-bold">{{ selectedManifestation.move || '-' }}</div>
+                  <div class="text-[9px] text-gray-500">Move</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-sm font-bold">{{ selectedManifestation.save || '-' }}</div>
+                  <div class="text-[9px] text-gray-500">Save</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Content -->
+          <div class="flex-1 space-y-4">
+            <div>
+              <h2 class="text-2xl font-bold text-squig-yellow">{{ selectedManifestation.name }}</h2>
+              <p v-if="selectedManifestationLore" class="text-sm text-gray-400">{{ selectedManifestationLore.name }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span v-if="selectedManifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
+                Casting Value: {{ selectedManifestation.casting_value }}+
+              </span>
+              <span v-if="selectedManifestation.banishment" class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">
+                Banishment: {{ selectedManifestation.banishment }}+
+              </span>
+            </div>
+            <div v-if="selectedManifestation.declare || selectedManifestation.effect" class="card">
+              <div class="bg-yellow-800/60 text-yellow-200 px-3 py-1 text-xs font-medium rounded-t-lg -mx-4 -mt-4 mb-3">
+                Hero Phase
+              </div>
+              <h3 class="font-bold text-squig-yellow mb-2">Summon</h3>
+              <p v-if="selectedManifestation.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ selectedManifestation.declare }}</p>
+              <p v-if="selectedManifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ selectedManifestation.effect }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile layout -->
+        <div class="lg:hidden space-y-4">
+          <div>
+            <h2 class="text-xl font-bold text-squig-yellow">{{ selectedManifestation.name }}</h2>
+            <p v-if="selectedManifestationLore" class="text-sm text-gray-400">{{ selectedManifestationLore.name }}</p>
+          </div>
+          <!-- Stats table -->
+          <div class="card">
+            <table class="w-full text-center text-sm">
+              <thead><tr class="text-gray-500 text-xs">
+                <th class="pb-1">Move</th><th class="pb-1">Health</th><th class="pb-1">Save</th>
+              </tr></thead>
+              <tbody><tr class="font-bold">
+                <td>{{ selectedManifestation.move || '-' }}</td>
+                <td>{{ selectedManifestation.health || '-' }}</td>
+                <td>{{ selectedManifestation.save || '-' }}</td>
+              </tr></tbody>
+            </table>
+          </div>
+          <!-- Badges -->
+          <div class="flex flex-wrap gap-2">
+            <span v-if="selectedManifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
+              Casting Value: {{ selectedManifestation.casting_value }}+
+            </span>
+            <span v-if="selectedManifestation.banishment" class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">
+              Banishment: {{ selectedManifestation.banishment }}+
+            </span>
+          </div>
+          <!-- Ability -->
+          <div v-if="selectedManifestation.declare || selectedManifestation.effect" class="card">
+            <div class="bg-yellow-800/60 text-yellow-200 px-3 py-1 text-xs font-medium rounded-t-lg -mx-4 -mt-4 mb-3">
+              Hero Phase
+            </div>
+            <h3 class="font-bold text-squig-yellow mb-2">Summon</h3>
+            <p v-if="selectedManifestation.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ selectedManifestation.declare }}</p>
+            <p v-if="selectedManifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ selectedManifestation.effect }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manifestation Lore List View -->
+      <div v-else-if="selectedManifestationLore">
         <button
           @click="goBack"
           class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
@@ -108,39 +206,25 @@
 
         <div class="mb-6">
           <h2 class="text-2xl font-bold">{{ selectedManifestationLore.name }}</h2>
-          <p class="text-gray-400">{{ t('rules.universalManifestations') }}</p>
+          <p class="text-gray-400">{{ selectedManifestationLore.manifestations?.length || 0 }} manifestations</p>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-1">
           <div
             v-for="manifestation in selectedManifestationLore.manifestations"
             :key="manifestation.id"
-            class="card"
+            @click="selectManifestation(manifestation)"
+            class="bg-gray-700/50 rounded px-3 py-2 cursor-pointer hover:bg-gray-600/50 transition-colors flex items-center justify-between"
           >
-            <div class="bg-yellow-800/60 text-yellow-200 px-3 py-1 text-xs font-medium rounded-t-lg -mx-4 -mt-4 mb-3">
-              Hero Phase
+            <div class="flex-1 min-w-0">
+              <span class="text-sm font-medium">{{ manifestation.name }}</span>
+              <div class="flex gap-3 text-xs text-gray-500 mt-0.5">
+                <span v-if="manifestation.move">Move {{ manifestation.move }}</span>
+                <span v-if="manifestation.health">HP {{ manifestation.health }}</span>
+                <span v-if="manifestation.save">Save {{ manifestation.save }}</span>
+              </div>
             </div>
-            <div class="flex items-start justify-between mb-2">
-              <h3 class="font-bold text-squig-yellow text-lg">{{ manifestation.name }}</h3>
-              <span v-if="manifestation.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">
-                {{ manifestation.points }} pts
-              </span>
-            </div>
-            <div v-if="manifestation.casting_value || manifestation.banishment" class="flex flex-wrap gap-2 mb-2">
-              <span v-if="manifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
-                Casting value: {{ manifestation.casting_value }}+
-              </span>
-              <span v-if="manifestation.banishment" class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">
-                Banishment: {{ manifestation.banishment }}+
-              </span>
-            </div>
-            <div v-if="manifestation.move || manifestation.health || manifestation.save" class="flex flex-wrap gap-3 mb-2 text-xs text-gray-400">
-              <span v-if="manifestation.move">Move: {{ manifestation.move }}</span>
-              <span v-if="manifestation.health">Health: {{ manifestation.health }}</span>
-              <span v-if="manifestation.save">Save: {{ manifestation.save }}+</span>
-            </div>
-            <p v-if="manifestation.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ manifestation.declare }}</p>
-            <p v-if="manifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ manifestation.effect }}</p>
+            <span v-if="manifestation.banishment" class="text-xs text-red-400 flex-shrink-0 ml-3">Ban {{ manifestation.banishment }}+</span>
           </div>
         </div>
       </div>
@@ -247,6 +331,7 @@ const universalManifestationLores = ref([])
 const selectedFaction = ref(null)
 const selectedUnit = ref(null)
 const selectedManifestationLore = ref(null)
+const selectedManifestation = ref(null)
 
 // Main factions (non-AoR) for the list display
 const mainFactions = computed(() => factions.value.filter(faction => !faction.is_aor))
@@ -349,7 +434,19 @@ const goBack = () => {
 
 const selectManifestationLore = (lore) => {
   selectedManifestationLore.value = lore
+  selectedManifestation.value = null
   router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(lore.name) } })
+}
+
+const selectManifestation = (manifestation) => {
+  selectedManifestation.value = manifestation
+  router.push({
+    name: 'RulesUnit',
+    params: {
+      factionSlug: toSlug(selectedManifestationLore.value.name),
+      unitSlug: toSlug(manifestation.name)
+    }
+  })
 }
 
 // Search
@@ -439,20 +536,29 @@ const handleRouteParams = async () => {
   const params = route.params
 
   if (params.unitSlug && params.factionSlug) {
-    // Load unit view
-    const faction = findFactionBySlug(params.factionSlug)
-    if (faction) {
-      selectedFaction.value = faction
-      // Need to search for unit by slug - fetch faction units first
-      try {
-        const unitsResponse = await axios.get(`${API_URL}/bsdata/factions/${faction.id}/units`)
-        const unit = unitsResponse.data.find(u => toSlug(u.name) === params.unitSlug)
-        if (unit) {
-          const response = await axios.get(`${API_URL}/bsdata/units/${unit.id}`)
-          selectedUnit.value = response.data
+    // Check if it's a manifestation lore slug
+    const lore = universalManifestationLores.value.find(l => toSlug(l.name) === params.factionSlug)
+    if (lore) {
+      selectedManifestationLore.value = lore
+      const manifestation = lore.manifestations?.find(m => toSlug(m.name) === params.unitSlug)
+      if (manifestation) {
+        selectedManifestation.value = manifestation
+      }
+    } else {
+      // Load unit view
+      const faction = findFactionBySlug(params.factionSlug)
+      if (faction) {
+        selectedFaction.value = faction
+        try {
+          const unitsResponse = await axios.get(`${API_URL}/bsdata/factions/${faction.id}/units`)
+          const unit = unitsResponse.data.find(u => toSlug(u.name) === params.unitSlug)
+          if (unit) {
+            const response = await axios.get(`${API_URL}/bsdata/units/${unit.id}`)
+            selectedUnit.value = response.data
+          }
+        } catch (err) {
+          console.error('Failed to fetch unit:', err)
         }
-      } catch (err) {
-        console.error('Failed to fetch unit:', err)
       }
     }
   } else if (params.factionSlug) {
@@ -466,11 +572,13 @@ const handleRouteParams = async () => {
       selectedFaction.value = faction
       selectedUnit.value = null
       selectedManifestationLore.value = null
+      selectedManifestation.value = null
     } else {
       // Try manifestation lore
       const lore = universalManifestationLores.value.find(l => toSlug(l.name) === params.factionSlug)
       if (lore) {
         selectedManifestationLore.value = lore
+        selectedManifestation.value = null
         selectedFaction.value = null
         selectedUnit.value = null
       }
@@ -480,6 +588,7 @@ const handleRouteParams = async () => {
     selectedFaction.value = null
     selectedUnit.value = null
     selectedManifestationLore.value = null
+    selectedManifestation.value = null
   }
 }
 
