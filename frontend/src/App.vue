@@ -108,7 +108,7 @@
 
           <!-- Mobile: page title + Login/Register or User + Hamburger -->
           <div class="flex md:hidden items-center gap-2">
-            <span v-if="mobileTitle" class="text-sm text-gray-400 truncate">{{ mobileTitle }}</span>
+            <span v-if="mobileTitle && authStore.isAuthenticated" class="text-sm text-gray-400 truncate">{{ mobileTitle }}</span>
           </div>
           <div class="flex md:hidden items-center gap-2">
             <div v-if="!authStore.isAuthenticated" class="flex items-center gap-2">
