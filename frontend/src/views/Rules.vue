@@ -65,6 +65,7 @@
         <FactionDetail
           :faction="selectedFaction"
           @select-unit="loadUnit"
+          @select-faction="loadFaction"
         />
       </div>
 
@@ -214,11 +215,22 @@ const fetchData = async () => {
   }
 }
 
-const loadFaction = (factionId) => {
+const loadFaction = async (factionId, factionName) => {
+  // Try local cache first (for main factions)
   const faction = factions.value.find(f => f.id === factionId)
   if (faction) {
     selectedFaction.value = faction
     router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(faction.name) } })
+    return
+  }
+  // AoR factions won't be in the list - fetch detail from API
+  try {
+    const response = await axios.get(`${API_URL}/bsdata/factions/${factionId}`)
+    const aorFaction = { id: response.data.id, name: factionName || response.data.name, grand_alliance: response.data.grand_alliance?.name }
+    selectedFaction.value = aorFaction
+    router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(aorFaction.name) } })
+  } catch (error) {
+    console.error('Failed to load faction:', error)
   }
 }
 

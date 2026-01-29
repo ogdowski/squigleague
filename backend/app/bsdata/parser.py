@@ -231,13 +231,19 @@ class BSDataParser:
             if card:
                 result["battle_tactic_cards"].append(card)
 
-        # Parse core abilities (passive)
-        for profile in root.findall(
-            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_ABILITY_PASSIVE), NS_GST
-        ):
-            ability = self._parse_ability_profile(profile, NS_GST, "passive")
-            if ability and ability.get("name") in ["Fly", "Ward Save", "Guarded Hero"]:
-                result["core_abilities"].append(ability)
+        # Parse core abilities (all types)
+        core_ability_types = {
+            PROFILE_TYPE_ABILITY_PASSIVE: "passive",
+            PROFILE_TYPE_ABILITY_ACTIVATED: "activated",
+            PROFILE_TYPE_ABILITY_COMMAND: "command",
+        }
+        for profile_type_id, ability_type in core_ability_types.items():
+            for profile in root.findall(
+                ".//bs:profile[@typeId='{}']".format(profile_type_id), NS_GST
+            ):
+                ability = self._parse_ability_profile(profile, NS_GST, ability_type)
+                if ability:
+                    result["core_abilities"].append(ability)
 
         return result
 
@@ -343,7 +349,7 @@ class BSDataParser:
             group_name = group.get("name", "")
 
             if group_name == "Heroic Traits":
-                for entry in group.findall("bs:selectionEntries/bs:selectionEntry", NS):
+                for entry in group.findall(".//bs:selectionEntry", NS):
                     entry_points = _extract_points(entry, NS)
                     for profile in entry.findall(".//bs:profile", NS):
                         trait = self._parse_ability_profile(profile, NS, "heroic_trait")
@@ -352,7 +358,7 @@ class BSDataParser:
                             heroic_traits.append(trait)
 
             elif group_name == "Artefacts of Power":
-                for entry in group.findall("bs:selectionEntries/bs:selectionEntry", NS):
+                for entry in group.findall(".//bs:selectionEntry", NS):
                     entry_points = _extract_points(entry, NS)
                     for profile in entry.findall(".//bs:profile", NS):
                         artefact = self._parse_ability_profile(profile, NS, "artefact")
@@ -412,6 +418,15 @@ class BSDataParser:
                                 {"name": lore_name, "target_id": target_id}
                             )
 
+        # Parse unit entry links (for AoR catalogs that reference parent units)
+        unit_refs = []
+        for link in root.findall("bs:entryLinks/bs:entryLink", NS):
+            link_type = link.get("type", "")
+            target_id = link.get("targetId", "")
+            link_name = link.get("name", "")
+            if link_type == "selectionEntry" and target_id and link_name:
+                unit_refs.append({"name": link_name, "target_id": target_id})
+
         return {
             "points": points_map,
             "reinforced_units": reinforced_units,
@@ -423,6 +438,7 @@ class BSDataParser:
             "spell_lore_refs": spell_lore_refs,
             "prayer_lore_refs": prayer_lore_refs,
             "manifestation_lore_refs": manifestation_lore_refs,
+            "unit_refs": unit_refs,
         }
 
     def _parse_unit_entry(self, unit_entry: ET.Element) -> Optional[dict]:

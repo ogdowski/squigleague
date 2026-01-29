@@ -844,10 +844,6 @@
           </div>
           <h3 class="text-lg font-medium text-gray-300 mb-2">{{ t('leagueDetail.votingNotStarted') }}</h3>
           <p class="text-gray-500 mb-3">{{ t('leagueDetail.votingStartsAfterLeague') }}</p>
-          <p class="text-sm text-gray-600">
-            {{ t('leagueDetail.currentPhase') }}:
-            <span class="text-gray-400">{{ statusText(league.status) }}</span>
-          </p>
         </div>
 
         <template v-else-if="loadingVoting">

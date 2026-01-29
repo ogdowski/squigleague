@@ -3,8 +3,6 @@
 from typing import Optional
 
 from app.bsdata.models import (
-    AoRBattleTrait,
-    ArmyOfRenown,
     Artefact,
     BattleFormation,
     BattleTacticCard,
@@ -16,6 +14,8 @@ from app.bsdata.models import (
     HeroicTrait,
     Manifestation,
     ManifestationLore,
+    Prayer,
+    PrayerLore,
     RegimentOfRenown,
     RoRUnit,
     Spell,
@@ -25,10 +25,6 @@ from app.bsdata.models import (
     Weapon,
 )
 from app.bsdata.schemas import (
-    AoRBattleTraitResponse,
-    ArmyOfRenownDetail,
-    ArmyOfRenownListItem,
-    ArmyOfRenownWithTraits,
     ArtefactResponse,
     BattleFormationResponse,
     BattleTacticCardResponse,
@@ -41,6 +37,8 @@ from app.bsdata.schemas import (
     HeroicTraitResponse,
     ManifestationLoreResponse,
     ManifestationResponse,
+    PrayerLoreResponse,
+    PrayerResponse,
     RegimentOfRenownResponse,
     RegimentOfRenownWithUnits,
     RoRUnitResponse,
@@ -75,21 +73,27 @@ async def list_grand_alliances(session: Session = Depends(get_session)):
 @router.get("/factions", response_model=list[FactionListItem])
 async def list_factions(
     grand_alliance: Optional[str] = None,
+    include_aor: bool = False,
     session: Session = Depends(get_session),
 ):
-    """List all factions with unit counts."""
+    """List all factions with unit counts. AoR factions excluded by default."""
     query = (
         select(
             Faction.id,
             Faction.name,
             GrandAlliance.name.label("grand_alliance"),
             func.count(Unit.id).label("units_count"),
+            Faction.is_aor,
+            Faction.parent_faction_id,
         )
         .join(GrandAlliance)
         .outerjoin(Unit)
         .group_by(Faction.id, GrandAlliance.name)
         .order_by(GrandAlliance.name, Faction.name)
     )
+
+    if not include_aor:
+        query = query.where(Faction.is_aor == False)
 
     if grand_alliance:
         query = query.where(GrandAlliance.name == grand_alliance)
@@ -102,6 +106,8 @@ async def list_factions(
             name=row.name,
             grand_alliance=row.grand_alliance,
             units_count=row.units_count or 0,
+            is_aor=row.is_aor,
+            parent_faction_id=row.parent_faction_id,
         )
         for row in results
     ]
@@ -142,6 +148,8 @@ async def get_faction(faction_id: int, session: Session = Depends(get_session)):
         battle_traits_count=battle_traits_count,
         heroic_traits_count=heroic_traits_count,
         artefacts_count=artefacts_count,
+        is_aor=faction.is_aor,
+        parent_faction_id=faction.parent_faction_id,
     )
 
 
@@ -309,36 +317,74 @@ async def list_faction_manifestation_lores(
 
 
 @router.get(
+    "/factions/{faction_id}/prayer-lores",
+    response_model=list[PrayerLoreResponse],
+)
+async def list_faction_prayer_lores(
+    faction_id: int,
+    session: Session = Depends(get_session),
+):
+    """List prayer lores for a faction."""
+    lores = session.exec(
+        select(PrayerLore)
+        .where(PrayerLore.faction_id == faction_id)
+        .order_by(PrayerLore.name)
+    ).all()
+
+    result = []
+    for lore in lores:
+        prayers = session.exec(
+            select(Prayer).where(Prayer.lore_id == lore.id).order_by(Prayer.name)
+        ).all()
+        result.append(
+            PrayerLoreResponse(
+                id=lore.id,
+                name=lore.name,
+                faction_id=lore.faction_id,
+                points=lore.points,
+                prayers=prayers,
+            )
+        )
+    return result
+
+
+@router.get(
     "/factions/{faction_id}/armies-of-renown",
-    response_model=list[ArmyOfRenownWithTraits],
+    response_model=list[FactionListItem],
 )
 async def list_faction_armies_of_renown(
     faction_id: int,
     session: Session = Depends(get_session),
 ):
-    """List armies of renown for a faction."""
-    armies = session.exec(
-        select(ArmyOfRenown)
-        .where(ArmyOfRenown.faction_id == faction_id)
-        .order_by(ArmyOfRenown.name)
+    """List AoR factions whose parent is this faction."""
+    aor_factions = session.exec(
+        select(
+            Faction.id,
+            Faction.name,
+            GrandAlliance.name.label("grand_alliance"),
+            func.count(Unit.id).label("units_count"),
+            Faction.is_aor,
+            Faction.parent_faction_id,
+        )
+        .join(GrandAlliance)
+        .outerjoin(Unit)
+        .where(Faction.parent_faction_id == faction_id)
+        .where(Faction.is_aor == True)
+        .group_by(Faction.id, GrandAlliance.name)
+        .order_by(Faction.name)
     ).all()
 
-    result = []
-    for aor in armies:
-        traits = session.exec(
-            select(AoRBattleTrait).where(AoRBattleTrait.army_of_renown_id == aor.id)
-        ).all()
-        result.append(
-            ArmyOfRenownWithTraits(
-                id=aor.id,
-                name=aor.name,
-                description=aor.description,
-                battle_traits=[
-                    AoRBattleTraitResponse.model_validate(t) for t in traits
-                ],
-            )
+    return [
+        FactionListItem(
+            id=row.id,
+            name=row.name,
+            grand_alliance=row.grand_alliance,
+            units_count=row.units_count or 0,
+            is_aor=row.is_aor,
+            parent_faction_id=row.parent_faction_id,
         )
-    return result
+        for row in aor_factions
+    ]
 
 
 @router.get("/manifestation-lores", response_model=list[ManifestationLoreResponse])
@@ -499,43 +545,6 @@ async def search_units(
         )
         for unit, faction_name in results
     ]
-
-
-@router.get("/armies-of-renown", response_model=list[ArmyOfRenownListItem])
-async def list_armies_of_renown(session: Session = Depends(get_session)):
-    """List all Armies of Renown."""
-    query = (
-        select(ArmyOfRenown, Faction.name.label("faction_name"))
-        .join(Faction)
-        .order_by(Faction.name, ArmyOfRenown.name)
-    )
-    results = session.exec(query).all()
-
-    return [
-        ArmyOfRenownListItem(
-            id=aor.id,
-            name=aor.name,
-            faction_name=faction_name,
-        )
-        for aor, faction_name in results
-    ]
-
-
-@router.get("/armies-of-renown/{aor_id}", response_model=ArmyOfRenownDetail)
-async def get_army_of_renown(aor_id: int, session: Session = Depends(get_session)):
-    """Get Army of Renown details."""
-    aor = session.get(ArmyOfRenown, aor_id)
-    if not aor:
-        raise HTTPException(status_code=404, detail="Army of Renown not found")
-
-    return ArmyOfRenownDetail(
-        id=aor.id,
-        name=aor.name,
-        bsdata_id=aor.bsdata_id,
-        faction_id=aor.faction_id,
-        faction_name=aor.faction.name,
-        description=aor.description,
-    )
 
 
 @router.get("/regiments-of-renown", response_model=list[RegimentOfRenownResponse])

@@ -21,7 +21,7 @@
               </svg>
               {{ t('nav.matchups') }}
             </router-link>
-            <router-link to="/ranking" :class="['flex items-center gap-2', isActive('/ranking') ? 'btn-primary' : 'btn-secondary']">
+            <router-link to="/players" :class="['flex items-center gap-2', isActive('/players') ? 'btn-primary' : 'btn-secondary']">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
@@ -174,9 +174,9 @@
             {{ t('nav.matchups') }}
           </router-link>
           <router-link
-            to="/ranking"
+            to="/players"
             @click="showMobileMenu = false"
-            :class="['flex items-center gap-3 px-3 py-3 rounded-lg transition-colors', isActive('/ranking') ? 'bg-gray-700 text-squig-yellow' : 'hover:bg-gray-700']"
+            :class="['flex items-center gap-3 px-3 py-3 rounded-lg transition-colors', isActive('/players') ? 'bg-gray-700 text-squig-yellow' : 'hover:bg-gray-700']"
           >
             <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -352,7 +352,7 @@ const isActive = (path) => {
   // Handle singular/plural route variants (e.g. /leagues nav but /league/:id detail)
   if (path === '/leagues') return current.startsWith('/league')
   if (path === '/matchups') return current.startsWith('/matchup')
-  if (path === '/ranking') return current.startsWith('/player/')
+  if (path === '/players') return current.startsWith('/player/')
   return false
 }
 
@@ -361,7 +361,7 @@ const mobileTitle = computed(() => {
   if (path.startsWith('/rules')) return t('nav.rules')
   if (path.startsWith('/league')) return t('nav.leagues')
   if (path.startsWith('/matchup')) return t('nav.matchups')
-  if (path.startsWith('/ranking') || path.startsWith('/player')) return t('nav.ranking')
+  if (path.startsWith('/players') || path.startsWith('/player')) return t('nav.ranking')
   if (path.startsWith('/admin')) return t('nav.admin')
   if (path.startsWith('/settings')) return t('nav.settings')
   if (path.startsWith('/login')) return t('nav.login')

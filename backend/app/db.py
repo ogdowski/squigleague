@@ -32,8 +32,6 @@ def create_db_and_tables():
     """Create database tables. Called on startup."""
     # Import all models here to ensure they're registered
     from app.bsdata.models import (  # noqa: F401
-        AoRBattleTrait,
-        ArmyOfRenown,
         Artefact,
         BattleTacticCard,
         BattleTrait,
@@ -44,6 +42,8 @@ def create_db_and_tables():
         HeroicTrait,
         Manifestation,
         ManifestationLore,
+        Prayer,
+        PrayerLore,
         RegimentOfRenown,
         RoRUnit,
         Spell,

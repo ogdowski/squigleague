@@ -54,6 +54,8 @@ class FactionListItem(BaseModel):
     name: str
     grand_alliance: str
     units_count: int = 0
+    is_aor: bool = False
+    parent_faction_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -68,6 +70,8 @@ class FactionDetail(BaseModel):
     battle_traits_count: int = 0
     heroic_traits_count: int = 0
     artefacts_count: int = 0
+    is_aor: bool = False
+    parent_faction_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -186,32 +190,6 @@ class ArtefactResponse(AbilityResponseBase):
 
 
 # =============================================================================
-# Army of Renown
-# =============================================================================
-
-
-class ArmyOfRenownListItem(BaseModel):
-    id: int
-    name: str
-    faction_name: str
-
-    class Config:
-        from_attributes = True
-
-
-class ArmyOfRenownDetail(BaseModel):
-    id: int
-    name: str
-    bsdata_id: str
-    faction_id: int
-    faction_name: str
-    description: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-# =============================================================================
 # Regiment of Renown
 # =============================================================================
 
@@ -299,11 +277,10 @@ class BattleTacticCardResponse(BaseModel):
 # =============================================================================
 
 
-class CoreAbilityResponse(BaseModel):
+class CoreAbilityResponse(AbilityResponseBase):
     id: int
     name: str
     ability_type: str
-    effect: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -339,6 +316,33 @@ class SyncResultResponse(BaseModel):
 
 
 # =============================================================================
+# Prayer Lore
+# =============================================================================
+
+
+class PrayerResponse(KeywordsMixin):
+    id: int
+    name: str
+    chanting_value: Optional[str] = None
+    range: Optional[str] = None
+    effect: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PrayerLoreResponse(BaseModel):
+    id: int
+    name: str
+    faction_id: Optional[int] = None
+    points: Optional[int] = None
+    prayers: list[PrayerResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
 # Manifestation Lore
 # =============================================================================
 
@@ -348,30 +352,6 @@ class ManifestationLoreResponse(BaseModel):
     name: str
     faction_id: Optional[int] = None
     manifestations: list[ManifestationResponse] = []
-
-    class Config:
-        from_attributes = True
-
-
-# =============================================================================
-# Army of Renown (with battle traits)
-# =============================================================================
-
-
-class AoRBattleTraitResponse(BaseModel):
-    id: int
-    name: str
-    effect: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-class ArmyOfRenownWithTraits(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    battle_traits: list[AoRBattleTraitResponse] = []
 
     class Config:
         from_attributes = True
@@ -412,14 +392,16 @@ class FactionFull(BaseModel):
     id: int
     name: str
     grand_alliance_name: str
+    is_aor: bool = False
+    parent_faction_id: Optional[int] = None
     battle_traits: list[BattleTraitResponse] = []
     battle_formations: list[BattleFormationResponse] = []
     heroic_traits: list[HeroicTraitResponse] = []
     artefacts: list[ArtefactResponse] = []
     units: list[UnitListItem] = []
     spell_lores: list[SpellLoreResponse] = []
+    prayer_lores: list[PrayerLoreResponse] = []
     manifestation_lores: list[ManifestationLoreResponse] = []
-    armies_of_renown: list[ArmyOfRenownWithTraits] = []
     regiments_of_renown: list[RegimentOfRenownWithUnits] = []
 
     class Config:

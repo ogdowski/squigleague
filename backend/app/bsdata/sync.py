@@ -10,8 +10,6 @@ from typing import Optional
 
 import httpx
 from app.bsdata.models import (
-    AoRBattleTrait,
-    ArmyOfRenown,
     Artefact,
     BattleFormation,
     BattleTacticCard,
@@ -23,6 +21,8 @@ from app.bsdata.models import (
     HeroicTrait,
     Manifestation,
     ManifestationLore,
+    Prayer,
+    PrayerLore,
     RegimentOfRenown,
     RoRUnit,
     Spell,
@@ -248,25 +248,29 @@ class BSDataSync:
         from sqlalchemy import text
 
         # Delete in order respecting foreign keys
-        self.session.exec(text("DELETE FROM bsdata_spells"))
-        self.session.exec(text("DELETE FROM bsdata_spell_lores"))
-        self.session.exec(text("DELETE FROM bsdata_manifestations"))
-        self.session.exec(text("DELETE FROM bsdata_manifestation_lores"))
-        self.session.exec(text("DELETE FROM bsdata_ror_units"))
-        self.session.exec(text("DELETE FROM bsdata_regiments_of_renown"))
-        self.session.exec(text("DELETE FROM bsdata_weapons"))
-        self.session.exec(text("DELETE FROM bsdata_unit_abilities"))
-        self.session.exec(text("DELETE FROM bsdata_units"))
-        self.session.exec(text("DELETE FROM bsdata_battle_traits"))
-        self.session.exec(text("DELETE FROM bsdata_battle_formations"))
-        self.session.exec(text("DELETE FROM bsdata_heroic_traits"))
-        self.session.exec(text("DELETE FROM bsdata_artefacts"))
-        self.session.exec(text("DELETE FROM bsdata_aor_battle_traits"))
-        self.session.exec(text("DELETE FROM bsdata_armies_of_renown"))
-        self.session.exec(text("DELETE FROM bsdata_factions"))
-        self.session.exec(text("DELETE FROM bsdata_grand_alliances"))
-        self.session.exec(text("DELETE FROM bsdata_battle_tactic_cards"))
-        self.session.exec(text("DELETE FROM bsdata_core_abilities"))
+        tables_to_clear = [
+            "bsdata_spells",
+            "bsdata_spell_lores",
+            "bsdata_prayers",
+            "bsdata_prayer_lores",
+            "bsdata_manifestations",
+            "bsdata_manifestation_lores",
+            "bsdata_ror_units",
+            "bsdata_regiments_of_renown",
+            "bsdata_weapons",
+            "bsdata_unit_abilities",
+            "bsdata_units",
+            "bsdata_battle_traits",
+            "bsdata_battle_formations",
+            "bsdata_heroic_traits",
+            "bsdata_artefacts",
+            "bsdata_factions",
+            "bsdata_grand_alliances",
+            "bsdata_battle_tactic_cards",
+            "bsdata_core_abilities",
+        ]
+        for table_name in tables_to_clear:
+            self.session.execute(text(f"DELETE FROM {table_name}"))
         self.session.commit()
 
         # Clear caches
@@ -289,7 +293,13 @@ class BSDataSync:
             else:
                 self._grand_alliance_cache[alliance_name] = existing.id
 
-    def _get_or_create_faction(self, name: str, bsdata_id: str) -> int:
+    def _get_or_create_faction(
+        self,
+        name: str,
+        bsdata_id: str,
+        is_aor: bool = False,
+        parent_faction_id: Optional[int] = None,
+    ) -> int:
         """Get or create faction, return ID."""
         if bsdata_id in self._faction_cache:
             return self._faction_cache[bsdata_id]
@@ -302,16 +312,26 @@ class BSDataSync:
             self._faction_cache[bsdata_id] = existing.id
             return existing.id
 
-        alliance_name = get_grand_alliance(name)
-        alliance_id = self._grand_alliance_cache.get(alliance_name)
-
-        if not alliance_id:
-            alliance_id = self._grand_alliance_cache.get("Order", 1)
+        # For AoR factions, use the parent faction's grand alliance
+        if is_aor and parent_faction_id:
+            parent = self.session.get(Faction, parent_faction_id)
+            alliance_id = (
+                parent.grand_alliance_id
+                if parent
+                else self._grand_alliance_cache.get("Order", 1)
+            )
+        else:
+            alliance_name = get_grand_alliance(name)
+            alliance_id = self._grand_alliance_cache.get(alliance_name)
+            if not alliance_id:
+                alliance_id = self._grand_alliance_cache.get("Order", 1)
 
         faction = Faction(
             name=name,
             bsdata_id=bsdata_id,
             grand_alliance_id=alliance_id,
+            is_aor=is_aor,
+            parent_faction_id=parent_faction_id,
         )
         self.session.add(faction)
         self.session.flush()
@@ -337,19 +357,30 @@ class BSDataSync:
             ]
         ):
             return None
-        if faction_name.startswith("þ"):
+        if faction_name.startswith("\u00fe"):
             return None
 
         is_army_of_renown = " - " in faction_name and "Library" not in faction_name
 
         if is_army_of_renown:
             self._sync_army_of_renown(main_cat, catalog_data)
-            return None
+            return {"units": 0, "weapons": 0, "abilities": 0}
 
         faction_id = self._get_or_create_faction(
             faction_name, catalog_data.get("bsdata_id", "")
         )
 
+        self._sync_faction_content(faction_id, main_cat, lib_cat, stats)
+        return stats
+
+    def _sync_faction_content(
+        self,
+        faction_id: int,
+        main_cat: Path,
+        lib_cat: Optional[Path],
+        stats: dict,
+    ):
+        """Sync all content for a faction (battle traits, lores, units, etc.)."""
         main_data = self.parser.parse_faction_main_catalog(main_cat)
         points_map = main_data.get("points", {})
         reinforced_units = main_data.get("reinforced_units", set())
@@ -380,11 +411,11 @@ class BSDataSync:
                     lore_ref.get("points"),
                 )
 
-        # Resolve prayer lore references (stored as spell lores)
+        # Resolve prayer lore references (now stored in prayer tables)
         for lore_ref in main_data.get("prayer_lore_refs", []):
             lore_content = self._lores_index.get(lore_ref["target_id"])
             if lore_content:
-                self._upsert_faction_spell_lore(
+                self._upsert_faction_prayer_lore(
                     faction_id,
                     lore_ref["target_id"],
                     lore_ref["name"],
@@ -417,10 +448,13 @@ class BSDataSync:
                 stats["weapons"] += unit_stats.get("weapons", 0)
                 stats["abilities"] += unit_stats.get("abilities", 0)
 
-        return stats
+        # AoR unit references — link parent faction's units by name
+        unit_ref_names = {ref["name"] for ref in main_data.get("unit_refs", [])}
+        if unit_ref_names:
+            self._link_aor_units(faction_id, unit_ref_names, stats)
 
     def _sync_army_of_renown(self, cat_path: Path, catalog_data: dict):
-        """Sync an Army of Renown."""
+        """Sync an Army of Renown as a regular faction with is_aor=True."""
         full_name = catalog_data.get("name", "")
         bsdata_id = catalog_data.get("bsdata_id", "")
 
@@ -438,19 +472,95 @@ class BSDataSync:
         if not parent_faction:
             return
 
-        existing = self.session.exec(
-            select(ArmyOfRenown).where(ArmyOfRenown.bsdata_id == bsdata_id)
-        ).first()
+        # Create AoR as a regular faction with is_aor flag
+        faction_id = self._get_or_create_faction(
+            aor_name,
+            bsdata_id,
+            is_aor=True,
+            parent_faction_id=parent_faction.id,
+        )
 
-        if existing:
-            existing.name = aor_name
-        else:
-            aor = ArmyOfRenown(
-                name=aor_name,
-                bsdata_id=bsdata_id,
-                faction_id=parent_faction.id,
-            )
-            self.session.add(aor)
+        # Parse AoR catalog the same way as a normal faction
+        # AoRs have battle traits, heroic traits, artefacts, spell lores etc.
+        # They typically don't have battle formations or their own units
+        stats = {"units": 0, "weapons": 0, "abilities": 0}
+        self._sync_faction_content(faction_id, cat_path, None, stats)
+
+    def _link_aor_units(self, aor_faction_id: int, unit_ref_names: set, stats: dict):
+        """Link parent faction units to AoR by looking up the parent and matching unit names."""
+        aor_faction = self.session.get(Faction, aor_faction_id)
+        if not aor_faction or not aor_faction.parent_faction_id:
+            return
+
+        parent_units = self.session.exec(
+            select(Unit).where(Unit.faction_id == aor_faction.parent_faction_id)
+        ).all()
+
+        for parent_unit in parent_units:
+            if parent_unit.name in unit_ref_names:
+                # Create a unit record under the AoR faction referencing same data
+                aor_bsdata_id = f"aor-{aor_faction_id}-{parent_unit.bsdata_id}"
+                existing = self.session.exec(
+                    select(Unit).where(Unit.bsdata_id == aor_bsdata_id)
+                ).first()
+                if not existing:
+                    aor_unit = Unit(
+                        faction_id=aor_faction_id,
+                        bsdata_id=aor_bsdata_id,
+                        name=parent_unit.name,
+                        points=parent_unit.points,
+                        move=parent_unit.move,
+                        health=parent_unit.health,
+                        save=parent_unit.save,
+                        control=parent_unit.control,
+                        keywords=parent_unit.keywords,
+                        base_size=parent_unit.base_size,
+                        unit_size=parent_unit.unit_size,
+                        can_be_reinforced=parent_unit.can_be_reinforced,
+                        notes=parent_unit.notes,
+                    )
+                    self.session.add(aor_unit)
+                    self.session.flush()
+
+                    # Copy weapons
+                    parent_weapons = self.session.exec(
+                        select(Weapon).where(Weapon.unit_id == parent_unit.id)
+                    ).all()
+                    for weapon in parent_weapons:
+                        aor_weapon = Weapon(
+                            unit_id=aor_unit.id,
+                            bsdata_id=f"aor-{aor_faction_id}-{weapon.bsdata_id}",
+                            name=weapon.name,
+                            weapon_type=weapon.weapon_type,
+                            range=weapon.range,
+                            attacks=weapon.attacks,
+                            hit=weapon.hit,
+                            wound=weapon.wound,
+                            rend=weapon.rend,
+                            damage=weapon.damage,
+                            ability=weapon.ability,
+                        )
+                        self.session.add(aor_weapon)
+
+                    # Copy abilities
+                    parent_abilities = self.session.exec(
+                        select(UnitAbility).where(UnitAbility.unit_id == parent_unit.id)
+                    ).all()
+                    for ability in parent_abilities:
+                        aor_ability = UnitAbility(
+                            unit_id=aor_unit.id,
+                            bsdata_id=f"aor-{aor_faction_id}-{ability.bsdata_id}",
+                            name=ability.name,
+                            ability_type=ability.ability_type,
+                            effect=ability.effect,
+                            keywords=ability.keywords,
+                            timing=ability.timing,
+                            declare=ability.declare,
+                            color=ability.color,
+                        )
+                        self.session.add(aor_ability)
+
+                    stats["units"] += 1
 
     def _upsert_unit(self, faction_id: int, unit_data: dict) -> dict:
         """Upsert a unit and its weapons/abilities."""
@@ -753,7 +863,7 @@ class BSDataSync:
             self.session.add(card)
 
     def _upsert_core_ability(self, ability_data: dict):
-        """Upsert a core ability."""
+        """Upsert a core ability (with full ability fields)."""
         bsdata_id = ability_data.get("bsdata_id", "")
         existing = self.session.exec(
             select(CoreAbility).where(CoreAbility.bsdata_id == bsdata_id)
@@ -766,6 +876,9 @@ class BSDataSync:
             )
             existing.effect = ability_data.get("effect", existing.effect)
             existing.keywords = ability_data.get("keywords", existing.keywords)
+            existing.timing = ability_data.get("timing", existing.timing)
+            existing.declare = ability_data.get("declare", existing.declare)
+            existing.color = ability_data.get("color", existing.color)
         else:
             ability = CoreAbility(
                 bsdata_id=bsdata_id,
@@ -773,6 +886,9 @@ class BSDataSync:
                 ability_type=ability_data.get("ability_type", "passive"),
                 effect=ability_data.get("effect"),
                 keywords=ability_data.get("keywords"),
+                timing=ability_data.get("timing"),
+                declare=ability_data.get("declare"),
+                color=ability_data.get("color"),
             )
             self.session.add(ability)
 
@@ -852,7 +968,7 @@ class BSDataSync:
         entries: list,
         points: Optional[int] = None,
     ):
-        """Upsert a faction-specific spell or prayer lore resolved from Lores.cat."""
+        """Upsert a faction-specific spell lore resolved from Lores.cat."""
         existing = self.session.exec(
             select(SpellLore).where(SpellLore.bsdata_id == bsdata_id)
         ).first()
@@ -874,6 +990,62 @@ class BSDataSync:
 
         for entry_data in entries:
             self._upsert_spell(lore.id, entry_data)
+
+    def _upsert_faction_prayer_lore(
+        self,
+        faction_id: int,
+        bsdata_id: str,
+        lore_name: str,
+        entries: list,
+        points: Optional[int] = None,
+    ):
+        """Upsert a faction-specific prayer lore resolved from Lores.cat."""
+        existing = self.session.exec(
+            select(PrayerLore).where(PrayerLore.bsdata_id == bsdata_id)
+        ).first()
+
+        if existing:
+            existing.name = lore_name
+            existing.faction_id = faction_id
+            existing.points = points
+            lore = existing
+        else:
+            lore = PrayerLore(
+                bsdata_id=bsdata_id,
+                faction_id=faction_id,
+                name=lore_name,
+                points=points,
+            )
+            self.session.add(lore)
+            self.session.flush()
+
+        for entry_data in entries:
+            self._upsert_prayer(lore.id, entry_data)
+
+    def _upsert_prayer(self, lore_id: int, prayer_data: dict):
+        """Upsert a prayer."""
+        bsdata_id = prayer_data.get("bsdata_id", "")
+        existing = self.session.exec(
+            select(Prayer).where(Prayer.bsdata_id == bsdata_id)
+        ).first()
+
+        if existing:
+            existing.name = prayer_data.get("name", existing.name)
+            existing.chanting_value = prayer_data.get(
+                "casting_value", existing.chanting_value
+            )
+            existing.effect = prayer_data.get("effect", existing.effect)
+            existing.keywords = prayer_data.get("keywords", existing.keywords)
+        else:
+            prayer = Prayer(
+                lore_id=lore_id,
+                bsdata_id=bsdata_id,
+                name=prayer_data.get("name", ""),
+                chanting_value=prayer_data.get("casting_value"),
+                effect=prayer_data.get("effect"),
+                keywords=prayer_data.get("keywords"),
+            )
+            self.session.add(prayer)
 
     def _upsert_faction_manifestation_lore(
         self, faction_id: int, bsdata_id: str, lore_name: str, entries: list

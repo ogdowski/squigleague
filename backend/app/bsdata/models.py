@@ -45,6 +45,10 @@ class Faction(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     name: str = Field(index=True, max_length=100)
     grand_alliance_id: int = Field(foreign_key="bsdata_grand_alliances.id")
+    is_aor: bool = Field(default=False)
+    parent_faction_id: Optional[int] = Field(
+        default=None, foreign_key="bsdata_factions.id"
+    )
 
     grand_alliance: GrandAlliance = Relationship(back_populates="factions")
     units: list["Unit"] = Relationship(back_populates="faction")
@@ -52,7 +56,6 @@ class Faction(SQLModel, table=True):
     battle_formations: list["BattleFormation"] = Relationship(back_populates="faction")
     heroic_traits: list["HeroicTrait"] = Relationship(back_populates="faction")
     artefacts: list["Artefact"] = Relationship(back_populates="faction")
-    armies_of_renown: list["ArmyOfRenown"] = Relationship(back_populates="faction")
 
 
 # =============================================================================
@@ -183,42 +186,6 @@ class Artefact(AbilityBase, table=True):
 
 
 # =============================================================================
-# Army of Renown
-# =============================================================================
-
-
-class ArmyOfRenown(SQLModel, table=True):
-    """Army of Renown - variant subfaction."""
-
-    __tablename__ = "bsdata_armies_of_renown"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    bsdata_id: str = Field(unique=True, index=True, max_length=100)
-    faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
-    name: str = Field(index=True, max_length=200)
-    description: Optional[str] = None
-
-    faction: Faction = Relationship(back_populates="armies_of_renown")
-    battle_traits: list["AoRBattleTrait"] = Relationship(
-        back_populates="army_of_renown"
-    )
-
-
-class AoRBattleTrait(SQLModel, table=True):
-    """Battle trait specific to Army of Renown."""
-
-    __tablename__ = "bsdata_aor_battle_traits"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    bsdata_id: str = Field(unique=True, index=True, max_length=100)
-    army_of_renown_id: int = Field(foreign_key="bsdata_armies_of_renown.id", index=True)
-    name: str = Field(max_length=200)
-    effect: Optional[str] = None
-
-    army_of_renown: ArmyOfRenown = Relationship(back_populates="battle_traits")
-
-
-# =============================================================================
 # Regiment of Renown
 # =============================================================================
 
@@ -290,6 +257,42 @@ class Spell(SQLModel, table=True):
 
 
 # =============================================================================
+# Prayer Lores
+# =============================================================================
+
+
+class PrayerLore(SQLModel, table=True):
+    """Prayer lore (e.g., Lore of the Reclusians)."""
+
+    __tablename__ = "bsdata_prayer_lores"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    bsdata_id: str = Field(unique=True, index=True, max_length=100)
+    faction_id: Optional[int] = Field(default=None, foreign_key="bsdata_factions.id")
+    name: str = Field(index=True, max_length=200)
+    points: Optional[int] = None
+
+    prayers: list["Prayer"] = Relationship(back_populates="lore")
+
+
+class Prayer(SQLModel, table=True):
+    """Individual prayer."""
+
+    __tablename__ = "bsdata_prayers"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    bsdata_id: str = Field(unique=True, index=True, max_length=100)
+    lore_id: int = Field(foreign_key="bsdata_prayer_lores.id", index=True)
+    name: str = Field(max_length=200)
+    chanting_value: Optional[str] = Field(default=None, max_length=10)
+    range: Optional[str] = Field(default=None, max_length=20)
+    effect: Optional[str] = None
+    keywords: Optional[str] = None  # JSON array
+
+    lore: PrayerLore = Relationship(back_populates="prayers")
+
+
+# =============================================================================
 # Manifestations (Endless Spells, Invocations)
 # =============================================================================
 
@@ -352,7 +355,7 @@ class BattleTacticCard(SQLModel, table=True):
     domination_effect: Optional[str] = None
 
 
-class CoreAbility(SQLModel, table=True):
+class CoreAbility(AbilityBase, table=True):
     """Core game ability (Fly, Ward Save, etc.)."""
 
     __tablename__ = "bsdata_core_abilities"
@@ -361,8 +364,6 @@ class CoreAbility(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     name: str = Field(index=True, max_length=200)
     ability_type: str = Field(max_length=30)  # "passive", "command", etc.
-    effect: Optional[str] = None
-    keywords: Optional[str] = None  # JSON array
 
 
 # =============================================================================

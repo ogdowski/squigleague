@@ -94,7 +94,7 @@ const routes = [
   },
   // Player routes
   {
-    path: '/ranking',
+    path: '/players',
     name: 'PlayerRanking',
     component: () => import('../views/PlayerRanking.vue'),
   },

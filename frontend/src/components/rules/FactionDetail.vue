@@ -222,6 +222,47 @@
           </div>
         </CollapsibleSection>
 
+        <!-- Prayer Lores -->
+        <CollapsibleSection
+          v-if="sectionData.prayer_lores?.length"
+          :title="t('rules.prayerLores')"
+          :count="sectionData.prayer_lores.length"
+          :expanded="expandedSections.has('prayer_lores')"
+          @toggle="toggleSection('prayer_lores')"
+        >
+          <div class="space-y-4">
+            <div v-for="lore in sectionData.prayer_lores" :key="lore.id" class="bg-gray-700/50 rounded-lg p-4">
+              <div class="flex items-start justify-between mb-3">
+                <h4 class="font-bold text-amber-400">{{ lore.name }}</h4>
+                <span v-if="lore.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ lore.points }} pts</span>
+              </div>
+              <div class="space-y-3">
+                <div
+                  v-for="prayer in lore.prayers"
+                  :key="prayer.id"
+                  class="bg-gray-800/50 rounded overflow-hidden"
+                >
+                  <div class="px-3 py-1 text-xs font-medium bg-yellow-600 text-yellow-100">
+                    Hero Phase
+                  </div>
+                  <div class="p-3">
+                    <div class="flex items-start justify-between mb-1">
+                      <h5 class="font-medium text-squig-yellow">{{ prayer.name }}</h5>
+                      <span v-if="prayer.chanting_value" class="text-xs bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded">
+                        Chanting value: {{ prayer.chanting_value }}+
+                      </span>
+                    </div>
+                    <p v-if="prayer.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ prayer.effect }}</p>
+                    <div v-if="prayer.keywords?.length" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-600/50">
+                      <span v-for="kw in prayer.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CollapsibleSection>
+
         <!-- Manifestation Lores -->
         <CollapsibleSection
           v-if="sectionData.manifestation_lores?.length"
@@ -245,9 +286,24 @@
                   <div class="p-3">
                     <div class="flex items-start justify-between mb-1">
                       <h5 class="font-medium text-squig-yellow">{{ manifestation.name }}</h5>
-                      <span v-if="manifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
-                        {{ manifestation.casting_value }}+
+                      <span v-if="manifestation.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-2">
+                        {{ manifestation.points }} pts
                       </span>
+                    </div>
+                    <!-- Casting & Banishment info -->
+                    <div v-if="manifestation.casting_value || manifestation.banishment" class="flex flex-wrap gap-2 mb-2">
+                      <span v-if="manifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
+                        Casting value: {{ manifestation.casting_value }}+
+                      </span>
+                      <span v-if="manifestation.banishment" class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">
+                        Banishment: {{ manifestation.banishment }}+
+                      </span>
+                    </div>
+                    <!-- Stats row -->
+                    <div v-if="manifestation.move || manifestation.health || manifestation.save" class="flex flex-wrap gap-3 mb-2 text-xs text-gray-400">
+                      <span v-if="manifestation.move">Move: {{ manifestation.move }}</span>
+                      <span v-if="manifestation.health">Health: {{ manifestation.health }}</span>
+                      <span v-if="manifestation.save">Save: {{ manifestation.save }}+</span>
                     </div>
                     <p v-if="manifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ manifestation.effect }}</p>
                   </div>
@@ -257,7 +313,7 @@
           </div>
         </CollapsibleSection>
 
-        <!-- Armies of Renown -->
+        <!-- Armies of Renown (sub-factions) -->
         <CollapsibleSection
           v-if="sectionData.armies_of_renown?.length"
           :title="t('rules.armiesOfRenown')"
@@ -265,21 +321,15 @@
           :expanded="expandedSections.has('armies_of_renown')"
           @toggle="toggleSection('armies_of_renown')"
         >
-          <div class="space-y-4">
-            <div v-for="aor in sectionData.armies_of_renown" :key="aor.id" class="bg-gray-700/50 rounded-lg p-4">
-              <h4 class="font-bold text-squig-yellow mb-2">{{ aor.name }}</h4>
-              <p v-if="aor.description" class="text-sm text-gray-300 whitespace-pre-wrap mb-3">{{ aor.description }}</p>
-              <div v-if="aor.battle_traits?.length" class="space-y-2">
-                <h5 class="text-sm font-medium text-gray-400">{{ t('rules.battleTraits') }}:</h5>
-                <div
-                  v-for="trait in aor.battle_traits"
-                  :key="trait.id"
-                  class="bg-gray-800/50 rounded p-3"
-                >
-                  <h6 class="font-medium mb-1">{{ trait.name }}</h6>
-                  <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ trait.effect }}</p>
-                </div>
-              </div>
+          <div class="space-y-1">
+            <div
+              v-for="aor in sectionData.armies_of_renown"
+              :key="aor.id"
+              @click="$emit('selectFaction', aor.id, aor.name)"
+              class="bg-gray-700/50 rounded px-3 py-2 cursor-pointer hover:bg-gray-600/50 transition-colors flex items-center justify-between"
+            >
+              <span class="text-sm font-medium">{{ aor.name }}</span>
+              <span class="text-xs text-gray-400">AoR</span>
             </div>
           </div>
         </CollapsibleSection>
@@ -303,7 +353,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['selectUnit'])
+defineEmits(['selectUnit', 'selectFaction'])
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -316,6 +366,7 @@ const sectionData = reactive({
   artefacts: null,
   units: null,
   spell_lores: null,
+  prayer_lores: null,
   manifestation_lores: null,
   armies_of_renown: null,
 })
@@ -327,6 +378,7 @@ const sectionEndpoints = {
   artefacts: 'artefacts',
   units: 'units',
   spell_lores: 'spell-lores',
+  prayer_lores: 'prayer-lores',
   manifestation_lores: 'manifestation-lores',
   armies_of_renown: 'armies-of-renown',
 }
@@ -434,11 +486,11 @@ const getColorBarClass = (color) => {
     'Yellow': 'bg-yellow-600 text-yellow-100',
     'Red': 'bg-red-700 text-red-100',
     'Blue': 'bg-blue-600 text-blue-100',
-    'Green': 'bg-green-700 text-green-100',
+    'Green': 'bg-gray-600 text-gray-200',
     'Purple': 'bg-purple-700 text-purple-100',
     'Orange': 'bg-orange-600 text-orange-100',
-    'Gray': 'bg-gray-600 text-gray-200',
-    'Grey': 'bg-gray-600 text-gray-200',
+    'Gray': 'bg-green-700 text-green-100',
+    'Grey': 'bg-green-700 text-green-100',
     'Black': 'bg-gray-900 text-gray-300',
     'White': 'bg-gray-200 text-gray-800',
     'Cyan': 'bg-cyan-700 text-cyan-100',
