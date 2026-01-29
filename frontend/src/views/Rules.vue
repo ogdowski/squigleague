@@ -293,6 +293,9 @@
         </div>
       </template>
     </template>
+
+    <!-- Disclaimer -->
+    <p class="text-xs text-gray-600 text-center mt-8">Squig League is not affiliated with Games Workshop.<br>It only displays data from <a href="https://github.com/BSData/age-of-sigmar-4th" target="_blank" class="underline hover:text-gray-400">BSData</a>.</p>
   </div>
 </template>
 
@@ -392,6 +395,7 @@ const loadFaction = (factionId) => {
     faction.parentFactionName = parent ? parent.name : null
   }
   selectedFaction.value = faction
+  window.scrollTo(0, 0)
   router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(faction.name) } })
 }
 
@@ -399,6 +403,7 @@ const loadUnit = async (unitId, unitName) => {
   try {
     const response = await axios.get(`${API_URL}/bsdata/units/${unitId}`)
     selectedUnit.value = response.data
+    window.scrollTo(0, 0)
     if (selectedFaction.value) {
       const unitSlug = toSlug(unitName || response.data.name)
       router.push({
@@ -435,11 +440,13 @@ const goBack = () => {
 const selectManifestationLore = (lore) => {
   selectedManifestationLore.value = lore
   selectedManifestation.value = null
+  window.scrollTo(0, 0)
   router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(lore.name) } })
 }
 
 const selectManifestation = (manifestation) => {
   selectedManifestation.value = manifestation
+  window.scrollTo(0, 0)
   router.push({
     name: 'RulesUnit',
     params: {

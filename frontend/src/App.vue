@@ -3,8 +3,8 @@
     <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
       <div class="container mx-auto px-3 py-1.5 md:px-4 md:py-3">
         <div class="flex items-center justify-between">
-          <router-link to="/" class="text-lg md:text-2xl font-bold tracking-wide" style="font-family: system-ui, -apple-system, sans-serif;">
-            <span class="text-squig-yellow">SQUIG</span> <span class="text-white">LEAGUE</span>
+          <router-link to="/" class="text-base md:text-2xl font-bold tracking-wide" style="font-family: system-ui, -apple-system, sans-serif;">
+            <span class="text-squig-yellow">SQUIG</span><span class="text-white">LEAGUE</span>
           </router-link>
 
           <!-- Desktop Navigation -->
