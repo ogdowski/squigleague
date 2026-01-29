@@ -138,6 +138,9 @@
               </div>
               <p v-if="ability.declare" class="text-sm text-gray-400 mb-2 italic">{{ ability.declare }}</p>
               <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ ability.effect }}</p>
+              <div v-if="ability.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
+                <span v-for="kw in ability.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -226,8 +229,7 @@ const getPhaseFromColor = (color) => {
     'Orange': 'Charge Phase',
     'Gray': 'Passive',
     'Grey': 'Passive',
-    'Black': 'Passive',
-    'Teal': 'Deployment',
+    'Black': 'Deployment',
     'Cyan': 'Any Phase',
   }
   return phases[color] || null
@@ -244,9 +246,8 @@ const getColorBarClass = (color) => {
     'Orange': 'bg-orange-600 text-orange-100',
     'Gray': 'bg-gray-600 text-gray-200',
     'Grey': 'bg-gray-600 text-gray-200',
-    'Black': 'bg-gray-800 text-gray-300',
+    'Black': 'bg-gray-900 text-gray-300',
     'White': 'bg-gray-200 text-gray-800',
-    'Teal': 'bg-teal-700 text-teal-100',
     'Cyan': 'bg-cyan-700 text-cyan-100',
   }
   return classes[color] || 'bg-gray-700 text-gray-300'

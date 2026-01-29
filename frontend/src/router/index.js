@@ -73,21 +73,24 @@ const routes = [
     name: 'MatchDetail',
     component: () => import('../views/MatchDetail.vue'),
   },
-  // Rules routes
+  // Rules routes (auth required)
   {
     path: '/rules',
     name: 'Rules',
     component: () => import('../views/Rules.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/rules/:factionSlug',
     name: 'RulesFaction',
     component: () => import('../views/Rules.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/rules/:factionSlug/:unitSlug',
     name: 'RulesUnit',
     component: () => import('../views/Rules.vue'),
+    meta: { requiresAuth: true },
   },
   // Player routes
   {
@@ -111,6 +114,15 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth) {
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      return { name: 'Login', query: { redirect: to.fullPath } }
+    }
+  }
 })
 
 export default router

@@ -11,10 +11,10 @@
       <div class="w-10 h-10 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
     </div>
 
-    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <!-- LEFT column: Units -->
       <div v-if="sectionData.units?.length">
-        <div class="card lg:sticky lg:top-16">
+        <div class="card">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-squig-yellow">{{ t('rules.units') }}</h3>
             <span class="text-sm text-gray-400">{{ sectionData.units.length }}</span>
@@ -57,10 +57,58 @@
             <div
               v-for="trait in sectionData.battle_traits"
               :key="trait.id"
-              class="bg-gray-700/50 rounded-lg p-4"
+              class="bg-gray-700/50 rounded-lg overflow-hidden"
             >
-              <h4 class="font-bold text-squig-yellow mb-2">{{ trait.name }}</h4>
-              <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ trait.effect }}</p>
+              <div
+                :class="['px-3 py-1 text-xs font-medium', getColorBarClass(trait.color)]"
+              >
+                {{ trait.timing || getPhaseFromColor(trait.color) || 'Passive' }}
+              </div>
+              <div class="p-4">
+                <h4 class="font-bold text-squig-yellow mb-2">{{ trait.name }}</h4>
+                <p v-if="trait.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ trait.declare }}</p>
+                <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ trait.effect }}</p>
+                <div v-if="trait.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
+                  <span v-for="kw in trait.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CollapsibleSection>
+
+        <!-- Battle Formations -->
+        <CollapsibleSection
+          v-if="sectionData.battle_formations?.length"
+          :title="t('rules.battleFormations')"
+          :count="sectionData.battle_formations.length"
+          :expanded="expandedSections.has('battle_formations')"
+          @toggle="toggleSection('battle_formations')"
+        >
+          <div class="space-y-3">
+            <div
+              v-for="formation in sectionData.battle_formations"
+              :key="formation.id"
+              class="bg-gray-700/50 rounded-lg overflow-hidden"
+            >
+              <div
+                :class="['px-3 py-1 text-xs font-medium', getColorBarClass(formation.color)]"
+              >
+                {{ formation.timing || getPhaseFromColor(formation.color) || 'Passive' }}
+              </div>
+              <div class="p-4">
+                <div class="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 class="font-bold text-squig-yellow">{{ formation.name }}</h4>
+                    <p v-if="formation.ability_name && formation.ability_name !== formation.name" class="text-sm text-gray-400">{{ formation.ability_name }}</p>
+                  </div>
+                  <span v-if="formation.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ formation.points }} pts</span>
+                </div>
+                <p v-if="formation.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ formation.declare }}</p>
+                <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ formation.effect }}</p>
+                <div v-if="formation.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
+                  <span v-for="kw in formation.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -77,10 +125,24 @@
             <div
               v-for="trait in sectionData.heroic_traits"
               :key="trait.id"
-              class="bg-gray-700/50 rounded-lg p-4"
+              class="bg-gray-700/50 rounded-lg overflow-hidden"
             >
-              <h4 class="font-bold text-squig-yellow mb-2">{{ trait.name }}</h4>
-              <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ trait.effect }}</p>
+              <div
+                :class="['px-3 py-1 text-xs font-medium', getColorBarClass(trait.color)]"
+              >
+                {{ trait.timing || getPhaseFromColor(trait.color) || 'Passive' }}
+              </div>
+              <div class="p-4">
+                <div class="flex items-start justify-between mb-2">
+                  <h4 class="font-bold text-squig-yellow">{{ trait.name }}</h4>
+                  <span v-if="trait.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ trait.points }} pts</span>
+                </div>
+                <p v-if="trait.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ trait.declare }}</p>
+                <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ trait.effect }}</p>
+                <div v-if="trait.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
+                  <span v-for="kw in trait.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -97,10 +159,24 @@
             <div
               v-for="artefact in sectionData.artefacts"
               :key="artefact.id"
-              class="bg-gray-700/50 rounded-lg p-4"
+              class="bg-gray-700/50 rounded-lg overflow-hidden"
             >
-              <h4 class="font-bold text-squig-yellow mb-2">{{ artefact.name }}</h4>
-              <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ artefact.effect }}</p>
+              <div
+                :class="['px-3 py-1 text-xs font-medium', getColorBarClass(artefact.color)]"
+              >
+                {{ artefact.timing || getPhaseFromColor(artefact.color) || 'Passive' }}
+              </div>
+              <div class="p-4">
+                <div class="flex items-start justify-between mb-2">
+                  <h4 class="font-bold text-squig-yellow">{{ artefact.name }}</h4>
+                  <span v-if="artefact.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ artefact.points }} pts</span>
+                </div>
+                <p v-if="artefact.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ artefact.declare }}</p>
+                <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ artefact.effect }}</p>
+                <div v-if="artefact.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
+                  <span v-for="kw in artefact.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </CollapsibleSection>
@@ -115,20 +191,31 @@
         >
           <div class="space-y-4">
             <div v-for="lore in sectionData.spell_lores" :key="lore.id" class="bg-gray-700/50 rounded-lg p-4">
-              <h4 class="font-bold text-purple-400 mb-3">{{ lore.name }}</h4>
+              <div class="flex items-start justify-between mb-3">
+                <h4 class="font-bold text-purple-400">{{ lore.name }}</h4>
+                <span v-if="lore.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ lore.points }} pts</span>
+              </div>
               <div class="space-y-3">
                 <div
                   v-for="spell in lore.spells"
                   :key="spell.id"
-                  class="bg-gray-800/50 rounded p-3"
+                  class="bg-gray-800/50 rounded overflow-hidden"
                 >
-                  <div class="flex items-start justify-between mb-1">
-                    <h5 class="font-medium text-squig-yellow">{{ spell.name }}</h5>
-                    <span v-if="spell.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
-                      {{ spell.casting_value }}+
-                    </span>
+                  <div class="px-3 py-1 text-xs font-medium bg-yellow-600 text-yellow-100">
+                    Hero Phase
                   </div>
-                  <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ spell.effect }}</p>
+                  <div class="p-3">
+                    <div class="flex items-start justify-between mb-1">
+                      <h5 class="font-medium text-squig-yellow">{{ spell.name }}</h5>
+                      <span v-if="spell.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
+                        {{ spell.casting_value }}+
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ spell.effect }}</p>
+                    <div v-if="spell.keywords?.length" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-600/50">
+                      <span v-for="kw in spell.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -150,20 +237,20 @@
                 <div
                   v-for="manifestation in lore.manifestations"
                   :key="manifestation.id"
-                  class="bg-gray-800/50 rounded p-3"
+                  class="bg-gray-800/50 rounded overflow-hidden"
                 >
-                  <div class="flex items-start justify-between mb-1">
-                    <h5 class="font-medium text-squig-yellow">{{ manifestation.name }}</h5>
-                    <span v-if="manifestation.points" class="text-sm text-squig-yellow">
-                      {{ manifestation.points }} pts
-                    </span>
+                  <div class="px-3 py-1 text-xs font-medium bg-yellow-600 text-yellow-100">
+                    Hero Phase
                   </div>
-                  <div v-if="manifestation.move || manifestation.health || manifestation.save" class="flex gap-3 mb-2 text-xs text-gray-400">
-                    <span v-if="manifestation.move">M: {{ manifestation.move }}</span>
-                    <span v-if="manifestation.health">H: {{ manifestation.health }}</span>
-                    <span v-if="manifestation.save">Sv: {{ manifestation.save }}</span>
+                  <div class="p-3">
+                    <div class="flex items-start justify-between mb-1">
+                      <h5 class="font-medium text-squig-yellow">{{ manifestation.name }}</h5>
+                      <span v-if="manifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
+                        {{ manifestation.casting_value }}+
+                      </span>
+                    </div>
+                    <p v-if="manifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ manifestation.effect }}</p>
                   </div>
-                  <p v-if="manifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ manifestation.effect }}</p>
                 </div>
               </div>
             </div>
@@ -224,6 +311,7 @@ const initialLoading = ref(true)
 const expandedSections = ref(new Set())
 const sectionData = reactive({
   battle_traits: null,
+  battle_formations: null,
   heroic_traits: null,
   artefacts: null,
   units: null,
@@ -234,6 +322,7 @@ const sectionData = reactive({
 
 const sectionEndpoints = {
   battle_traits: 'battle-traits',
+  battle_formations: 'battle-formations',
   heroic_traits: 'heroic-traits',
   artefacts: 'artefacts',
   units: 'units',
@@ -322,6 +411,39 @@ const getMainKeywords = (keywords) => {
   return keywordsList
     .map(keyword => keyword.toUpperCase())
     .filter(keyword => mainKeywordsList.some(main => keyword.includes(main)))
+}
+
+const getPhaseFromColor = (color) => {
+  const phases = {
+    'Yellow': 'Hero Phase',
+    'Red': 'Combat Phase',
+    'Blue': 'Shooting Phase',
+    'Green': 'Movement Phase',
+    'Purple': 'End Phase',
+    'Orange': 'Charge Phase',
+    'Gray': 'Passive',
+    'Grey': 'Passive',
+    'Black': 'Deployment',
+    'Cyan': 'Any Phase',
+  }
+  return phases[color] || null
+}
+
+const getColorBarClass = (color) => {
+  const classes = {
+    'Yellow': 'bg-yellow-600 text-yellow-100',
+    'Red': 'bg-red-700 text-red-100',
+    'Blue': 'bg-blue-600 text-blue-100',
+    'Green': 'bg-green-700 text-green-100',
+    'Purple': 'bg-purple-700 text-purple-100',
+    'Orange': 'bg-orange-600 text-orange-100',
+    'Gray': 'bg-gray-600 text-gray-200',
+    'Grey': 'bg-gray-600 text-gray-200',
+    'Black': 'bg-gray-900 text-gray-300',
+    'White': 'bg-gray-200 text-gray-800',
+    'Cyan': 'bg-cyan-700 text-cyan-100',
+  }
+  return classes[color] || 'bg-gray-700 text-gray-300'
 }
 
 const toggleSection = (key) => {

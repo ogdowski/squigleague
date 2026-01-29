@@ -6,6 +6,21 @@ from typing import Optional
 from sqlmodel import Field, Relationship, SQLModel
 
 # =============================================================================
+# Shared Base
+# =============================================================================
+
+
+class AbilityBase(SQLModel):
+    """Shared ability fields used by traits, artefacts, formations, etc."""
+
+    effect: Optional[str] = None
+    keywords: Optional[str] = None  # JSON array
+    timing: Optional[str] = None
+    declare: Optional[str] = None
+    color: Optional[str] = Field(default=None, max_length=30)
+
+
+# =============================================================================
 # Core Models
 # =============================================================================
 
@@ -34,6 +49,7 @@ class Faction(SQLModel, table=True):
     grand_alliance: GrandAlliance = Relationship(back_populates="factions")
     units: list["Unit"] = Relationship(back_populates="faction")
     battle_traits: list["BattleTrait"] = Relationship(back_populates="faction")
+    battle_formations: list["BattleFormation"] = Relationship(back_populates="faction")
     heroic_traits: list["HeroicTrait"] = Relationship(back_populates="faction")
     artefacts: list["Artefact"] = Relationship(back_populates="faction")
     armies_of_renown: list["ArmyOfRenown"] = Relationship(back_populates="faction")
@@ -90,7 +106,7 @@ class Weapon(SQLModel, table=True):
     unit: Unit = Relationship(back_populates="weapons")
 
 
-class UnitAbility(SQLModel, table=True):
+class UnitAbility(AbilityBase, table=True):
     """Unit ability (passive, activated, reaction)."""
 
     __tablename__ = "bsdata_unit_abilities"
@@ -100,11 +116,6 @@ class UnitAbility(SQLModel, table=True):
     unit_id: int = Field(foreign_key="bsdata_units.id", index=True)
     name: str = Field(max_length=200)
     ability_type: str = Field(max_length=30)  # "passive", "activated", "spell", etc.
-    effect: Optional[str] = None
-    keywords: Optional[str] = None  # JSON array
-    timing: Optional[str] = None
-    declare: Optional[str] = None
-    color: Optional[str] = Field(default=None, max_length=30)
 
     unit: Unit = Relationship(back_populates="abilities")
 
@@ -114,7 +125,7 @@ class UnitAbility(SQLModel, table=True):
 # =============================================================================
 
 
-class BattleTrait(SQLModel, table=True):
+class BattleTrait(AbilityBase, table=True):
     """Faction battle trait."""
 
     __tablename__ = "bsdata_battle_traits"
@@ -123,12 +134,27 @@ class BattleTrait(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
     name: str = Field(max_length=200)
-    effect: Optional[str] = None
 
     faction: Faction = Relationship(back_populates="battle_traits")
 
 
-class HeroicTrait(SQLModel, table=True):
+class BattleFormation(AbilityBase, table=True):
+    """Battle Formation choice for a faction."""
+
+    __tablename__ = "bsdata_battle_formations"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    bsdata_id: str = Field(unique=True, index=True, max_length=100)
+    faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
+    name: str = Field(max_length=200)
+    points: Optional[int] = None
+    ability_name: Optional[str] = Field(default=None, max_length=200)
+    ability_type: Optional[str] = Field(default=None, max_length=30)
+
+    faction: Faction = Relationship(back_populates="battle_formations")
+
+
+class HeroicTrait(AbilityBase, table=True):
     """Heroic trait for heroes."""
 
     __tablename__ = "bsdata_heroic_traits"
@@ -137,12 +163,12 @@ class HeroicTrait(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
     name: str = Field(max_length=200)
-    effect: Optional[str] = None
+    points: Optional[int] = None
 
     faction: Faction = Relationship(back_populates="heroic_traits")
 
 
-class Artefact(SQLModel, table=True):
+class Artefact(AbilityBase, table=True):
     """Artefact of Power."""
 
     __tablename__ = "bsdata_artefacts"
@@ -151,7 +177,7 @@ class Artefact(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
     name: str = Field(max_length=200)
-    effect: Optional[str] = None
+    points: Optional[int] = None
 
     faction: Faction = Relationship(back_populates="artefacts")
 
@@ -241,6 +267,7 @@ class SpellLore(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     faction_id: Optional[int] = Field(default=None, foreign_key="bsdata_factions.id")
     name: str = Field(index=True, max_length=200)
+    points: Optional[int] = None
 
     spells: list["Spell"] = Relationship(back_populates="lore")
 
@@ -257,6 +284,7 @@ class Spell(SQLModel, table=True):
     casting_value: Optional[str] = Field(default=None, max_length=10)
     range: Optional[str] = Field(default=None, max_length=20)
     effect: Optional[str] = None
+    keywords: Optional[str] = None  # JSON array
 
     lore: SpellLore = Relationship(back_populates="spells")
 

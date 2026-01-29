@@ -1,5 +1,6 @@
 """BSData XML parser for Age of Sigmar 4th Edition catalog files."""
 
+import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -137,6 +138,28 @@ def get_characteristic_by_name(
             # Use itertext() to get all text including after child elements
             all_text = "".join(char.itertext())
             return clean_text(all_text)
+    return None
+
+
+def _keywords_to_json(keywords_raw: Optional[str]) -> Optional[str]:
+    """Convert raw keywords string (e.g. 'Blood Tithe, Spell') to JSON array string."""
+    if not keywords_raw:
+        return None
+    keywords_list = [kw.strip() for kw in keywords_raw.split(",") if kw.strip()]
+    if not keywords_list:
+        return None
+    return json.dumps(keywords_list)
+
+
+def _extract_points(entry: ET.Element, ns: dict) -> Optional[int]:
+    """Extract point cost from a selectionEntry's <costs> element."""
+    for cost in entry.findall("bs:costs/bs:cost[@name='pts']", ns):
+        try:
+            value = int(float(cost.get("value", 0)))
+            if value > 0:
+                return value
+        except (ValueError, TypeError):
+            pass
     return None
 
 
@@ -306,9 +329,10 @@ class BSDataParser:
                     if trait:
                         battle_traits.append(trait)
 
-        # Parse heroic traits and artefacts from sharedSelectionEntryGroups
+        # Parse heroic traits, artefacts, battle formations from sharedSelectionEntryGroups
         heroic_traits = []
         artefacts = []
+        battle_formations = []
         spell_lore_refs = []
         prayer_lore_refs = []
         manifestation_lore_refs = []
@@ -319,27 +343,44 @@ class BSDataParser:
             group_name = group.get("name", "")
 
             if group_name == "Heroic Traits":
-                for profile in group.findall(".//bs:profile", NS):
-                    trait = self._parse_ability_profile(profile, NS, "heroic_trait")
-                    if trait:
-                        heroic_traits.append(trait)
+                for entry in group.findall("bs:selectionEntries/bs:selectionEntry", NS):
+                    entry_points = _extract_points(entry, NS)
+                    for profile in entry.findall(".//bs:profile", NS):
+                        trait = self._parse_ability_profile(profile, NS, "heroic_trait")
+                        if trait:
+                            trait["points"] = entry_points
+                            heroic_traits.append(trait)
 
             elif group_name == "Artefacts of Power":
-                for profile in group.findall(".//bs:profile", NS):
-                    artefact = self._parse_ability_profile(profile, NS, "artefact")
-                    if artefact:
-                        artefacts.append(artefact)
+                for entry in group.findall("bs:selectionEntries/bs:selectionEntry", NS):
+                    entry_points = _extract_points(entry, NS)
+                    for profile in entry.findall(".//bs:profile", NS):
+                        artefact = self._parse_ability_profile(profile, NS, "artefact")
+                        if artefact:
+                            artefact["points"] = entry_points
+                            artefacts.append(artefact)
+
+            elif group_name.startswith("Battle Formations"):
+                for entry in group.findall("bs:selectionEntries/bs:selectionEntry", NS):
+                    formation = self._parse_battle_formation(entry, NS)
+                    if formation:
+                        battle_formations.append(formation)
 
             elif group_name == "Spell Lores":
                 for entry in group.findall(".//bs:selectionEntry", NS):
                     lore_name = entry.get("name", "")
                     if not lore_name:
                         continue
+                    entry_points = _extract_points(entry, NS)
                     for link in entry.findall("bs:entryLinks/bs:entryLink", NS):
                         target_id = link.get("targetId", "")
                         if target_id:
                             spell_lore_refs.append(
-                                {"name": lore_name, "target_id": target_id}
+                                {
+                                    "name": lore_name,
+                                    "target_id": target_id,
+                                    "points": entry_points,
+                                }
                             )
 
             elif group_name == "Prayer Lores":
@@ -347,11 +388,16 @@ class BSDataParser:
                     lore_name = entry.get("name", "")
                     if not lore_name:
                         continue
+                    entry_points = _extract_points(entry, NS)
                     for link in entry.findall("bs:entryLinks/bs:entryLink", NS):
                         target_id = link.get("targetId", "")
                         if target_id:
                             prayer_lore_refs.append(
-                                {"name": lore_name, "target_id": target_id}
+                                {
+                                    "name": lore_name,
+                                    "target_id": target_id,
+                                    "points": entry_points,
+                                }
                             )
 
             elif group_name == "Manifestation Lores":
@@ -371,6 +417,7 @@ class BSDataParser:
             "reinforced_units": reinforced_units,
             "notes": notes_map,
             "battle_traits": battle_traits,
+            "battle_formations": battle_formations,
             "heroic_traits": heroic_traits,
             "artefacts": artefacts,
             "spell_lore_refs": spell_lore_refs,
@@ -595,7 +642,8 @@ class BSDataParser:
             return None
 
         effect = get_characteristic_by_name(profile, "Effect", ns)
-        keywords = get_characteristic_by_name(profile, "Keywords", ns)
+        keywords_raw = get_characteristic_by_name(profile, "Keywords", ns)
+        keywords_json = _keywords_to_json(keywords_raw)
         timing = get_characteristic_by_name(profile, "Timing", ns)
         declare = get_characteristic_by_name(profile, "Declare", ns)
 
@@ -613,11 +661,45 @@ class BSDataParser:
             "bsdata_id": profile_id,
             "ability_type": ability_type,
             "effect": effect,
-            "keywords": keywords,
+            "keywords": keywords_json,
             "timing": timing,
             "declare": declare,
             "color": color,
         }
+
+    def _parse_battle_formation(self, entry: ET.Element, ns: dict) -> Optional[dict]:
+        """Parse a battle formation selectionEntry."""
+        formation_name = entry.get("name", "")
+        formation_id = entry.get("id", "")
+
+        if not formation_name or not formation_id:
+            return None
+
+        points = _extract_points(entry, ns)
+
+        # Find the first ability profile inside
+        ability_data = None
+        for profile in entry.findall(".//bs:profile", ns):
+            ability_data = self._parse_ability_profile(profile, ns, "formation")
+            if ability_data:
+                break
+
+        result = {
+            "name": formation_name,
+            "bsdata_id": formation_id,
+            "points": points,
+        }
+
+        if ability_data:
+            result["ability_name"] = ability_data["name"]
+            result["ability_type"] = ability_data["ability_type"]
+            result["effect"] = ability_data["effect"]
+            result["timing"] = ability_data["timing"]
+            result["declare"] = ability_data["declare"]
+            result["color"] = ability_data["color"]
+            result["keywords"] = ability_data["keywords"]
+
+        return result
 
     def _parse_manifestation_profile(
         self, profile: ET.Element, ns: dict
@@ -841,12 +923,14 @@ class BSDataParser:
 
         chanting_value = get_characteristic_by_name(profile, "Chanting Value", NS)
         effect = get_characteristic_by_name(profile, "Effect", NS)
+        keywords_raw = get_characteristic_by_name(profile, "Keywords", NS)
 
         return {
             "name": name,
             "bsdata_id": profile_id,
             "casting_value": chanting_value,
             "effect": effect,
+            "keywords": _keywords_to_json(keywords_raw),
         }
 
     def _parse_spell_profile(self, profile: ET.Element) -> Optional[dict]:
@@ -859,10 +943,12 @@ class BSDataParser:
 
         casting_value = get_characteristic_by_name(profile, "Casting Value", NS)
         effect = get_characteristic_by_name(profile, "Effect", NS)
+        keywords_raw = get_characteristic_by_name(profile, "Keywords", NS)
 
         return {
             "name": name,
             "bsdata_id": profile_id,
             "casting_value": casting_value,
             "effect": effect,
+            "keywords": _keywords_to_json(keywords_raw),
         }

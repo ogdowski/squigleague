@@ -13,6 +13,7 @@ from app.bsdata.models import (
     AoRBattleTrait,
     ArmyOfRenown,
     Artefact,
+    BattleFormation,
     BattleTacticCard,
     BattleTrait,
     BSDataSyncStatus,
@@ -249,20 +250,21 @@ class BSDataSync:
         # Delete in order respecting foreign keys
         self.session.exec(text("DELETE FROM bsdata_spells"))
         self.session.exec(text("DELETE FROM bsdata_spell_lores"))
+        self.session.exec(text("DELETE FROM bsdata_manifestations"))
+        self.session.exec(text("DELETE FROM bsdata_manifestation_lores"))
         self.session.exec(text("DELETE FROM bsdata_ror_units"))
         self.session.exec(text("DELETE FROM bsdata_regiments_of_renown"))
         self.session.exec(text("DELETE FROM bsdata_weapons"))
         self.session.exec(text("DELETE FROM bsdata_unit_abilities"))
         self.session.exec(text("DELETE FROM bsdata_units"))
         self.session.exec(text("DELETE FROM bsdata_battle_traits"))
+        self.session.exec(text("DELETE FROM bsdata_battle_formations"))
         self.session.exec(text("DELETE FROM bsdata_heroic_traits"))
         self.session.exec(text("DELETE FROM bsdata_artefacts"))
         self.session.exec(text("DELETE FROM bsdata_aor_battle_traits"))
         self.session.exec(text("DELETE FROM bsdata_armies_of_renown"))
         self.session.exec(text("DELETE FROM bsdata_factions"))
         self.session.exec(text("DELETE FROM bsdata_grand_alliances"))
-        self.session.exec(text("DELETE FROM bsdata_manifestations"))
-        self.session.exec(text("DELETE FROM bsdata_manifestation_lores"))
         self.session.exec(text("DELETE FROM bsdata_battle_tactic_cards"))
         self.session.exec(text("DELETE FROM bsdata_core_abilities"))
         self.session.commit()
@@ -326,7 +328,13 @@ class BSDataSync:
 
         if any(
             skip in faction_name
-            for skip in ["Regiments of Renown", "Lores", "Path to Glory", "[LEGENDS]"]
+            for skip in [
+                "Regiments of Renown",
+                "Lores",
+                "Path to Glory",
+                "[LEGENDS]",
+                "Anvil of Apotheosis",
+            ]
         ):
             return None
         if faction_name.startswith("þ"):
@@ -357,6 +365,9 @@ class BSDataSync:
         for artefact_data in main_data.get("artefacts", []):
             self._upsert_artefact(faction_id, artefact_data)
 
+        for formation_data in main_data.get("battle_formations", []):
+            self._upsert_battle_formation(faction_id, formation_data)
+
         # Resolve spell lore references via Lores.cat index
         for lore_ref in main_data.get("spell_lore_refs", []):
             lore_content = self._lores_index.get(lore_ref["target_id"])
@@ -366,6 +377,7 @@ class BSDataSync:
                     lore_ref["target_id"],
                     lore_ref["name"],
                     lore_content["entries"],
+                    lore_ref.get("points"),
                 )
 
         # Resolve prayer lore references (stored as spell lores)
@@ -377,6 +389,7 @@ class BSDataSync:
                     lore_ref["target_id"],
                     lore_ref["name"],
                     lore_content["entries"],
+                    lore_ref.get("points"),
                 )
 
         # Resolve manifestation lore references
@@ -569,12 +582,20 @@ class BSDataSync:
         if existing:
             existing.name = trait_data.get("name", existing.name)
             existing.effect = trait_data.get("effect", existing.effect)
+            existing.timing = trait_data.get("timing", existing.timing)
+            existing.declare = trait_data.get("declare", existing.declare)
+            existing.color = trait_data.get("color", existing.color)
+            existing.keywords = trait_data.get("keywords", existing.keywords)
         else:
             trait = BattleTrait(
                 faction_id=faction_id,
                 bsdata_id=bsdata_id,
                 name=trait_data.get("name", ""),
                 effect=trait_data.get("effect"),
+                timing=trait_data.get("timing"),
+                declare=trait_data.get("declare"),
+                color=trait_data.get("color"),
+                keywords=trait_data.get("keywords"),
             )
             self.session.add(trait)
 
@@ -587,13 +608,23 @@ class BSDataSync:
 
         if existing:
             existing.name = trait_data.get("name", existing.name)
+            existing.points = trait_data.get("points")
             existing.effect = trait_data.get("effect", existing.effect)
+            existing.timing = trait_data.get("timing", existing.timing)
+            existing.declare = trait_data.get("declare", existing.declare)
+            existing.color = trait_data.get("color", existing.color)
+            existing.keywords = trait_data.get("keywords", existing.keywords)
         else:
             trait = HeroicTrait(
                 faction_id=faction_id,
                 bsdata_id=bsdata_id,
                 name=trait_data.get("name", ""),
+                points=trait_data.get("points"),
                 effect=trait_data.get("effect"),
+                timing=trait_data.get("timing"),
+                declare=trait_data.get("declare"),
+                color=trait_data.get("color"),
+                keywords=trait_data.get("keywords"),
             )
             self.session.add(trait)
 
@@ -606,15 +637,58 @@ class BSDataSync:
 
         if existing:
             existing.name = artefact_data.get("name", existing.name)
+            existing.points = artefact_data.get("points")
             existing.effect = artefact_data.get("effect", existing.effect)
+            existing.timing = artefact_data.get("timing", existing.timing)
+            existing.declare = artefact_data.get("declare", existing.declare)
+            existing.color = artefact_data.get("color", existing.color)
+            existing.keywords = artefact_data.get("keywords", existing.keywords)
         else:
             artefact = Artefact(
                 faction_id=faction_id,
                 bsdata_id=bsdata_id,
                 name=artefact_data.get("name", ""),
+                points=artefact_data.get("points"),
                 effect=artefact_data.get("effect"),
+                timing=artefact_data.get("timing"),
+                declare=artefact_data.get("declare"),
+                color=artefact_data.get("color"),
+                keywords=artefact_data.get("keywords"),
             )
             self.session.add(artefact)
+
+    def _upsert_battle_formation(self, faction_id: int, formation_data: dict):
+        """Upsert a battle formation."""
+        bsdata_id = formation_data.get("bsdata_id", "")
+        existing = self.session.exec(
+            select(BattleFormation).where(BattleFormation.bsdata_id == bsdata_id)
+        ).first()
+
+        if existing:
+            existing.name = formation_data.get("name", existing.name)
+            existing.points = formation_data.get("points")
+            existing.ability_name = formation_data.get("ability_name")
+            existing.ability_type = formation_data.get("ability_type")
+            existing.effect = formation_data.get("effect")
+            existing.timing = formation_data.get("timing")
+            existing.declare = formation_data.get("declare")
+            existing.color = formation_data.get("color")
+            existing.keywords = formation_data.get("keywords")
+        else:
+            formation = BattleFormation(
+                faction_id=faction_id,
+                bsdata_id=bsdata_id,
+                name=formation_data.get("name", ""),
+                points=formation_data.get("points"),
+                ability_name=formation_data.get("ability_name"),
+                ability_type=formation_data.get("ability_type"),
+                effect=formation_data.get("effect"),
+                timing=formation_data.get("timing"),
+                declare=formation_data.get("declare"),
+                color=formation_data.get("color"),
+                keywords=formation_data.get("keywords"),
+            )
+            self.session.add(formation)
 
     def _upsert_manifestation(self, manif_data: dict):
         """Upsert a manifestation."""
@@ -758,6 +832,7 @@ class BSDataSync:
                 "casting_value", existing.casting_value
             )
             existing.effect = spell_data.get("effect", existing.effect)
+            existing.keywords = spell_data.get("keywords", existing.keywords)
         else:
             spell = Spell(
                 lore_id=lore_id,
@@ -765,11 +840,17 @@ class BSDataSync:
                 name=spell_data.get("name", ""),
                 casting_value=spell_data.get("casting_value"),
                 effect=spell_data.get("effect"),
+                keywords=spell_data.get("keywords"),
             )
             self.session.add(spell)
 
     def _upsert_faction_spell_lore(
-        self, faction_id: int, bsdata_id: str, lore_name: str, entries: list
+        self,
+        faction_id: int,
+        bsdata_id: str,
+        lore_name: str,
+        entries: list,
+        points: Optional[int] = None,
     ):
         """Upsert a faction-specific spell or prayer lore resolved from Lores.cat."""
         existing = self.session.exec(
@@ -779,12 +860,14 @@ class BSDataSync:
         if existing:
             existing.name = lore_name
             existing.faction_id = faction_id
+            existing.points = points
             lore = existing
         else:
             lore = SpellLore(
                 bsdata_id=bsdata_id,
                 faction_id=faction_id,
                 name=lore_name,
+                points=points,
             )
             self.session.add(lore)
             self.session.flush()

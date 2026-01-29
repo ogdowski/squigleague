@@ -7,6 +7,36 @@ from typing import Optional
 from pydantic import BaseModel, field_validator
 
 # =============================================================================
+# Shared Base
+# =============================================================================
+
+
+class KeywordsMixin(BaseModel):
+    """Base schema with JSON keywords parsing."""
+
+    keywords: Optional[list[str]] = None
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def parse_keywords_json(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return value
+
+
+class AbilityResponseBase(KeywordsMixin):
+    """Base schema for ability-like responses with timing/color fields."""
+
+    effect: Optional[str] = None
+    timing: Optional[str] = None
+    declare: Optional[str] = None
+    color: Optional[str] = None
+
+
+# =============================================================================
 # Grand Alliance & Faction
 # =============================================================================
 
@@ -64,31 +94,16 @@ class WeaponResponse(BaseModel):
         from_attributes = True
 
 
-class UnitAbilityResponse(BaseModel):
+class UnitAbilityResponse(AbilityResponseBase):
     id: int
     name: str
     ability_type: str
-    effect: Optional[str] = None
-    keywords: Optional[list[str]] = None
-    timing: Optional[str] = None
-    declare: Optional[str] = None
-    color: Optional[str] = None
-
-    @field_validator("keywords", mode="before")
-    @classmethod
-    def parse_keywords_json(cls, value):
-        if isinstance(value, str):
-            try:
-                return json.loads(value)
-            except (json.JSONDecodeError, TypeError):
-                return None
-        return value
 
     class Config:
         from_attributes = True
 
 
-class UnitListItem(BaseModel):
+class UnitListItem(KeywordsMixin):
     id: int
     name: str
     faction_name: str
@@ -97,27 +112,16 @@ class UnitListItem(BaseModel):
     health: Optional[int] = None
     save: Optional[str] = None
     control: Optional[int] = None
-    keywords: Optional[list[str]] = None
     base_size: Optional[str] = None
     unit_size: Optional[int] = None
     can_be_reinforced: bool = False
     notes: Optional[str] = None
 
-    @field_validator("keywords", mode="before")
-    @classmethod
-    def parse_keywords_json(cls, value):
-        if isinstance(value, str):
-            try:
-                return json.loads(value)
-            except (json.JSONDecodeError, TypeError):
-                return None
-        return value
-
     class Config:
         from_attributes = True
 
 
-class UnitDetail(BaseModel):
+class UnitDetail(KeywordsMixin):
     id: int
     name: str
     bsdata_id: str
@@ -128,23 +132,12 @@ class UnitDetail(BaseModel):
     health: Optional[int] = None
     save: Optional[str] = None
     control: Optional[int] = None
-    keywords: Optional[list[str]] = None
     base_size: Optional[str] = None
     unit_size: Optional[int] = None
     can_be_reinforced: bool = False
     notes: Optional[str] = None
     weapons: list[WeaponResponse] = []
     abilities: list[UnitAbilityResponse] = []
-
-    @field_validator("keywords", mode="before")
-    @classmethod
-    def parse_keywords_json(cls, value):
-        if isinstance(value, str):
-            try:
-                return json.loads(value)
-            except (json.JSONDecodeError, TypeError):
-                return None
-        return value
 
     class Config:
         from_attributes = True
@@ -155,28 +148,38 @@ class UnitDetail(BaseModel):
 # =============================================================================
 
 
-class BattleTraitResponse(BaseModel):
+class BattleTraitResponse(AbilityResponseBase):
     id: int
     name: str
-    effect: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 
-class HeroicTraitResponse(BaseModel):
+class BattleFormationResponse(AbilityResponseBase):
     id: int
     name: str
-    effect: Optional[str] = None
+    points: Optional[int] = None
+    ability_name: Optional[str] = None
+    ability_type: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 
-class ArtefactResponse(BaseModel):
+class HeroicTraitResponse(AbilityResponseBase):
     id: int
     name: str
-    effect: Optional[str] = None
+    points: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ArtefactResponse(AbilityResponseBase):
+    id: int
+    name: str
+    points: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -249,7 +252,7 @@ class ManifestationResponse(BaseModel):
 # =============================================================================
 
 
-class SpellResponse(BaseModel):
+class SpellResponse(KeywordsMixin):
     id: int
     name: str
     casting_value: Optional[str] = None
@@ -264,6 +267,7 @@ class SpellLoreResponse(BaseModel):
     id: int
     name: str
     faction_id: Optional[int] = None
+    points: Optional[int] = None
     spells: list[SpellResponse] = []
 
     class Config:
@@ -409,6 +413,7 @@ class FactionFull(BaseModel):
     name: str
     grand_alliance_name: str
     battle_traits: list[BattleTraitResponse] = []
+    battle_formations: list[BattleFormationResponse] = []
     heroic_traits: list[HeroicTraitResponse] = []
     artefacts: list[ArtefactResponse] = []
     units: list[UnitListItem] = []

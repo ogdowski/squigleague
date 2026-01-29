@@ -6,6 +6,7 @@ from app.bsdata.models import (
     AoRBattleTrait,
     ArmyOfRenown,
     Artefact,
+    BattleFormation,
     BattleTacticCard,
     BattleTrait,
     BSDataSyncStatus,
@@ -29,6 +30,7 @@ from app.bsdata.schemas import (
     ArmyOfRenownListItem,
     ArmyOfRenownWithTraits,
     ArtefactResponse,
+    BattleFormationResponse,
     BattleTacticCardResponse,
     BattleTraitResponse,
     CoreAbilityResponse,
@@ -58,7 +60,9 @@ from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, func, select
 
-router = APIRouter(prefix="/bsdata", tags=["bsdata"])
+router = APIRouter(
+    prefix="/bsdata", tags=["bsdata"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get("/grand-alliances", response_model=list[GrandAllianceResponse])
@@ -207,6 +211,23 @@ async def list_faction_heroic_traits(
     return traits
 
 
+@router.get(
+    "/factions/{faction_id}/battle-formations",
+    response_model=list[BattleFormationResponse],
+)
+async def list_faction_battle_formations(
+    faction_id: int,
+    session: Session = Depends(get_session),
+):
+    """List battle formations for a faction."""
+    formations = session.exec(
+        select(BattleFormation)
+        .where(BattleFormation.faction_id == faction_id)
+        .order_by(BattleFormation.name)
+    ).all()
+    return formations
+
+
 @router.get("/factions/{faction_id}/artefacts", response_model=list[ArtefactResponse])
 async def list_faction_artefacts(
     faction_id: int,
@@ -245,6 +266,7 @@ async def list_faction_spell_lores(
                 id=lore.id,
                 name=lore.name,
                 faction_id=lore.faction_id,
+                points=lore.points,
                 spells=spells,
             )
         )
