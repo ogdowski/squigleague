@@ -8,6 +8,7 @@
     "stayTuned": "Czekaj na więcej",
     "close": "Zamknij",
     "cancel": "Anuluj",
+    "back": "Wróć",
     "optional": "opcjonalne"
   },
   "home": {
@@ -706,6 +707,7 @@
     "keywords": "Słowa Kluczowe",
     "pts": "pkt",
     "failedToLoad": "Nie udało się załadować danych zasad",
-    "noData": "Brak danych"
+    "noData": "Brak danych",
+    "searchPlaceholder": "Szukaj jednostek, zdolności, cech, zaklęć..."
   }
 }

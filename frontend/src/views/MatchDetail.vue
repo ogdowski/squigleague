@@ -5,6 +5,15 @@
     </div>
     <div v-else-if="error" class="card bg-red-900/30 border border-red-500 text-red-200">{{ error }}</div>
     <div v-else-if="match">
+      <button
+        @click="goBack"
+        class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        {{ t('common.back') }}
+      </button>
       <!-- Header -->
       <div class="card mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
@@ -352,7 +361,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import BattlePlanDisplay from '@/components/BattlePlanDisplay.vue'
@@ -363,7 +372,16 @@ import { ARMY_FACTIONS } from '@/constants/armies'
 const { t } = useI18n()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/leagues')
+  }
+}
 
 const match = ref(null)
 const loading = ref(true)

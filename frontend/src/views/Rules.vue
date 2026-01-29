@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-7xl mx-auto">
     <!-- BSData info panel -->
-    <div v-if="!infoPanelHidden && !selectedFaction && !selectedUnit" class="mb-6 bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+    <div v-if="!infoPanelHidden && !selectedFaction && !selectedUnit && !selectedManifestationLore" class="mb-6 bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-start gap-3">
           <svg class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,6 +23,65 @@
       </div>
     </div>
 
+    <!-- Search Bar -->
+    <div class="relative mb-6">
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          v-model="searchQuery"
+          @input="onSearchInput"
+          @focus="searchFocused = true"
+          @blur="onSearchBlur"
+          type="text"
+          :placeholder="t('rules.searchPlaceholder')"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-squig-yellow/50"
+        />
+        <button
+          v-if="searchQuery"
+          @mousedown.prevent="clearSearch"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search Results Dropdown -->
+      <div
+        v-if="searchFocused && searchQuery.length >= 2 && (searchResults.length > 0 || searchLoading)"
+        class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-96 overflow-y-auto"
+      >
+        <div v-if="searchLoading" class="px-4 py-3 text-sm text-gray-400">
+          {{ t('common.loading') || 'Loading...' }}
+        </div>
+        <template v-else>
+          <div
+            v-for="(result, index) in searchResults"
+            :key="index"
+            @mousedown.prevent="selectSearchResult(result)"
+            class="px-4 py-2.5 hover:bg-gray-700/50 cursor-pointer border-b border-gray-700/50 last:border-b-0"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <span class="text-sm font-medium text-white">{{ result.name }}</span>
+                <span v-if="result.faction_name" class="text-xs text-gray-500 ml-2">{{ result.faction_name }}</span>
+                <span v-if="result.extra && result.result_type === 'ability'" class="text-xs text-gray-500 ml-1">/ {{ result.extra }}</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span v-if="result.points" class="text-xs text-squig-yellow font-bold">{{ result.points }} pts</span>
+                <span :class="['text-xs px-1.5 py-0.5 rounded', searchResultTypeClass(result.result_type)]">
+                  {{ searchResultTypeLabel(result.result_type) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-12">
       <div class="w-10 h-10 border-4 border-squig-yellow border-t-transparent rounded-full animate-spin"></div>
@@ -35,16 +94,67 @@
 
     <!-- Content -->
     <template v-else>
-      <!-- Unit Detail View -->
-      <div v-if="selectedUnit">
+      <!-- Manifestation Lore Detail View -->
+      <div v-if="selectedManifestationLore">
         <button
-          @click="goBackToFaction"
+          @click="goBack"
           class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
-          {{ t('rules.backToFaction') }}
+          {{ t('common.back') }}
+        </button>
+
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold">{{ selectedManifestationLore.name }}</h2>
+          <p class="text-gray-400">{{ t('rules.universalManifestations') }}</p>
+        </div>
+
+        <div class="space-y-4">
+          <div
+            v-for="manifestation in selectedManifestationLore.manifestations"
+            :key="manifestation.id"
+            class="card"
+          >
+            <div class="bg-yellow-800/60 text-yellow-200 px-3 py-1 text-xs font-medium rounded-t-lg -mx-4 -mt-4 mb-3">
+              Hero Phase
+            </div>
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="font-bold text-squig-yellow text-lg">{{ manifestation.name }}</h3>
+              <span v-if="manifestation.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">
+                {{ manifestation.points }} pts
+              </span>
+            </div>
+            <div v-if="manifestation.casting_value || manifestation.banishment" class="flex flex-wrap gap-2 mb-2">
+              <span v-if="manifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
+                Casting value: {{ manifestation.casting_value }}+
+              </span>
+              <span v-if="manifestation.banishment" class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">
+                Banishment: {{ manifestation.banishment }}+
+              </span>
+            </div>
+            <div v-if="manifestation.move || manifestation.health || manifestation.save" class="flex flex-wrap gap-3 mb-2 text-xs text-gray-400">
+              <span v-if="manifestation.move">Move: {{ manifestation.move }}</span>
+              <span v-if="manifestation.health">Health: {{ manifestation.health }}</span>
+              <span v-if="manifestation.save">Save: {{ manifestation.save }}+</span>
+            </div>
+            <p v-if="manifestation.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ manifestation.declare }}</p>
+            <p v-if="manifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ manifestation.effect }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unit Detail View -->
+      <div v-else-if="selectedUnit">
+        <button
+          @click="goBack"
+          class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          {{ t('common.back') }}
         </button>
 
         <UnitDetail :unit="selectedUnit" />
@@ -53,16 +163,17 @@
       <!-- Faction Detail View -->
       <div v-else-if="selectedFaction">
         <button
-          @click="goBackToFactions"
+          @click="goBack"
           class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
-          {{ t('rules.backToFactions') }}
+          {{ t('common.back') }}
         </button>
 
         <FactionDetail
+          :key="selectedFaction.id"
           :faction="selectedFaction"
           @select-unit="loadUnit"
           @select-faction="loadFaction"
@@ -73,7 +184,7 @@
       <template v-else>
         <FactionBrowser
           :grand-alliances="grandAlliances"
-          :factions="factions"
+          :factions="mainFactions"
           @select-faction="loadFaction"
         />
 
@@ -84,45 +195,15 @@
             <div class="flex-1 h-px bg-purple-400/30"></div>
           </div>
 
-          <div class="space-y-4">
-            <div v-for="lore in universalManifestationLores" :key="lore.id" class="card">
-              <button
-                @click="toggleSection('lore-' + lore.id)"
-                class="w-full flex items-center justify-between text-left"
-              >
-                <h3 class="font-bold text-lg">{{ lore.name }}</h3>
-                <svg
-                  :class="['w-5 h-5 transition-transform', expandedSections.has('lore-' + lore.id) ? 'rotate-180' : '']"
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              <div v-if="expandedSections.has('lore-' + lore.id)" class="mt-4 space-y-3">
-                <div
-                  v-for="manifestation in lore.manifestations"
-                  :key="manifestation.id"
-                  class="bg-gray-700/50 rounded-lg p-4"
-                >
-                  <div class="flex items-start justify-between mb-2">
-                    <h4 class="font-bold text-squig-yellow">{{ manifestation.name }}</h4>
-                    <div class="flex items-center gap-2 text-sm">
-                      <span v-if="manifestation.points" class="text-squig-yellow">
-                        {{ manifestation.points }} pts
-                      </span>
-                    </div>
-                  </div>
-                  <div v-if="manifestation.move || manifestation.health || manifestation.save" class="flex gap-3 mb-2 text-sm text-gray-400">
-                    <span v-if="manifestation.move">M: {{ manifestation.move }}</span>
-                    <span v-if="manifestation.health">H: {{ manifestation.health }}</span>
-                    <span v-if="manifestation.save">Sv: {{ manifestation.save }}</span>
-                  </div>
-                  <p v-if="manifestation.description" class="text-sm text-gray-300 whitespace-pre-wrap">
-                    {{ manifestation.description }}
-                  </p>
-                </div>
-              </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div
+              v-for="lore in universalManifestationLores"
+              :key="lore.id"
+              @click="selectManifestationLore(lore)"
+              class="card cursor-pointer hover:border-purple-500/50 transition-colors flex items-center justify-between"
+            >
+              <span class="font-medium">{{ lore.name }}</span>
+              <span class="text-sm text-gray-400">{{ lore.manifestations?.length || 0 }}</span>
             </div>
           </div>
         </div>
@@ -132,7 +213,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
@@ -152,12 +233,23 @@ const error = ref('')
 const infoPanelHidden = ref(localStorage.getItem('rules_infoPanelHidden') === 'true')
 const expandedSections = ref(new Set())
 
+// Search state
+const searchQuery = ref('')
+const searchResults = ref([])
+const searchLoading = ref(false)
+const searchFocused = ref(false)
+let searchTimeout = null
+
 const grandAlliances = ref([])
 const factions = ref([])
 const universalManifestationLores = ref([])
 
 const selectedFaction = ref(null)
 const selectedUnit = ref(null)
+const selectedManifestationLore = ref(null)
+
+// Main factions (non-AoR) for the list display
+const mainFactions = computed(() => factions.value.filter(faction => !faction.is_aor))
 
 // Convert name to URL-friendly slug
 const toSlug = (name) => {
@@ -190,23 +282,15 @@ const fetchData = async () => {
   error.value = ''
 
   try {
-    const [gaResponse, factionsResponse, manifestationsResponse] = await Promise.all([
+    const [gaResponse, factionsResponse, loresResponse] = await Promise.all([
       axios.get(`${API_URL}/bsdata/grand-alliances`),
-      axios.get(`${API_URL}/bsdata/factions`),
-      axios.get(`${API_URL}/bsdata/manifestations`),
+      axios.get(`${API_URL}/bsdata/factions?include_aor=true`),
+      axios.get(`${API_URL}/bsdata/manifestation-lores`),
     ])
 
     grandAlliances.value = gaResponse.data
     factions.value = factionsResponse.data
-    // Group manifestations as a single "Universal" lore
-    const manifestations = manifestationsResponse.data
-    if (manifestations.length > 0) {
-      universalManifestationLores.value = [{
-        id: 0,
-        name: 'Endless Spells & Invocations',
-        manifestations: manifestations
-      }]
-    }
+    universalManifestationLores.value = loresResponse.data
   } catch (err) {
     console.error('Failed to fetch BSData:', err)
     error.value = t('rules.failedToLoad')
@@ -215,23 +299,15 @@ const fetchData = async () => {
   }
 }
 
-const loadFaction = async (factionId, factionName) => {
-  // Try local cache first (for main factions)
+const loadFaction = (factionId) => {
   const faction = factions.value.find(f => f.id === factionId)
-  if (faction) {
-    selectedFaction.value = faction
-    router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(faction.name) } })
-    return
+  if (!faction) return
+  if (faction.is_aor && faction.parent_faction_id) {
+    const parent = factions.value.find(f => f.id === faction.parent_faction_id)
+    faction.parentFactionName = parent ? parent.name : null
   }
-  // AoR factions won't be in the list - fetch detail from API
-  try {
-    const response = await axios.get(`${API_URL}/bsdata/factions/${factionId}`)
-    const aorFaction = { id: response.data.id, name: factionName || response.data.name, grand_alliance: response.data.grand_alliance?.name }
-    selectedFaction.value = aorFaction
-    router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(aorFaction.name) } })
-  } catch (error) {
-    console.error('Failed to load faction:', error)
-  }
+  selectedFaction.value = faction
+  router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(faction.name) } })
 }
 
 const loadUnit = async (unitId, unitName) => {
@@ -253,17 +329,107 @@ const loadUnit = async (unitId, unitName) => {
   }
 }
 
-const goBackToFactions = () => {
-  selectedFaction.value = null
-  selectedUnit.value = null
-  router.push({ name: 'Rules' })
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else if (selectedManifestationLore.value) {
+    selectedManifestationLore.value = null
+    router.push({ name: 'Rules' })
+  } else if (selectedUnit.value) {
+    selectedUnit.value = null
+    if (selectedFaction.value) {
+      router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(selectedFaction.value.name) } })
+    }
+  } else {
+    selectedFaction.value = null
+    selectedUnit.value = null
+    router.push({ name: 'Rules' })
+  }
 }
 
-const goBackToFaction = () => {
-  selectedUnit.value = null
-  if (selectedFaction.value) {
-    router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(selectedFaction.value.name) } })
+const selectManifestationLore = (lore) => {
+  selectedManifestationLore.value = lore
+  router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(lore.name) } })
+}
+
+// Search
+const onSearchInput = () => {
+  clearTimeout(searchTimeout)
+  if (searchQuery.value.length < 2) {
+    searchResults.value = []
+    return
   }
+  searchLoading.value = true
+  searchTimeout = setTimeout(async () => {
+    try {
+      const response = await axios.get(`${API_URL}/bsdata/search`, { params: { query: searchQuery.value } })
+      searchResults.value = response.data
+    } catch (err) {
+      searchResults.value = []
+    } finally {
+      searchLoading.value = false
+    }
+  }, 300)
+}
+
+const onSearchBlur = () => {
+  setTimeout(() => { searchFocused.value = false }, 200)
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  searchResults.value = []
+}
+
+const selectSearchResult = (result) => {
+  searchQuery.value = ''
+  searchResults.value = []
+  searchFocused.value = false
+
+  if (result.result_type === 'unit' && result.unit_id) {
+    // Navigate to unit detail via faction
+    const faction = factions.value.find(f => f.id === result.faction_id)
+    if (faction) {
+      selectedFaction.value = faction
+      loadUnit(result.unit_id, result.name)
+    }
+  } else if (result.result_type === 'ability' && result.unit_id) {
+    // Navigate to the unit that has this ability
+    const faction = factions.value.find(f => f.id === result.faction_id)
+    if (faction) {
+      selectedFaction.value = faction
+      loadUnit(result.unit_id, result.extra)
+    }
+  } else if (result.faction_id) {
+    // Battle trait, heroic trait, artefact, spell, prayer → go to faction
+    loadFaction(result.faction_id)
+  }
+}
+
+const searchResultTypeLabel = (type) => {
+  const labels = {
+    'unit': 'Unit',
+    'ability': 'Ability',
+    'battle_trait': 'Trait',
+    'heroic_trait': 'Heroic',
+    'artefact': 'Artefact',
+    'spell': 'Spell',
+    'prayer': 'Prayer',
+  }
+  return labels[type] || type
+}
+
+const searchResultTypeClass = (type) => {
+  const classes = {
+    'unit': 'bg-gray-700 text-gray-300',
+    'ability': 'bg-blue-900/50 text-blue-300',
+    'battle_trait': 'bg-green-900/50 text-green-300',
+    'heroic_trait': 'bg-yellow-900/50 text-yellow-300',
+    'artefact': 'bg-purple-900/50 text-purple-300',
+    'spell': 'bg-indigo-900/50 text-indigo-300',
+    'prayer': 'bg-amber-900/50 text-amber-300',
+  }
+  return classes[type] || 'bg-gray-700 text-gray-300'
 }
 
 // Handle URL parameters
@@ -290,16 +456,30 @@ const handleRouteParams = async () => {
       }
     }
   } else if (params.factionSlug) {
-    // Load faction view
+    // Try faction first
     const faction = findFactionBySlug(params.factionSlug)
     if (faction) {
+      if (faction.is_aor && faction.parent_faction_id) {
+        const parent = factions.value.find(f => f.id === faction.parent_faction_id)
+        faction.parentFactionName = parent ? parent.name : null
+      }
       selectedFaction.value = faction
       selectedUnit.value = null
+      selectedManifestationLore.value = null
+    } else {
+      // Try manifestation lore
+      const lore = universalManifestationLores.value.find(l => toSlug(l.name) === params.factionSlug)
+      if (lore) {
+        selectedManifestationLore.value = lore
+        selectedFaction.value = null
+        selectedUnit.value = null
+      }
     }
   } else {
     // Show faction list
     selectedFaction.value = null
     selectedUnit.value = null
+    selectedManifestationLore.value = null
   }
 }
 

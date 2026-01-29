@@ -22,6 +22,7 @@ from app.bsdata.models import (
     SpellLore,
     Unit,
     UnitAbility,
+    UnitFaction,
     Weapon,
 )
 from app.bsdata.schemas import (
@@ -42,6 +43,7 @@ from app.bsdata.schemas import (
     RegimentOfRenownResponse,
     RegimentOfRenownWithUnits,
     RoRUnitResponse,
+    SearchResultItem,
     SpellLoreResponse,
     SpellResponse,
     SyncResultResponse,
@@ -100,17 +102,27 @@ async def list_factions(
 
     results = session.exec(query).all()
 
-    return [
-        FactionListItem(
-            id=row.id,
-            name=row.name,
-            grand_alliance=row.grand_alliance,
-            units_count=row.units_count or 0,
-            is_aor=row.is_aor,
-            parent_faction_id=row.parent_faction_id,
+    items = []
+    for row in results:
+        units_count = row.units_count or 0
+        # AoR factions have units linked via junction table, not direct
+        if row.is_aor:
+            units_count = session.exec(
+                select(func.count(UnitFaction.id)).where(
+                    UnitFaction.faction_id == row.id
+                )
+            ).one()
+        items.append(
+            FactionListItem(
+                id=row.id,
+                name=row.name,
+                grand_alliance=row.grand_alliance,
+                units_count=units_count,
+                is_aor=row.is_aor,
+                parent_faction_id=row.parent_faction_id,
+            )
         )
-        for row in results
-    ]
+    return items
 
 
 @router.get("/factions/{faction_id}", response_model=FactionDetail)
@@ -158,14 +170,23 @@ async def list_faction_units(
     faction_id: int,
     session: Session = Depends(get_session),
 ):
-    """List all units in a faction."""
+    """List all units in a faction. AoR factions use junction table."""
     faction = session.get(Faction, faction_id)
     if not faction:
         raise HTTPException(status_code=404, detail="Faction not found")
 
-    units = session.exec(
-        select(Unit).where(Unit.faction_id == faction_id).order_by(Unit.name)
-    ).all()
+    if faction.is_aor:
+        # AoR: units linked via junction table
+        units = session.exec(
+            select(Unit)
+            .join(UnitFaction, Unit.id == UnitFaction.unit_id)
+            .where(UnitFaction.faction_id == faction_id)
+            .order_by(Unit.name)
+        ).all()
+    else:
+        units = session.exec(
+            select(Unit).where(Unit.faction_id == faction_id).order_by(Unit.name)
+        ).all()
 
     return [
         UnitListItem(
@@ -362,29 +383,31 @@ async def list_faction_armies_of_renown(
             Faction.id,
             Faction.name,
             GrandAlliance.name.label("grand_alliance"),
-            func.count(Unit.id).label("units_count"),
             Faction.is_aor,
             Faction.parent_faction_id,
         )
         .join(GrandAlliance)
-        .outerjoin(Unit)
         .where(Faction.parent_faction_id == faction_id)
         .where(Faction.is_aor == True)
-        .group_by(Faction.id, GrandAlliance.name)
         .order_by(Faction.name)
     ).all()
 
-    return [
-        FactionListItem(
-            id=row.id,
-            name=row.name,
-            grand_alliance=row.grand_alliance,
-            units_count=row.units_count or 0,
-            is_aor=row.is_aor,
-            parent_faction_id=row.parent_faction_id,
+    items = []
+    for row in aor_factions:
+        units_count = session.exec(
+            select(func.count(UnitFaction.id)).where(UnitFaction.faction_id == row.id)
+        ).one()
+        items.append(
+            FactionListItem(
+                id=row.id,
+                name=row.name,
+                grand_alliance=row.grand_alliance,
+                units_count=units_count,
+                is_aor=row.is_aor,
+                parent_faction_id=row.parent_faction_id,
+            )
         )
-        for row in aor_factions
-    ]
+    return items
 
 
 @router.get("/manifestation-lores", response_model=list[ManifestationLoreResponse])
@@ -599,6 +622,176 @@ async def list_core_abilities(session: Session = Depends(get_session)):
     """List all core abilities."""
     abilities = session.exec(select(CoreAbility).order_by(CoreAbility.name)).all()
     return abilities
+
+
+@router.get("/search", response_model=list[SearchResultItem])
+async def search_rules(
+    query: str = Query(..., min_length=2, max_length=100),
+    session: Session = Depends(get_session),
+):
+    """Search across units, abilities, traits, spells, prayers."""
+    pattern = f"%{query}%"
+    results: list[SearchResultItem] = []
+
+    # Units (exclude AoR to avoid duplicates)
+    units = session.exec(
+        select(
+            Unit.id,
+            Unit.name,
+            Unit.points,
+            Faction.name.label("faction_name"),
+            Faction.id.label("faction_id"),
+        )
+        .join(Faction, Unit.faction_id == Faction.id)
+        .where(Unit.name.ilike(pattern))
+        .where(Faction.is_aor == False)
+        .order_by(Unit.name)
+        .limit(20)
+    ).all()
+    for row in units:
+        results.append(
+            SearchResultItem(
+                result_type="unit",
+                name=row.name,
+                faction_name=row.faction_name,
+                faction_id=row.faction_id,
+                unit_id=row.id,
+                points=row.points,
+            )
+        )
+
+    # Unit Abilities (exclude AoR to avoid duplicates)
+    abilities = session.exec(
+        select(
+            UnitAbility.name,
+            UnitAbility.ability_type,
+            Unit.id.label("unit_id"),
+            Unit.name.label("unit_name"),
+            Faction.name.label("faction_name"),
+            Faction.id.label("faction_id"),
+        )
+        .join(Unit, UnitAbility.unit_id == Unit.id)
+        .join(Faction, Unit.faction_id == Faction.id)
+        .where(UnitAbility.name.ilike(pattern))
+        .where(Faction.is_aor == False)
+        .order_by(UnitAbility.name)
+        .limit(15)
+    ).all()
+    for row in abilities:
+        results.append(
+            SearchResultItem(
+                result_type="ability",
+                name=row.name,
+                faction_name=row.faction_name,
+                faction_id=row.faction_id,
+                unit_id=row.unit_id,
+                extra=row.unit_name,
+            )
+        )
+
+    # Battle Traits
+    traits = session.exec(
+        select(
+            BattleTrait.name,
+            Faction.name.label("faction_name"),
+            Faction.id.label("faction_id"),
+        )
+        .join(Faction, BattleTrait.faction_id == Faction.id)
+        .where(BattleTrait.name.ilike(pattern))
+        .order_by(BattleTrait.name)
+        .limit(10)
+    ).all()
+    for row in traits:
+        results.append(
+            SearchResultItem(
+                result_type="battle_trait",
+                name=row.name,
+                faction_name=row.faction_name,
+                faction_id=row.faction_id,
+            )
+        )
+
+    # Heroic Traits
+    heroic = session.exec(
+        select(
+            HeroicTrait.name,
+            Faction.name.label("faction_name"),
+            Faction.id.label("faction_id"),
+        )
+        .join(Faction, HeroicTrait.faction_id == Faction.id)
+        .where(HeroicTrait.name.ilike(pattern))
+        .order_by(HeroicTrait.name)
+        .limit(10)
+    ).all()
+    for row in heroic:
+        results.append(
+            SearchResultItem(
+                result_type="heroic_trait",
+                name=row.name,
+                faction_name=row.faction_name,
+                faction_id=row.faction_id,
+            )
+        )
+
+    # Artefacts
+    artefacts = session.exec(
+        select(
+            Artefact.name,
+            Faction.name.label("faction_name"),
+            Faction.id.label("faction_id"),
+        )
+        .join(Faction, Artefact.faction_id == Faction.id)
+        .where(Artefact.name.ilike(pattern))
+        .order_by(Artefact.name)
+        .limit(10)
+    ).all()
+    for row in artefacts:
+        results.append(
+            SearchResultItem(
+                result_type="artefact",
+                name=row.name,
+                faction_name=row.faction_name,
+                faction_id=row.faction_id,
+            )
+        )
+
+    # Spells
+    spells = session.exec(
+        select(Spell.name, SpellLore.name.label("lore_name"), SpellLore.faction_id)
+        .join(SpellLore, Spell.lore_id == SpellLore.id)
+        .where(Spell.name.ilike(pattern))
+        .order_by(Spell.name)
+        .limit(10)
+    ).all()
+    for row in spells:
+        results.append(
+            SearchResultItem(
+                result_type="spell",
+                name=row.name,
+                faction_id=row.faction_id,
+                extra=row.lore_name,
+            )
+        )
+
+    # Prayers
+    prayers = session.exec(
+        select(Prayer.name, PrayerLore.name.label("lore_name"), PrayerLore.faction_id)
+        .join(PrayerLore, Prayer.lore_id == PrayerLore.id)
+        .where(Prayer.name.ilike(pattern))
+        .order_by(Prayer.name)
+        .limit(10)
+    ).all()
+    for row in prayers:
+        results.append(
+            SearchResultItem(
+                result_type="prayer",
+                name=row.name,
+                faction_id=row.faction_id,
+                extra=row.lore_name,
+            )
+        )
+
+    return results
 
 
 @router.get("/status", response_model=Optional[SyncStatusResponse])

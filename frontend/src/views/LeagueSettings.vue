@@ -14,7 +14,7 @@
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-3xl font-bold">{{ t('leagueSettings.title') }}</h1>
         <router-link :to="`/league/${leagueId}`" class="text-gray-400 hover:text-white">
-          {{ t('leagueSettings.backToLeague') }}
+          {{ t('common.back') }}
         </router-link>
       </div>
 

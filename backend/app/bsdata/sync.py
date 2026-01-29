@@ -29,6 +29,7 @@ from app.bsdata.models import (
     SpellLore,
     Unit,
     UnitAbility,
+    UnitFaction,
     Weapon,
 )
 from app.bsdata.parser import BSDataParser, get_grand_alliance
@@ -257,6 +258,7 @@ class BSDataSync:
             "bsdata_manifestation_lores",
             "bsdata_ror_units",
             "bsdata_regiments_of_renown",
+            "bsdata_unit_factions",
             "bsdata_weapons",
             "bsdata_unit_abilities",
             "bsdata_units",
@@ -487,7 +489,7 @@ class BSDataSync:
         self._sync_faction_content(faction_id, cat_path, None, stats)
 
     def _link_aor_units(self, aor_faction_id: int, unit_ref_names: set, stats: dict):
-        """Link parent faction units to AoR by looking up the parent and matching unit names."""
+        """Link parent faction units to AoR via junction table."""
         aor_faction = self.session.get(Faction, aor_faction_id)
         if not aor_faction or not aor_faction.parent_faction_id:
             return
@@ -498,69 +500,12 @@ class BSDataSync:
 
         for parent_unit in parent_units:
             if parent_unit.name in unit_ref_names:
-                # Create a unit record under the AoR faction referencing same data
-                aor_bsdata_id = f"aor-{aor_faction_id}-{parent_unit.bsdata_id}"
-                existing = self.session.exec(
-                    select(Unit).where(Unit.bsdata_id == aor_bsdata_id)
-                ).first()
-                if not existing:
-                    aor_unit = Unit(
-                        faction_id=aor_faction_id,
-                        bsdata_id=aor_bsdata_id,
-                        name=parent_unit.name,
-                        points=parent_unit.points,
-                        move=parent_unit.move,
-                        health=parent_unit.health,
-                        save=parent_unit.save,
-                        control=parent_unit.control,
-                        keywords=parent_unit.keywords,
-                        base_size=parent_unit.base_size,
-                        unit_size=parent_unit.unit_size,
-                        can_be_reinforced=parent_unit.can_be_reinforced,
-                        notes=parent_unit.notes,
-                    )
-                    self.session.add(aor_unit)
-                    self.session.flush()
-
-                    # Copy weapons
-                    parent_weapons = self.session.exec(
-                        select(Weapon).where(Weapon.unit_id == parent_unit.id)
-                    ).all()
-                    for weapon in parent_weapons:
-                        aor_weapon = Weapon(
-                            unit_id=aor_unit.id,
-                            bsdata_id=f"aor-{aor_faction_id}-{weapon.bsdata_id}",
-                            name=weapon.name,
-                            weapon_type=weapon.weapon_type,
-                            range=weapon.range,
-                            attacks=weapon.attacks,
-                            hit=weapon.hit,
-                            wound=weapon.wound,
-                            rend=weapon.rend,
-                            damage=weapon.damage,
-                            ability=weapon.ability,
-                        )
-                        self.session.add(aor_weapon)
-
-                    # Copy abilities
-                    parent_abilities = self.session.exec(
-                        select(UnitAbility).where(UnitAbility.unit_id == parent_unit.id)
-                    ).all()
-                    for ability in parent_abilities:
-                        aor_ability = UnitAbility(
-                            unit_id=aor_unit.id,
-                            bsdata_id=f"aor-{aor_faction_id}-{ability.bsdata_id}",
-                            name=ability.name,
-                            ability_type=ability.ability_type,
-                            effect=ability.effect,
-                            keywords=ability.keywords,
-                            timing=ability.timing,
-                            declare=ability.declare,
-                            color=ability.color,
-                        )
-                        self.session.add(aor_ability)
-
-                    stats["units"] += 1
+                link = UnitFaction(
+                    unit_id=parent_unit.id,
+                    faction_id=aor_faction_id,
+                )
+                self.session.add(link)
+                stats["units"] += 1
 
     def _upsert_unit(self, faction_id: int, unit_data: dict) -> dict:
         """Upsert a unit and its weapons/abilities."""
@@ -947,6 +892,7 @@ class BSDataSync:
             existing.casting_value = spell_data.get(
                 "casting_value", existing.casting_value
             )
+            existing.declare = spell_data.get("declare", existing.declare)
             existing.effect = spell_data.get("effect", existing.effect)
             existing.keywords = spell_data.get("keywords", existing.keywords)
         else:
@@ -955,6 +901,7 @@ class BSDataSync:
                 bsdata_id=bsdata_id,
                 name=spell_data.get("name", ""),
                 casting_value=spell_data.get("casting_value"),
+                declare=spell_data.get("declare"),
                 effect=spell_data.get("effect"),
                 keywords=spell_data.get("keywords"),
             )
@@ -1034,6 +981,7 @@ class BSDataSync:
             existing.chanting_value = prayer_data.get(
                 "casting_value", existing.chanting_value
             )
+            existing.declare = prayer_data.get("declare", existing.declare)
             existing.effect = prayer_data.get("effect", existing.effect)
             existing.keywords = prayer_data.get("keywords", existing.keywords)
         else:
@@ -1042,6 +990,7 @@ class BSDataSync:
                 bsdata_id=bsdata_id,
                 name=prayer_data.get("name", ""),
                 chanting_value=prayer_data.get("casting_value"),
+                declare=prayer_data.get("declare"),
                 effect=prayer_data.get("effect"),
                 keywords=prayer_data.get("keywords"),
             )
@@ -1082,6 +1031,7 @@ class BSDataSync:
             existing.name = entry_data.get("name", existing.name)
             existing.lore_id = lore_id
             existing.casting_value = entry_data.get("casting_value")
+            existing.declare = entry_data.get("declare")
             existing.effect = entry_data.get("effect")
         else:
             manifestation = Manifestation(
@@ -1089,6 +1039,7 @@ class BSDataSync:
                 lore_id=lore_id,
                 name=entry_data.get("name", ""),
                 casting_value=entry_data.get("casting_value"),
+                declare=entry_data.get("declare"),
                 effect=entry_data.get("effect"),
             )
             self.session.add(manifestation)

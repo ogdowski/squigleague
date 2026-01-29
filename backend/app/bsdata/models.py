@@ -63,6 +63,16 @@ class Faction(SQLModel, table=True):
 # =============================================================================
 
 
+class UnitFaction(SQLModel, table=True):
+    """Junction table linking units to additional factions (AoR)."""
+
+    __tablename__ = "bsdata_unit_factions"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unit_id: int = Field(foreign_key="bsdata_units.id", index=True)
+    faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
+
+
 class Unit(SQLModel, table=True):
     """Unit with profile stats."""
 
@@ -250,6 +260,7 @@ class Spell(SQLModel, table=True):
     name: str = Field(max_length=200)
     casting_value: Optional[str] = Field(default=None, max_length=10)
     range: Optional[str] = Field(default=None, max_length=20)
+    declare: Optional[str] = None
     effect: Optional[str] = None
     keywords: Optional[str] = None  # JSON array
 
@@ -286,6 +297,7 @@ class Prayer(SQLModel, table=True):
     name: str = Field(max_length=200)
     chanting_value: Optional[str] = Field(default=None, max_length=10)
     range: Optional[str] = Field(default=None, max_length=20)
+    declare: Optional[str] = None
     effect: Optional[str] = None
     keywords: Optional[str] = None  # JSON array
 
@@ -327,6 +339,7 @@ class Manifestation(SQLModel, table=True):
     move: Optional[str] = Field(default=None, max_length=20)
     health: Optional[int] = None
     save: Optional[str] = Field(default=None, max_length=10)
+    declare: Optional[str] = None
     effect: Optional[str] = None
     keywords: Optional[str] = None  # JSON array
 

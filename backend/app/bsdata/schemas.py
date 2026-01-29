@@ -219,6 +219,7 @@ class ManifestationResponse(BaseModel):
     move: Optional[str] = None
     health: Optional[int] = None
     save: Optional[str] = None
+    declare: Optional[str] = None
     effect: Optional[str] = None
 
     class Config:
@@ -235,6 +236,7 @@ class SpellResponse(KeywordsMixin):
     name: str
     casting_value: Optional[str] = None
     range: Optional[str] = None
+    declare: Optional[str] = None
     effect: Optional[str] = None
 
     class Config:
@@ -325,6 +327,7 @@ class PrayerResponse(KeywordsMixin):
     name: str
     chanting_value: Optional[str] = None
     range: Optional[str] = None
+    declare: Optional[str] = None
     effect: Optional[str] = None
 
     class Config:
@@ -406,3 +409,18 @@ class FactionFull(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# =============================================================================
+# Search
+# =============================================================================
+
+
+class SearchResultItem(BaseModel):
+    result_type: str  # "unit", "ability", "battle_trait", "heroic_trait", "artefact", "spell", "prayer"
+    name: str
+    faction_name: Optional[str] = None
+    faction_id: Optional[int] = None
+    unit_id: Optional[int] = None
+    points: Optional[int] = None
+    extra: Optional[str] = None  # e.g. ability type, phase

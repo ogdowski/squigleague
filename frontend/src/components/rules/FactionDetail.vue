@@ -208,9 +208,10 @@
                     <div class="flex items-start justify-between mb-1">
                       <h5 class="font-medium text-squig-yellow">{{ spell.name }}</h5>
                       <span v-if="spell.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
-                        {{ spell.casting_value }}+
+                        Casting value: {{ spell.casting_value }}+
                       </span>
                     </div>
+                    <p v-if="spell.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ spell.declare }}</p>
                     <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ spell.effect }}</p>
                     <div v-if="spell.keywords?.length" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-600/50">
                       <span v-for="kw in spell.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
@@ -252,6 +253,7 @@
                         Chanting value: {{ prayer.chanting_value }}+
                       </span>
                     </div>
+                    <p v-if="prayer.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ prayer.declare }}</p>
                     <p v-if="prayer.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ prayer.effect }}</p>
                     <div v-if="prayer.keywords?.length" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-600/50">
                       <span v-for="kw in prayer.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
@@ -305,6 +307,7 @@
                       <span v-if="manifestation.health">Health: {{ manifestation.health }}</span>
                       <span v-if="manifestation.save">Save: {{ manifestation.save }}+</span>
                     </div>
+                    <p v-if="manifestation.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ manifestation.declare }}</p>
                     <p v-if="manifestation.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ manifestation.effect }}</p>
                   </div>
                 </div>
@@ -483,19 +486,19 @@ const getPhaseFromColor = (color) => {
 
 const getColorBarClass = (color) => {
   const classes = {
-    'Yellow': 'bg-yellow-600 text-yellow-100',
-    'Red': 'bg-red-700 text-red-100',
-    'Blue': 'bg-blue-600 text-blue-100',
-    'Green': 'bg-gray-600 text-gray-200',
-    'Purple': 'bg-purple-700 text-purple-100',
-    'Orange': 'bg-orange-600 text-orange-100',
-    'Gray': 'bg-green-700 text-green-100',
-    'Grey': 'bg-green-700 text-green-100',
-    'Black': 'bg-gray-900 text-gray-300',
-    'White': 'bg-gray-200 text-gray-800',
-    'Cyan': 'bg-cyan-700 text-cyan-100',
+    'Yellow': 'bg-yellow-800/60 text-yellow-200',
+    'Red': 'bg-red-900/60 text-red-200',
+    'Blue': 'bg-blue-800/60 text-blue-200',
+    'Green': 'bg-gray-700/60 text-gray-300',
+    'Purple': 'bg-purple-900/60 text-purple-200',
+    'Orange': 'bg-orange-800/60 text-orange-200',
+    'Gray': 'bg-green-900/60 text-green-200',
+    'Grey': 'bg-green-900/60 text-green-200',
+    'Black': 'bg-gray-800/60 text-gray-300',
+    'White': 'bg-gray-300/40 text-gray-800',
+    'Cyan': 'bg-cyan-900/60 text-cyan-200',
   }
-  return classes[color] || 'bg-gray-700 text-gray-300'
+  return classes[color] || 'bg-gray-700/60 text-gray-300'
 }
 
 const toggleSection = (key) => {

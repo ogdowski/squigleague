@@ -16,7 +16,7 @@
         <h2 class="text-xl font-bold mb-2">Login Failed</h2>
         <p class="text-gray-400 mb-6">{{ error }}</p>
         <router-link to="/login" class="btn-primary inline-block">
-          Back to Login
+          {{ t('common.back') }}
         </router-link>
       </div>
     </div>
@@ -25,8 +25,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()

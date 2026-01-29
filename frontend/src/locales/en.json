@@ -8,6 +8,7 @@
     "stayTuned": "Stay Tuned",
     "close": "Close",
     "cancel": "Cancel",
+    "back": "Back",
     "optional": "optional"
   },
   "home": {
@@ -706,6 +707,7 @@
     "keywords": "Keywords",
     "pts": "pts",
     "failedToLoad": "Failed to load rules data",
-    "noData": "No data available"
+    "noData": "No data available",
+    "searchPlaceholder": "Search units, abilities, traits, spells..."
   }
 }

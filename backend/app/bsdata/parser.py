@@ -445,6 +445,10 @@ class BSDataParser:
         """Parse a complete unit selectionEntry including weapons and abilities."""
         entry_name = unit_entry.get("name", "")
 
+        # Skip Anvil of Apotheosis (custom hero templates)
+        if "Anvil of Apotheosis" in entry_name:
+            return None
+
         # Skip Legends units
         for cat_link in unit_entry.findall(".//bs:categoryLink", NS):
             if cat_link.get("name") == "Legends":
@@ -938,6 +942,7 @@ class BSDataParser:
             return None
 
         chanting_value = get_characteristic_by_name(profile, "Chanting Value", NS)
+        declare = get_characteristic_by_name(profile, "Declare", NS)
         effect = get_characteristic_by_name(profile, "Effect", NS)
         keywords_raw = get_characteristic_by_name(profile, "Keywords", NS)
 
@@ -945,6 +950,7 @@ class BSDataParser:
             "name": name,
             "bsdata_id": profile_id,
             "casting_value": chanting_value,
+            "declare": declare,
             "effect": effect,
             "keywords": _keywords_to_json(keywords_raw),
         }
@@ -958,6 +964,7 @@ class BSDataParser:
             return None
 
         casting_value = get_characteristic_by_name(profile, "Casting Value", NS)
+        declare = get_characteristic_by_name(profile, "Declare", NS)
         effect = get_characteristic_by_name(profile, "Effect", NS)
         keywords_raw = get_characteristic_by_name(profile, "Keywords", NS)
 
@@ -965,6 +972,7 @@ class BSDataParser:
             "name": name,
             "bsdata_id": profile_id,
             "casting_value": casting_value,
+            "declare": declare,
             "effect": effect,
             "keywords": _keywords_to_json(keywords_raw),
         }

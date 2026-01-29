@@ -11,6 +11,16 @@
     </div>
 
     <div v-else-if="league">
+      <button
+        @click="goBack"
+        class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        {{ t('common.back') }}
+      </button>
+
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
@@ -1391,6 +1401,14 @@ const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/leagues')
+  }
+}
 
 const loading = ref(true)
 const error = ref('')

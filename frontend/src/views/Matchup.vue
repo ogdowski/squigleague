@@ -22,6 +22,15 @@
     </div>
 
     <div v-else-if="matchup">
+      <button
+        @click="goBack"
+        class="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        {{ t('common.back') }}
+      </button>
       <div class="card mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div class="flex-1">
@@ -723,7 +732,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
@@ -735,6 +744,15 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 const route = useRoute()
+const router = useRouter()
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/my-matchups')
+  }
+}
 
 const loading = ref(true)
 const error = ref('')
