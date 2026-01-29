@@ -476,6 +476,20 @@
 
       <!-- Data Tab (BSData) -->
       <div v-show="activeTab === 'data'">
+        <!-- Feature Toggles -->
+        <div class="card mb-6">
+          <h3 class="text-lg font-bold mb-3">Feature Toggles</h3>
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              :checked="rulesNavVisible"
+              @change="toggleRulesNav"
+              class="w-4 h-4 accent-squig-yellow"
+            />
+            <span class="text-sm">Show Rules button in navigation</span>
+          </label>
+        </div>
+
         <div v-if="bsDataLoading" class="text-center py-8">
           <p class="text-gray-400">{{ t('common.loading') }}</p>
         </div>
@@ -642,6 +656,14 @@ const saveSuccess = ref(false)
 const matchups = ref([])
 const matchupsLoading = ref(false)
 const matchupFilter = ref('all')
+
+// Feature toggles
+const rulesNavVisible = ref(localStorage.getItem('rules_nav_visible') === 'true')
+
+const toggleRulesNav = () => {
+  rulesNavVisible.value = !rulesNavVisible.value
+  localStorage.setItem('rules_nav_visible', rulesNavVisible.value.toString())
+}
 
 // BSData state
 const bsDataStatus = ref(null)

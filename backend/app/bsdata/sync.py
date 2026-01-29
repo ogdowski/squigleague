@@ -51,6 +51,7 @@ class BSDataSync:
         self.parser: Optional[BSDataParser] = None
         self._grand_alliance_cache: dict[str, int] = {}
         self._faction_cache: dict[str, int] = {}
+        self._lores_index: dict = {}
 
     def get_current_commit(self) -> Optional[str]:
         """Get current BSData commit from database."""
@@ -203,6 +204,9 @@ class BSDataSync:
         self._clear_all_data()
         self._ensure_grand_alliances()
 
+        # Build lores index from Lores.cat for cross-file resolution
+        self._lores_index = self.parser.parse_lores_indexed()
+
         faction_catalogs = self.parser.get_faction_catalogs()
         for main_cat, lib_cat in faction_catalogs:
             faction_stats = self._sync_faction(main_cat, lib_cat)
@@ -258,6 +262,7 @@ class BSDataSync:
         self.session.exec(text("DELETE FROM bsdata_factions"))
         self.session.exec(text("DELETE FROM bsdata_grand_alliances"))
         self.session.exec(text("DELETE FROM bsdata_manifestations"))
+        self.session.exec(text("DELETE FROM bsdata_manifestation_lores"))
         self.session.exec(text("DELETE FROM bsdata_battle_tactic_cards"))
         self.session.exec(text("DELETE FROM bsdata_core_abilities"))
         self.session.commit()
@@ -337,11 +342,55 @@ class BSDataSync:
             faction_name, catalog_data.get("bsdata_id", "")
         )
 
-        points_data = self.parser.parse_faction_main_catalog(main_cat)
-        points_map = points_data.get("points", {})
-        reinforced_units = points_data.get("reinforced_units", set())
-        notes_map = points_data.get("notes", {})
+        main_data = self.parser.parse_faction_main_catalog(main_cat)
+        points_map = main_data.get("points", {})
+        reinforced_units = main_data.get("reinforced_units", set())
+        notes_map = main_data.get("notes", {})
 
+        # Battle traits, heroic traits, artefacts from main catalog
+        for trait_data in main_data.get("battle_traits", []):
+            self._upsert_battle_trait(faction_id, trait_data)
+
+        for trait_data in main_data.get("heroic_traits", []):
+            self._upsert_heroic_trait(faction_id, trait_data)
+
+        for artefact_data in main_data.get("artefacts", []):
+            self._upsert_artefact(faction_id, artefact_data)
+
+        # Resolve spell lore references via Lores.cat index
+        for lore_ref in main_data.get("spell_lore_refs", []):
+            lore_content = self._lores_index.get(lore_ref["target_id"])
+            if lore_content:
+                self._upsert_faction_spell_lore(
+                    faction_id,
+                    lore_ref["target_id"],
+                    lore_ref["name"],
+                    lore_content["entries"],
+                )
+
+        # Resolve prayer lore references (stored as spell lores)
+        for lore_ref in main_data.get("prayer_lore_refs", []):
+            lore_content = self._lores_index.get(lore_ref["target_id"])
+            if lore_content:
+                self._upsert_faction_spell_lore(
+                    faction_id,
+                    lore_ref["target_id"],
+                    lore_ref["name"],
+                    lore_content["entries"],
+                )
+
+        # Resolve manifestation lore references
+        for lore_ref in main_data.get("manifestation_lore_refs", []):
+            lore_content = self._lores_index.get(lore_ref["target_id"])
+            if lore_content:
+                self._upsert_faction_manifestation_lore(
+                    faction_id,
+                    lore_ref["target_id"],
+                    lore_ref["name"],
+                    lore_content["entries"],
+                )
+
+        # Units from library catalog
         if lib_cat and lib_cat.exists():
             lib_data = self.parser.parse_library_catalog(lib_cat)
 
@@ -354,15 +403,6 @@ class BSDataSync:
                 stats["units"] += 1
                 stats["weapons"] += unit_stats.get("weapons", 0)
                 stats["abilities"] += unit_stats.get("abilities", 0)
-
-            for trait_data in lib_data.get("battle_traits", []):
-                self._upsert_battle_trait(faction_id, trait_data)
-
-            for trait_data in lib_data.get("heroic_traits", []):
-                self._upsert_heroic_trait(faction_id, trait_data)
-
-            for artefact_data in lib_data.get("artefacts", []):
-                self._upsert_artefact(faction_id, artefact_data)
 
         return stats
 
@@ -727,3 +767,73 @@ class BSDataSync:
                 effect=spell_data.get("effect"),
             )
             self.session.add(spell)
+
+    def _upsert_faction_spell_lore(
+        self, faction_id: int, bsdata_id: str, lore_name: str, entries: list
+    ):
+        """Upsert a faction-specific spell or prayer lore resolved from Lores.cat."""
+        existing = self.session.exec(
+            select(SpellLore).where(SpellLore.bsdata_id == bsdata_id)
+        ).first()
+
+        if existing:
+            existing.name = lore_name
+            existing.faction_id = faction_id
+            lore = existing
+        else:
+            lore = SpellLore(
+                bsdata_id=bsdata_id,
+                faction_id=faction_id,
+                name=lore_name,
+            )
+            self.session.add(lore)
+            self.session.flush()
+
+        for entry_data in entries:
+            self._upsert_spell(lore.id, entry_data)
+
+    def _upsert_faction_manifestation_lore(
+        self, faction_id: int, bsdata_id: str, lore_name: str, entries: list
+    ):
+        """Upsert a faction-specific manifestation lore resolved from Lores.cat."""
+        existing = self.session.exec(
+            select(ManifestationLore).where(ManifestationLore.bsdata_id == bsdata_id)
+        ).first()
+
+        if existing:
+            existing.name = lore_name
+            existing.faction_id = faction_id
+            lore = existing
+        else:
+            lore = ManifestationLore(
+                bsdata_id=bsdata_id,
+                faction_id=faction_id,
+                name=lore_name,
+            )
+            self.session.add(lore)
+            self.session.flush()
+
+        for entry_data in entries:
+            self._upsert_faction_manifestation(lore.id, entry_data)
+
+    def _upsert_faction_manifestation(self, lore_id: int, entry_data: dict):
+        """Upsert a manifestation entry (summoning spell stored as manifestation)."""
+        bsdata_id = entry_data.get("bsdata_id", "")
+        existing = self.session.exec(
+            select(Manifestation).where(Manifestation.bsdata_id == bsdata_id)
+        ).first()
+
+        if existing:
+            existing.name = entry_data.get("name", existing.name)
+            existing.lore_id = lore_id
+            existing.casting_value = entry_data.get("casting_value")
+            existing.effect = entry_data.get("effect")
+        else:
+            manifestation = Manifestation(
+                bsdata_id=bsdata_id,
+                lore_id=lore_id,
+                name=entry_data.get("name", ""),
+                casting_value=entry_data.get("casting_value"),
+                effect=entry_data.get("effect"),
+            )
+            self.session.add(manifestation)

@@ -239,9 +239,6 @@ class BSDataParser:
 
         result = {
             "units": [],
-            "battle_traits": [],
-            "heroic_traits": [],
-            "artefacts": [],
         }
 
         # Find unit selectionEntries (type="unit") and parse them completely
@@ -249,25 +246,6 @@ class BSDataParser:
             unit = self._parse_unit_entry(unit_entry)
             if unit:
                 result["units"].append(unit)
-
-        # Parse battle traits from sharedSelectionEntryGroups
-        for entry in root.findall(".//bs:selectionEntry", NS):
-            entry_name = entry.get("name", "")
-            if "Battle Trait" in entry_name:
-                for profile in entry.findall(".//bs:profile", NS):
-                    trait = self._parse_ability_profile(profile, NS, "battle_trait")
-                    if trait:
-                        result["battle_traits"].append(trait)
-            elif "Heroic Trait" in entry_name:
-                for profile in entry.findall(".//bs:profile", NS):
-                    trait = self._parse_ability_profile(profile, NS, "heroic_trait")
-                    if trait:
-                        result["heroic_traits"].append(trait)
-            elif "Artefact" in entry_name:
-                for profile in entry.findall(".//bs:profile", NS):
-                    artefact = self._parse_ability_profile(profile, NS, "artefact")
-                    if artefact:
-                        result["artefacts"].append(artefact)
 
         return result
 
@@ -318,10 +296,86 @@ class BSDataParser:
                 except (ValueError, TypeError):
                     pass
 
+        # Parse battle traits from sharedSelectionEntries
+        battle_traits = []
+        for entry in root.findall("bs:sharedSelectionEntries/bs:selectionEntry", NS):
+            entry_name = entry.get("name", "")
+            if entry_name.startswith("Battle Traits"):
+                for profile in entry.findall(".//bs:profile", NS):
+                    trait = self._parse_ability_profile(profile, NS, "battle_trait")
+                    if trait:
+                        battle_traits.append(trait)
+
+        # Parse heroic traits and artefacts from sharedSelectionEntryGroups
+        heroic_traits = []
+        artefacts = []
+        spell_lore_refs = []
+        prayer_lore_refs = []
+        manifestation_lore_refs = []
+
+        for group in root.findall(
+            "bs:sharedSelectionEntryGroups/bs:selectionEntryGroup", NS
+        ):
+            group_name = group.get("name", "")
+
+            if group_name == "Heroic Traits":
+                for profile in group.findall(".//bs:profile", NS):
+                    trait = self._parse_ability_profile(profile, NS, "heroic_trait")
+                    if trait:
+                        heroic_traits.append(trait)
+
+            elif group_name == "Artefacts of Power":
+                for profile in group.findall(".//bs:profile", NS):
+                    artefact = self._parse_ability_profile(profile, NS, "artefact")
+                    if artefact:
+                        artefacts.append(artefact)
+
+            elif group_name == "Spell Lores":
+                for entry in group.findall(".//bs:selectionEntry", NS):
+                    lore_name = entry.get("name", "")
+                    if not lore_name:
+                        continue
+                    for link in entry.findall("bs:entryLinks/bs:entryLink", NS):
+                        target_id = link.get("targetId", "")
+                        if target_id:
+                            spell_lore_refs.append(
+                                {"name": lore_name, "target_id": target_id}
+                            )
+
+            elif group_name == "Prayer Lores":
+                for entry in group.findall(".//bs:selectionEntry", NS):
+                    lore_name = entry.get("name", "")
+                    if not lore_name:
+                        continue
+                    for link in entry.findall("bs:entryLinks/bs:entryLink", NS):
+                        target_id = link.get("targetId", "")
+                        if target_id:
+                            prayer_lore_refs.append(
+                                {"name": lore_name, "target_id": target_id}
+                            )
+
+            elif group_name == "Manifestation Lores":
+                for entry in group.findall(".//bs:selectionEntry", NS):
+                    lore_name = entry.get("name", "")
+                    if not lore_name:
+                        continue
+                    for link in entry.findall("bs:entryLinks/bs:entryLink", NS):
+                        target_id = link.get("targetId", "")
+                        if target_id:
+                            manifestation_lore_refs.append(
+                                {"name": lore_name, "target_id": target_id}
+                            )
+
         return {
             "points": points_map,
             "reinforced_units": reinforced_units,
             "notes": notes_map,
+            "battle_traits": battle_traits,
+            "heroic_traits": heroic_traits,
+            "artefacts": artefacts,
+            "spell_lore_refs": spell_lore_refs,
+            "prayer_lore_refs": prayer_lore_refs,
+            "manifestation_lore_refs": manifestation_lore_refs,
         }
 
     def _parse_unit_entry(self, unit_entry: ET.Element) -> Optional[dict]:
@@ -734,6 +788,66 @@ class BSDataParser:
                 )
 
         return {"spell_lores": spell_lores}
+
+    def parse_lores_indexed(self) -> dict:
+        """Parse Lores.cat and return dict indexed by selectionEntryGroup ID.
+
+        This allows cross-referencing from faction main catalogs which use
+        entryLink targetId to reference lore groups in Lores.cat.
+        """
+        lores_file = self.repo_path / "Lores.cat"
+        if not lores_file.exists():
+            return {}
+
+        tree = ET.parse(lores_file)
+        root = tree.getroot()
+
+        index = {}
+
+        for group in root.findall(".//bs:selectionEntryGroup", NS):
+            group_id = group.get("id", "")
+            group_name = group.get("name", "")
+            if not group_id:
+                continue
+
+            entries = []
+            for profile in group.findall(".//bs:profile", NS):
+                profile_type_id = profile.get("typeId", "")
+
+                if profile_type_id == PROFILE_TYPE_ABILITY_SPELL:
+                    parsed = self._parse_spell_profile(profile)
+                    if parsed:
+                        entries.append(parsed)
+                elif profile_type_id == PROFILE_TYPE_ABILITY_PRAYER:
+                    parsed = self._parse_prayer_profile(profile)
+                    if parsed:
+                        entries.append(parsed)
+
+            if entries:
+                index[group_id] = {
+                    "name": group_name,
+                    "entries": entries,
+                }
+
+        return index
+
+    def _parse_prayer_profile(self, profile: ET.Element) -> Optional[dict]:
+        """Parse a prayer profile (same structure as spell, uses Chanting Value)."""
+        name = profile.get("name")
+        profile_id = profile.get("id")
+
+        if not name or not profile_id:
+            return None
+
+        chanting_value = get_characteristic_by_name(profile, "Chanting Value", NS)
+        effect = get_characteristic_by_name(profile, "Effect", NS)
+
+        return {
+            "name": name,
+            "bsdata_id": profile_id,
+            "casting_value": chanting_value,
+            "effect": effect,
+        }
 
     def _parse_spell_profile(self, profile: ET.Element) -> Optional[dict]:
         """Parse a spell profile."""

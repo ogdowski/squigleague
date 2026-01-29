@@ -42,7 +42,12 @@
         <div>
           <div class="flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <h2 class="text-2xl font-bold">{{ unit.name }}</h2>
+              <h2 class="text-2xl font-bold flex items-center gap-2">
+                {{ unit.name }}
+                <svg v-if="isUniqueHero" class="w-5 h-5 text-squig-yellow flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </h2>
               <p class="text-gray-400">{{ unit.faction_name }}</p>
               <!-- Keywords under name -->
               <div v-if="unitKeywords.length" class="flex flex-wrap gap-1 mt-2">
@@ -156,6 +161,13 @@ const props = defineProps({
     type: Object,
     required: true
   }
+})
+
+const isUniqueHero = computed(() => {
+  const keywordsList = Array.isArray(props.unit.keywords)
+    ? props.unit.keywords.map(keyword => keyword.toUpperCase())
+    : []
+  return keywordsList.includes('UNIQUE') && keywordsList.some(keyword => keyword.includes('HERO'))
 })
 
 const meleeWeapons = computed(() => {
