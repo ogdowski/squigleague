@@ -1,7 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">{{ t('rules.title') }}</h1>
-
     <!-- BSData info panel -->
     <div v-if="!infoPanelHidden && !selectedFaction && !selectedUnit" class="mb-6 bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
       <div class="flex items-start justify-between gap-4">

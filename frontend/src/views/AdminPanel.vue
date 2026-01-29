@@ -1,7 +1,5 @@
 <template>
   <div class="max-w-6xl mx-auto">
-    <h1 class="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{{ t('admin.title') }}</h1>
-
     <!-- Tabs: Menu overlay on mobile, buttons on desktop -->
     <!-- Mobile tabs menu -->
     <div class="md:hidden mb-4">

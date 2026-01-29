@@ -9,25 +9,25 @@
 
           <!-- Desktop Navigation -->
           <div class="hidden md:flex items-center gap-3">
-            <router-link to="/leagues" class="btn-secondary flex items-center gap-2">
+            <router-link to="/leagues" :class="['flex items-center gap-2', isActive('/leagues') ? 'btn-primary' : 'btn-secondary']">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M6 9H4a2 2 0 01-2-2V4a2 2 0 012-2h2M18 9h2a2 2 0 002-2V4a2 2 0 00-2-2h-2M6 2h12v7a6 6 0 11-12 0V2zM12 15v4M8 21h8" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               {{ t('nav.leagues') }}
             </router-link>
-            <router-link to="/matchups" class="btn-secondary flex items-center gap-2">
+            <router-link to="/matchups" :class="['flex items-center gap-2', isActive('/matchups') ? 'btn-primary' : 'btn-secondary']">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
               {{ t('nav.matchups') }}
             </router-link>
-            <router-link to="/ranking" class="btn-secondary flex items-center gap-2">
+            <router-link to="/ranking" :class="['flex items-center gap-2', isActive('/ranking') ? 'btn-primary' : 'btn-secondary']">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               {{ t('nav.ranking') }}
             </router-link>
-            <router-link v-if="rulesNavVisible && authStore.isAuthenticated" to="/rules" class="btn-secondary flex items-center gap-2">
+            <router-link v-if="rulesNavVisible && authStore.isAuthenticated" to="/rules" :class="['flex items-center gap-2', isActive('/rules') ? 'btn-primary' : 'btn-secondary']">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
@@ -106,7 +106,10 @@
             </div>
           </div>
 
-          <!-- Mobile: Login/Register or User + Hamburger -->
+          <!-- Mobile: page title + Login/Register or User + Hamburger -->
+          <div class="flex md:hidden items-center gap-2">
+            <span v-if="mobileTitle" class="text-sm text-gray-400 truncate">{{ mobileTitle }}</span>
+          </div>
           <div class="flex md:hidden items-center gap-2">
             <div v-if="!authStore.isAuthenticated" class="flex items-center gap-2">
               <router-link to="/login" class="inline-flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold h-9 px-3 rounded transition-colors">
@@ -153,7 +156,7 @@
           <router-link
             to="/leagues"
             @click="showMobileMenu = false"
-            class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            :class="['flex items-center gap-3 px-3 py-3 rounded-lg transition-colors', isActive('/leagues') ? 'bg-gray-700 text-squig-yellow' : 'hover:bg-gray-700']"
           >
             <svg class="w-5 h-5 text-squig-yellow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 9H4a2 2 0 01-2-2V4a2 2 0 012-2h2M18 9h2a2 2 0 002-2V4a2 2 0 00-2-2h-2M6 2h12v7a6 6 0 11-12 0V2zM12 15v4M8 21h8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -163,7 +166,7 @@
           <router-link
             to="/matchups"
             @click="showMobileMenu = false"
-            class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            :class="['flex items-center gap-3 px-3 py-3 rounded-lg transition-colors', isActive('/matchups') ? 'bg-gray-700 text-squig-yellow' : 'hover:bg-gray-700']"
           >
             <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -173,7 +176,7 @@
           <router-link
             to="/ranking"
             @click="showMobileMenu = false"
-            class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            :class="['flex items-center gap-3 px-3 py-3 rounded-lg transition-colors', isActive('/ranking') ? 'bg-gray-700 text-squig-yellow' : 'hover:bg-gray-700']"
           >
             <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -184,7 +187,7 @@
             v-if="rulesNavVisible && authStore.isAuthenticated"
             to="/rules"
             @click="showMobileMenu = false"
-            class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            :class="['flex items-center gap-3 px-3 py-3 rounded-lg transition-colors', isActive('/rules') ? 'bg-gray-700 text-squig-yellow' : 'hover:bg-gray-700']"
           >
             <svg class="w-5 h-5 text-squig-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -329,9 +332,9 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useLanguageStore } from './stores/language'
 import LanguageSwitcher from './components/LanguageSwitcher.vue'
@@ -339,8 +342,32 @@ import axios from 'axios'
 import packageJson from '../package.json'
 
 const { t, locale } = useI18n()
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+const isActive = (path) => {
+  const current = route.path
+  if (current === path || current.startsWith(path + '/')) return true
+  // Handle singular/plural route variants (e.g. /leagues nav but /league/:id detail)
+  if (path === '/leagues') return current.startsWith('/league')
+  if (path === '/matchups') return current.startsWith('/matchup')
+  if (path === '/ranking') return current.startsWith('/player/')
+  return false
+}
+
+const mobileTitle = computed(() => {
+  const path = route.path
+  if (path.startsWith('/rules')) return t('nav.rules')
+  if (path.startsWith('/league')) return t('nav.leagues')
+  if (path.startsWith('/matchup')) return t('nav.matchups')
+  if (path.startsWith('/ranking') || path.startsWith('/player')) return t('nav.ranking')
+  if (path.startsWith('/admin')) return t('nav.admin')
+  if (path.startsWith('/settings')) return t('nav.settings')
+  if (path.startsWith('/login')) return t('nav.login')
+  if (path.startsWith('/register')) return t('nav.register')
+  return ''
+})
 const languageStore = useLanguageStore()
 const stats = ref(null)
 const bsDataStatus = ref(null)

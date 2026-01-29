@@ -53,7 +53,7 @@
     </div>
 
     <div id="leagues-section" class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-      <h1 class="text-2xl md:text-3xl font-bold">{{ t('leagues.title') }}</h1>
+      <div></div>
       <router-link
         v-if="canCreateLeague"
         to="/league/create"

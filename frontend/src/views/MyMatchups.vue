@@ -1,7 +1,5 @@
 <template>
   <div class="max-w-6xl mx-auto">
-    <h1 class="text-2xl md:text-3xl font-bold mb-6">{{ t('matchups.title') }}</h1>
-
     <!-- How It Works section -->
     <div v-if="!howItWorksHidden" class="mb-6 relative">
       <div class="flex items-center justify-between mb-4">

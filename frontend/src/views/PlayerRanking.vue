@@ -1,7 +1,5 @@
 <template>
   <div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">{{ t('ranking.title') }}</h1>
-
     <!-- Stats cards -->
     <div v-if="stats" class="space-y-4 mb-6">
       <!-- Numbers row -->
