@@ -20,6 +20,27 @@ os.environ["ENVIRONMENT"] = "testing"
 os.environ["DEBUG"] = "False"
 
 # Import all models to ensure they're registered with SQLModel metadata
+from app.bsdata.models import (
+    BattleFormation,
+    BattleTacticCard,
+    BattleTrait,
+    BSDataSyncStatus,
+    CoreAbility,
+    Faction,
+    GrandAlliance,
+    HeroicTrait,
+    Manifestation,
+    ManifestationLore,
+    Prayer,
+    PrayerLore,
+    RegimentOfRenown,
+    Spell,
+    SpellLore,
+    Unit,
+    UnitAbility,
+    UnitFaction,
+    Weapon,
+)
 from app.league.models import (
     AppSettings,
     ArmyMatchupStats,
