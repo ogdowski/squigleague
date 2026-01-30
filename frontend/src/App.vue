@@ -272,7 +272,7 @@
           <div class="flex items-center justify-between text-xs text-gray-400">
             <LanguageSwitcher />
             <div class="flex items-center gap-2">
-              <span v-if="bsDataStatus" class="text-gray-500">BSData: {{ bsDataStatus.commit_short }}</span>
+              <span v-if="bsDataStatus && authStore.isAuthenticated && (authStore.user?.role === 'admin' || rulesNavVisible)" class="text-gray-500">BSData: {{ bsDataStatus.commit_short }}</span>
               <span v-if="stats">v{{ stats.version }}</span>
             </div>
           </div>
@@ -296,7 +296,7 @@
               <button @click="showFeedbackInfo = true" class="hover:text-squig-yellow transition-colors">
                 {{ t('footer.feedback') }}
               </button>
-              <span v-if="bsDataStatus" class="text-gray-500">• BSData: {{ bsDataStatus.commit_short }}</span>
+              <span v-if="bsDataStatus && authStore.isAuthenticated && (authStore.user?.role === 'admin' || rulesNavVisible)" class="text-gray-500">• BSData: {{ bsDataStatus.commit_short }}</span>
               <span v-if="stats">• v{{ stats.version }}</span>
             </div>
           </div>
