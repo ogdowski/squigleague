@@ -1,5 +1,8 @@
+import axios from 'axios'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const routes = [
   {
@@ -78,19 +81,19 @@ const routes = [
     path: '/rules',
     name: 'Rules',
     component: () => import('../views/Rules.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresRules: true },
   },
   {
     path: '/rules/:factionSlug',
     name: 'RulesFaction',
     component: () => import('../views/Rules.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresRules: true },
   },
   {
     path: '/rules/:factionSlug/:unitSlug',
     name: 'RulesUnit',
     component: () => import('../views/Rules.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresRules: true },
   },
   // Player routes
   {
@@ -116,11 +119,23 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
     const authStore = useAuthStore()
     if (!authStore.isAuthenticated) {
       return { name: 'Login', query: { redirect: to.fullPath } }
+    }
+  }
+  if (to.meta.requiresRules) {
+    const authStore = useAuthStore()
+    if (authStore.user?.role === 'admin') return
+    try {
+      const response = await axios.get(`${API_URL}/admin/settings/features`)
+      if (!response.data.rules_enabled) {
+        return { name: 'Home' }
+      }
+    } catch {
+      return { name: 'Home' }
     }
   }
 })

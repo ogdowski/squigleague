@@ -7,6 +7,7 @@ from app.admin.schemas import (
     ClaimApproval,
     EloSettingsResponse,
     EloSettingsUpdate,
+    FeatureTogglesResponse,
     RoleUpdate,
     UserResponse,
 )
@@ -19,6 +20,7 @@ from app.league.elo import (
     get_global_k_factor,
     get_new_player_games_threshold,
     get_new_player_k_factor,
+    get_setting,
     set_setting,
 )
 from app.league.models import LeaguePlayer, PlayerElo
@@ -240,6 +242,26 @@ async def update_elo_settings(
         new_player_k=get_new_player_k_factor(session),
         new_player_games=get_new_player_games_threshold(session),
     )
+
+
+@router.get("/settings/features", response_model=FeatureTogglesResponse)
+async def get_feature_toggles(
+    session: Session = Depends(get_session),
+):
+    """Get feature toggles (public, no auth required)."""
+    rules_enabled = get_setting(session, "rules_enabled", "false") == "true"
+    return FeatureTogglesResponse(rules_enabled=rules_enabled)
+
+
+@router.patch("/settings/features", response_model=FeatureTogglesResponse)
+async def update_feature_toggles(
+    data: FeatureTogglesResponse,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_admin),
+):
+    """Update feature toggles (admin only)."""
+    set_setting(session, "rules_enabled", str(data.rules_enabled).lower())
+    return FeatureTogglesResponse(rules_enabled=data.rules_enabled)
 
 
 @router.post("/recalculate-army-stats")

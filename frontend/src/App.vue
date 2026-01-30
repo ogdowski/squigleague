@@ -27,7 +27,7 @@
               </svg>
               {{ t('nav.ranking') }}
             </router-link>
-            <router-link v-if="rulesNavVisible && authStore.isAuthenticated" to="/rules" :class="['flex items-center gap-2', isActive('/rules') ? 'btn-primary' : 'btn-secondary']">
+            <router-link v-if="authStore.isAuthenticated && (authStore.user?.role === 'admin' || rulesNavVisible)" to="/rules" :class="['flex items-center gap-2', isActive('/rules') ? 'btn-primary' : 'btn-secondary']">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
@@ -184,7 +184,7 @@
             {{ t('nav.ranking') }}
           </router-link>
           <router-link
-            v-if="rulesNavVisible && authStore.isAuthenticated"
+            v-if="authStore.isAuthenticated && (authStore.user?.role === 'admin' || rulesNavVisible)"
             to="/rules"
             @click="showMobileMenu = false"
             :class="['flex items-center gap-3 px-3 py-3 rounded-lg transition-colors', isActive('/rules') ? 'bg-gray-700 text-squig-yellow' : 'hover:bg-gray-700']"
@@ -371,7 +371,7 @@ const mobileTitle = computed(() => {
 const languageStore = useLanguageStore()
 const stats = ref(null)
 const bsDataStatus = ref(null)
-const rulesNavVisible = ref(localStorage.getItem('rules_nav_visible') === 'true')
+const rulesNavVisible = ref(false)
 const showUserMenu = ref(false)
 const showMobileMenu = ref(false)
 const showMobileFooter = ref(false)
@@ -423,12 +423,22 @@ const fetchBSDataStatus = async () => {
   }
 }
 
+const fetchFeatureToggles = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/admin/settings/features`)
+    rulesNavVisible.value = response.data.rules_enabled
+  } catch (error) {
+    // Feature toggles not available, keep default (false)
+  }
+}
+
 onMounted(() => {
   // Sync vue-i18n locale with language store
   locale.value = languageStore.currentLocale
   authStore.initAuth()
   fetchStats()
   fetchBSDataStatus()
+  fetchFeatureToggles()
 })
 </script>
 

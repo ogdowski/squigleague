@@ -2,6 +2,7 @@ from typing import Optional
 
 from app.core.security import decode_access_token
 from app.db import get_session
+from app.league.models import AppSettings
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
@@ -101,3 +102,20 @@ def require_role(*allowed_roles: str):
 
 get_current_organizer = require_role("organizer", "admin")
 get_current_admin = require_role("admin")
+
+
+async def require_rules_enabled(
+    current_user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Block access to rules/bsdata when rules feature is disabled. Admin always passes."""
+    if current_user.role == "admin":
+        return current_user
+    statement = select(AppSettings).where(AppSettings.key == "rules_enabled")
+    setting = session.scalars(statement).first()
+    if not setting or setting.value != "true":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Rules feature is disabled",
+        )
+    return current_user

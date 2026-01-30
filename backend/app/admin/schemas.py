@@ -47,6 +47,10 @@ class EloSettingsUpdate(BaseModel):
     new_player_games: Optional[int] = Field(default=None, ge=1, le=50)
 
 
+class FeatureTogglesResponse(BaseModel):
+    rules_enabled: bool
+
+
 class AdminMatchupResponse(BaseModel):
     """Matchup info for admin panel (respects list visibility)."""
 

@@ -484,7 +484,7 @@
               @change="toggleRulesNav"
               class="w-4 h-4 accent-squig-yellow"
             />
-            <span class="text-sm">Show Rules button in navigation</span>
+            <span class="text-sm">Enable Rules</span>
           </label>
         </div>
 
@@ -656,11 +656,25 @@ const matchupsLoading = ref(false)
 const matchupFilter = ref('all')
 
 // Feature toggles
-const rulesNavVisible = ref(localStorage.getItem('rules_nav_visible') === 'true')
+const rulesNavVisible = ref(false)
 
-const toggleRulesNav = () => {
-  rulesNavVisible.value = !rulesNavVisible.value
-  localStorage.setItem('rules_nav_visible', rulesNavVisible.value.toString())
+const fetchFeatureToggles = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/admin/settings/features`)
+    rulesNavVisible.value = response.data.rules_enabled
+  } catch (error) {
+    console.error('Failed to fetch feature toggles:', error)
+  }
+}
+
+const toggleRulesNav = async () => {
+  const newValue = !rulesNavVisible.value
+  try {
+    await axios.patch(`${API_URL}/admin/settings/features`, { rules_enabled: newValue })
+    rulesNavVisible.value = newValue
+  } catch (error) {
+    console.error('Failed to update rules toggle:', error)
+  }
 }
 
 // BSData state
@@ -875,6 +889,7 @@ const formatDate = (dateString) => {
 
 onMounted(() => {
   fetchData()
+  fetchFeatureToggles()
   if (activeTab.value === 'matchups') {
     fetchMatchups()
   }

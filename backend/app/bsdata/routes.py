@@ -54,14 +54,14 @@ from app.bsdata.schemas import (
     WeaponResponse,
 )
 from app.bsdata.sync import BSDataSync
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_rules_enabled
 from app.db import get_session
 from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, func, select
 
 router = APIRouter(
-    prefix="/bsdata", tags=["bsdata"], dependencies=[Depends(get_current_user)]
+    prefix="/bsdata", tags=["bsdata"], dependencies=[Depends(require_rules_enabled)]
 )
 
 
