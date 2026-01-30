@@ -108,12 +108,12 @@ class Weapon(SQLModel, table=True):
     unit_id: int = Field(foreign_key="bsdata_units.id", index=True)
     name: str = Field(max_length=200)
     weapon_type: str = Field(max_length=20)  # "ranged", "melee"
-    range: Optional[str] = Field(default=None, max_length=20)
-    attacks: Optional[str] = Field(default=None, max_length=20)
-    hit: Optional[str] = Field(default=None, max_length=10)
-    wound: Optional[str] = Field(default=None, max_length=10)
-    rend: Optional[str] = Field(default=None, max_length=10)
-    damage: Optional[str] = Field(default=None, max_length=20)
+    range: Optional[str] = None
+    attacks: Optional[str] = None
+    hit: Optional[str] = None
+    wound: Optional[str] = None
+    rend: Optional[str] = None
+    damage: Optional[str] = None
     ability: Optional[str] = None
 
     unit: Unit = Relationship(back_populates="weapons")

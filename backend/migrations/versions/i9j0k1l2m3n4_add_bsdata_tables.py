@@ -121,12 +121,12 @@ def upgrade() -> None:
         ),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("weapon_type", sa.String(20), nullable=False),
-        sa.Column("range", sa.String(20), nullable=True),
-        sa.Column("attacks", sa.String(20), nullable=True),
-        sa.Column("hit", sa.String(10), nullable=True),
-        sa.Column("wound", sa.String(10), nullable=True),
-        sa.Column("rend", sa.String(10), nullable=True),
-        sa.Column("damage", sa.String(20), nullable=True),
+        sa.Column("range", sa.Text(), nullable=True),
+        sa.Column("attacks", sa.Text(), nullable=True),
+        sa.Column("hit", sa.Text(), nullable=True),
+        sa.Column("wound", sa.Text(), nullable=True),
+        sa.Column("rend", sa.Text(), nullable=True),
+        sa.Column("damage", sa.Text(), nullable=True),
         sa.Column("ability", sa.Text(), nullable=True),
     )
 
