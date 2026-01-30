@@ -175,6 +175,8 @@ class HeroicTraitResponse(AbilityResponseBase):
     id: int
     name: str
     points: Optional[int] = None
+    group_name: Optional[str] = None
+    is_seasonal: bool = False
 
     class Config:
         from_attributes = True
@@ -184,6 +186,8 @@ class ArtefactResponse(AbilityResponseBase):
     id: int
     name: str
     points: Optional[int] = None
+    group_name: Optional[str] = None
+    is_seasonal: bool = False
 
     class Config:
         from_attributes = True

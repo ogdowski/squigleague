@@ -177,6 +177,8 @@ class HeroicTrait(AbilityBase, table=True):
     faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
     name: str = Field(max_length=200)
     points: Optional[int] = None
+    group_name: Optional[str] = Field(default=None, max_length=200)
+    is_seasonal: bool = Field(default=False)
 
     faction: Faction = Relationship(back_populates="heroic_traits")
 
@@ -191,6 +193,8 @@ class Artefact(AbilityBase, table=True):
     faction_id: int = Field(foreign_key="bsdata_factions.id", index=True)
     name: str = Field(max_length=200)
     points: Optional[int] = None
+    group_name: Optional[str] = Field(default=None, max_length=200)
+    is_seasonal: bool = Field(default=False)
 
     faction: Faction = Relationship(back_populates="artefacts")
 

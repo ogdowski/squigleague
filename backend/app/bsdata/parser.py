@@ -57,6 +57,18 @@ CHAR_TACTIC_AFFRAY = "1047-3e43-674d-dc6c"
 CHAR_TACTIC_STRIKE = "94d4-173e-0f65-c569"
 CHAR_TACTIC_DOMINATION = "e1d7-1d3c-f001-62e0"
 
+# Scourge of Ghyran publication ID
+SOG_PUBLICATION_ID = "f894-7929-f79a-a269"
+
+# Top-level faction-specific groups that map to artefacts
+ARTEFACT_LIKE_GROUPS = {"Great Endrinworks", "Accursed Devices"}
+
+# Top-level faction-specific groups that map to heroic traits
+HEROIC_TRAIT_LIKE_GROUPS = {"Monstrous Traits", "Mount Traits", "Big Names", "Marks of"}
+
+# Groups to skip (Path to Glory, internal)
+SKIP_GROUPS = {"Battle Wounds + Scars", "Paths"}
+
 # Grand Alliance mapping
 GRAND_ALLIANCE_FACTIONS = {
     "Order": [
@@ -349,22 +361,14 @@ class BSDataParser:
             group_name = group.get("name", "")
 
             if group_name == "Heroic Traits":
-                for entry in group.findall(".//bs:selectionEntry", NS):
-                    entry_points = _extract_points(entry, NS)
-                    for profile in entry.findall(".//bs:profile", NS):
-                        trait = self._parse_ability_profile(profile, NS, "heroic_trait")
-                        if trait:
-                            trait["points"] = entry_points
-                            heroic_traits.append(trait)
+                heroic_traits.extend(
+                    self._parse_enhancement_subgroups(group, NS, "heroic_trait")
+                )
 
             elif group_name == "Artefacts of Power":
-                for entry in group.findall(".//bs:selectionEntry", NS):
-                    entry_points = _extract_points(entry, NS)
-                    for profile in entry.findall(".//bs:profile", NS):
-                        artefact = self._parse_ability_profile(profile, NS, "artefact")
-                        if artefact:
-                            artefact["points"] = entry_points
-                            artefacts.append(artefact)
+                artefacts.extend(
+                    self._parse_enhancement_subgroups(group, NS, "artefact")
+                )
 
             elif group_name.startswith("Battle Formations"):
                 for entry in group.findall("bs:selectionEntries/bs:selectionEntry", NS):
@@ -417,6 +421,25 @@ class BSDataParser:
                             manifestation_lore_refs.append(
                                 {"name": lore_name, "target_id": target_id}
                             )
+
+            elif group_name not in SKIP_GROUPS:
+                # Top-level faction-specific enhancement groups
+                # (e.g., Great Endrinworks, Monstrous Traits, Big Names)
+                is_artefact = any(
+                    pattern in group_name for pattern in ARTEFACT_LIKE_GROUPS
+                )
+                is_heroic = any(
+                    pattern in group_name for pattern in HEROIC_TRAIT_LIKE_GROUPS
+                )
+
+                if is_artefact:
+                    artefacts.extend(
+                        self._parse_enhancement_subgroups(group, NS, "artefact")
+                    )
+                elif is_heroic:
+                    heroic_traits.extend(
+                        self._parse_enhancement_subgroups(group, NS, "heroic_trait")
+                    )
 
         # Parse unit entry links (for AoR catalogs that reference parent units)
         unit_refs = []
@@ -686,6 +709,55 @@ class BSDataParser:
             "declare": declare,
             "color": color,
         }
+
+    def _parse_enhancement_subgroups(
+        self, parent_group: ET.Element, ns: dict, ability_type: str
+    ) -> list[dict]:
+        """Parse enhancement entries from subgroups, capturing group_name and seasonal flag.
+
+        Iterates child selectionEntryGroup elements within a parent group,
+        parses ability profiles from each, and tags with the subgroup name.
+        Also handles direct selectionEntry children (no subgroup).
+        """
+        results = []
+
+        # Iterate child selectionEntryGroup elements
+        for sub_group in parent_group.findall(
+            "bs:selectionEntryGroups/bs:selectionEntryGroup", ns
+        ):
+            sub_group_name = sub_group.get("name", "")
+            sub_pub_id = sub_group.get("publicationId", "")
+            is_seasonal = sub_pub_id == SOG_PUBLICATION_ID
+
+            for entry in sub_group.findall(".//bs:selectionEntry", ns):
+                entry_points = _extract_points(entry, ns)
+                # Check entry-level publicationId too
+                entry_pub_id = entry.get("publicationId", "")
+                entry_seasonal = is_seasonal or entry_pub_id == SOG_PUBLICATION_ID
+
+                for profile in entry.findall(".//bs:profile", ns):
+                    parsed = self._parse_ability_profile(profile, ns, ability_type)
+                    if parsed:
+                        parsed["points"] = entry_points
+                        parsed["group_name"] = sub_group_name
+                        parsed["is_seasonal"] = entry_seasonal
+                        results.append(parsed)
+
+        # Also check for direct selectionEntry children (no subgroup)
+        for entry in parent_group.findall("bs:selectionEntries/bs:selectionEntry", ns):
+            entry_points = _extract_points(entry, ns)
+            entry_pub_id = entry.get("publicationId", "")
+            entry_seasonal = entry_pub_id == SOG_PUBLICATION_ID
+
+            for profile in entry.findall(".//bs:profile", ns):
+                parsed = self._parse_ability_profile(profile, ns, ability_type)
+                if parsed:
+                    parsed["points"] = entry_points
+                    parsed["group_name"] = parent_group.get("name", "")
+                    parsed["is_seasonal"] = entry_seasonal
+                    results.append(parsed)
+
+        return results
 
     def _parse_battle_formation(self, entry: ET.Element, ns: dict) -> Optional[dict]:
         """Parse a battle formation selectionEntry."""

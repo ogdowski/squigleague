@@ -46,6 +46,9 @@
                 <svg v-if="isUniqueHero" class="w-5 h-5 text-squig-yellow flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
+                <svg v-if="isSoGUnit" class="w-5 h-5 text-green-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+                </svg>
               </h2>
               <p class="text-gray-400">{{ unit.faction_name }}</p>
             </div>
@@ -101,7 +104,7 @@
             <h3 class="font-bold text-squig-yellow mb-3">{{ t('rules.abilities') }}</h3>
             <div class="space-y-3">
               <div v-for="ability in unit.abilities" :key="ability.id" class="bg-gray-700/50 rounded-lg overflow-hidden">
-                <div :class="['px-3 py-1 text-xs font-medium', getColorBarClass(ability.color)]">{{ ability.timing || getPhaseFromColor(ability.color) || ability.ability_type }}</div>
+                <div :class="['px-3 py-1 text-xs font-medium', getColorBarClass(ability.color)]">{{ ability.timing || (ability.ability_type === 'passive' ? 'Passive' : getPhaseFromColor(ability.color)) || ability.ability_type }}</div>
                 <div class="p-3">
                   <div class="flex items-start justify-between mb-1"><h4 class="font-bold">{{ ability.name }}</h4><span v-if="ability.ability_type" :class="['text-xs px-2 py-0.5 rounded flex-shrink-0 ml-2', getAbilityTypeClass(ability.ability_type)]">{{ ability.ability_type }}</span></div>
                   <p v-if="ability.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ ability.declare }}</p>
@@ -218,7 +221,7 @@
           <div
             :class="['px-3 py-1 text-xs font-medium', getColorBarClass(ability.color)]"
           >
-            {{ ability.timing || getPhaseFromColor(ability.color) || ability.ability_type }}
+            {{ ability.timing || (ability.ability_type === 'passive' ? 'Passive' : getPhaseFromColor(ability.color)) || ability.ability_type }}
           </div>
           <div class="p-3">
             <div class="flex items-start justify-between mb-1">
@@ -262,6 +265,10 @@ const isUniqueHero = computed(() => {
     ? props.unit.keywords.map(keyword => keyword.toUpperCase())
     : []
   return keywordsList.includes('UNIQUE') && keywordsList.some(keyword => keyword.includes('HERO'))
+})
+
+const isSoGUnit = computed(() => {
+  return props.unit.name?.includes('(Scourge of Ghyran)')
 })
 
 const meleeWeapons = computed(() => {

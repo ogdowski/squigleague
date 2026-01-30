@@ -669,6 +669,8 @@ class BSDataSync:
             existing.declare = trait_data.get("declare", existing.declare)
             existing.color = trait_data.get("color", existing.color)
             existing.keywords = trait_data.get("keywords", existing.keywords)
+            existing.group_name = trait_data.get("group_name", existing.group_name)
+            existing.is_seasonal = trait_data.get("is_seasonal", existing.is_seasonal)
         else:
             trait = HeroicTrait(
                 faction_id=faction_id,
@@ -680,6 +682,8 @@ class BSDataSync:
                 declare=trait_data.get("declare"),
                 color=trait_data.get("color"),
                 keywords=trait_data.get("keywords"),
+                group_name=trait_data.get("group_name"),
+                is_seasonal=trait_data.get("is_seasonal", False),
             )
             self.session.add(trait)
 
@@ -698,6 +702,10 @@ class BSDataSync:
             existing.declare = artefact_data.get("declare", existing.declare)
             existing.color = artefact_data.get("color", existing.color)
             existing.keywords = artefact_data.get("keywords", existing.keywords)
+            existing.group_name = artefact_data.get("group_name", existing.group_name)
+            existing.is_seasonal = artefact_data.get(
+                "is_seasonal", existing.is_seasonal
+            )
         else:
             artefact = Artefact(
                 faction_id=faction_id,
@@ -709,6 +717,8 @@ class BSDataSync:
                 declare=artefact_data.get("declare"),
                 color=artefact_data.get("color"),
                 keywords=artefact_data.get("keywords"),
+                group_name=artefact_data.get("group_name"),
+                is_seasonal=artefact_data.get("is_seasonal", False),
             )
             self.session.add(artefact)
 

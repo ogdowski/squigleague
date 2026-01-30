@@ -5,6 +5,7 @@
       class="w-full flex items-center justify-between text-left"
     >
       <div class="flex items-center gap-2">
+        <slot name="title-prefix"></slot>
         <h3 class="font-bold text-lg">{{ title }}</h3>
         <span v-if="count !== undefined" class="text-sm text-gray-500">({{ count }})</span>
       </div>

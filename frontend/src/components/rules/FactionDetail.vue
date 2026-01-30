@@ -34,6 +34,9 @@
                     <svg v-if="isUniqueUnit(unit)" class="w-3.5 h-3.5 text-squig-yellow flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
+                    <svg v-if="isSoGUnit(unit)" class="w-3.5 h-3.5 text-green-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+                    </svg>
                   </span>
                   <span class="text-squig-yellow font-bold text-sm flex-shrink-0 ml-4">{{ unit.points || '-' }}</span>
                 </div>
@@ -113,73 +116,85 @@
           </div>
         </CollapsibleSection>
 
-        <!-- Heroic Traits -->
-        <CollapsibleSection
-          v-if="sectionData.heroic_traits?.length"
-          :title="t('rules.heroicTraits')"
-          :count="sectionData.heroic_traits.length"
-          :expanded="expandedSections.has('heroic_traits')"
-          @toggle="toggleSection('heroic_traits')"
-        >
-          <div class="space-y-3">
-            <div
-              v-for="trait in sectionData.heroic_traits"
-              :key="trait.id"
-              class="bg-gray-700/50 rounded-lg overflow-hidden"
-            >
+        <!-- Heroic Traits (grouped by group_name) -->
+        <template v-for="(group, index) in groupedHeroicTraits" :key="'ht-' + index">
+          <CollapsibleSection
+            :title="group.name === '_default' ? t('rules.heroicTraits') : t('rules.heroicTraits') + ': ' + group.name"
+            :count="group.items.length"
+            :expanded="expandedSections.has('heroic_traits_' + group.name + (group.isSeasonal ? '_s' : ''))"
+            @toggle="toggleSection('heroic_traits_' + group.name + (group.isSeasonal ? '_s' : ''))"
+          >
+            <template #title-prefix>
+              <svg v-if="group.isSeasonal" class="w-4 h-4 text-green-400 mr-1.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+              </svg>
+            </template>
+            <div class="space-y-3">
               <div
-                :class="['px-3 py-1 text-xs font-medium', getColorBarClass(trait.color)]"
+                v-for="trait in group.items"
+                :key="trait.id"
+                class="bg-gray-700/50 rounded-lg overflow-hidden"
               >
-                {{ trait.timing || getPhaseFromColor(trait.color) || 'Passive' }}
-              </div>
-              <div class="p-4">
-                <div class="flex items-start justify-between mb-2">
-                  <h4 class="font-bold text-squig-yellow">{{ trait.name }}</h4>
-                  <span v-if="trait.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ trait.points }} pts</span>
+                <div
+                  :class="['px-3 py-1 text-xs font-medium', getColorBarClass(trait.color)]"
+                >
+                  {{ trait.timing || getPhaseFromColor(trait.color) || 'Passive' }}
                 </div>
-                <p v-if="trait.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ trait.declare }}</p>
-                <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ trait.effect }}</p>
-                <div v-if="trait.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
-                  <span v-for="kw in trait.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                <div class="p-4">
+                  <div class="flex items-start justify-between mb-2">
+                    <h4 class="font-bold text-squig-yellow">{{ trait.name }}</h4>
+                    <span v-if="trait.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ trait.points }} pts</span>
+                  </div>
+                  <p v-if="trait.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ trait.declare }}</p>
+                  <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ trait.effect }}</p>
+                  <div v-if="trait.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
+                    <span v-for="kw in trait.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CollapsibleSection>
+          </CollapsibleSection>
+        </template>
 
-        <!-- Artefacts -->
-        <CollapsibleSection
-          v-if="sectionData.artefacts?.length"
-          :title="t('rules.artefacts')"
-          :count="sectionData.artefacts.length"
-          :expanded="expandedSections.has('artefacts')"
-          @toggle="toggleSection('artefacts')"
-        >
-          <div class="space-y-3">
-            <div
-              v-for="artefact in sectionData.artefacts"
-              :key="artefact.id"
-              class="bg-gray-700/50 rounded-lg overflow-hidden"
-            >
+        <!-- Artefacts (grouped by group_name) -->
+        <template v-for="(group, index) in groupedArtefacts" :key="'art-' + index">
+          <CollapsibleSection
+            :title="group.name === '_default' ? t('rules.artefacts') : t('rules.artefacts') + ': ' + group.name"
+            :count="group.items.length"
+            :expanded="expandedSections.has('artefacts_' + group.name + (group.isSeasonal ? '_s' : ''))"
+            @toggle="toggleSection('artefacts_' + group.name + (group.isSeasonal ? '_s' : ''))"
+          >
+            <template #title-prefix>
+              <svg v-if="group.isSeasonal" class="w-4 h-4 text-green-400 mr-1.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+              </svg>
+            </template>
+            <div class="space-y-3">
               <div
-                :class="['px-3 py-1 text-xs font-medium', getColorBarClass(artefact.color)]"
+                v-for="artefact in group.items"
+                :key="artefact.id"
+                class="bg-gray-700/50 rounded-lg overflow-hidden"
               >
-                {{ artefact.timing || getPhaseFromColor(artefact.color) || 'Passive' }}
-              </div>
-              <div class="p-4">
-                <div class="flex items-start justify-between mb-2">
-                  <h4 class="font-bold text-squig-yellow">{{ artefact.name }}</h4>
-                  <span v-if="artefact.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ artefact.points }} pts</span>
+                <div
+                  :class="['px-3 py-1 text-xs font-medium', getColorBarClass(artefact.color)]"
+                >
+                  {{ artefact.timing || getPhaseFromColor(artefact.color) || 'Passive' }}
                 </div>
-                <p v-if="artefact.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ artefact.declare }}</p>
-                <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ artefact.effect }}</p>
-                <div v-if="artefact.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
-                  <span v-for="kw in artefact.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                <div class="p-4">
+                  <div class="flex items-start justify-between mb-2">
+                    <h4 class="font-bold text-squig-yellow">{{ artefact.name }}</h4>
+                    <span v-if="artefact.points" class="text-sm font-bold text-squig-yellow flex-shrink-0 ml-4">{{ artefact.points }} pts</span>
+                  </div>
+                  <p v-if="artefact.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ artefact.declare }}</p>
+                  <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ artefact.effect }}</p>
+                  <div v-if="artefact.keywords?.length" class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-600/50">
+                    <span v-for="kw in artefact.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CollapsibleSection>
+          </CollapsibleSection>
+        </template>
 
         <!-- Spell Lores -->
         <CollapsibleSection
@@ -400,6 +415,36 @@ const unitTypeOrder = [
   'Other'
 ]
 
+const groupEnhancementsByGroupName = (items) => {
+  if (!items?.length) return []
+
+  const groups = {}
+  const order = []
+
+  for (const item of items) {
+    const groupName = item.group_name || '_default'
+    const seasonal = item.is_seasonal || false
+    const key = groupName + (seasonal ? '::seasonal' : '')
+    if (!groups[key]) {
+      groups[key] = {
+        name: groupName,
+        isSeasonal: seasonal,
+        items: [],
+      }
+      order.push(key)
+    }
+    groups[key].items.push(item)
+  }
+
+  // Non-seasonal groups first, then seasonal
+  return order
+    .map(key => groups[key])
+    .sort((first, second) => (first.isSeasonal === second.isSeasonal ? 0 : first.isSeasonal ? 1 : -1))
+}
+
+const groupedHeroicTraits = computed(() => groupEnhancementsByGroupName(sectionData.heroic_traits))
+const groupedArtefacts = computed(() => groupEnhancementsByGroupName(sectionData.artefacts))
+
 const groupedUnits = computed(() => {
   if (!sectionData.units) return []
 
@@ -452,6 +497,10 @@ const getUnitCategory = (unit) => {
 
 // Main keywords to display on unit cards
 const mainKeywordsList = ['HERO', 'INFANTRY', 'CAVALRY', 'MONSTER', 'BEAST', 'WAR MACHINE', 'WIZARD', 'PRIEST', 'UNIQUE', 'TOTEM', 'CHAMPION', 'MUSICIAN', 'STANDARD BEARER', 'FLY', 'WARD']
+
+const isSoGUnit = (unit) => {
+  return unit.name?.includes('(Scourge of Ghyran)')
+}
 
 const isUniqueUnit = (unit) => {
   const keywordsList = Array.isArray(unit.keywords)
