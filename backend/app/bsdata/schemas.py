@@ -214,6 +214,38 @@ class RegimentOfRenownResponse(BaseModel):
 # =============================================================================
 
 
+class ManifestationWeaponResponse(BaseModel):
+    name: str
+    weapon_type: str = "melee"
+    range: Optional[str] = None
+    attacks: Optional[str] = None
+    hit: Optional[str] = None
+    wound: Optional[str] = None
+    rend: Optional[str] = None
+    damage: Optional[str] = None
+    ability: Optional[str] = None
+
+
+class ManifestationAbilityResponse(BaseModel):
+    name: str
+    ability_type: str = "passive"
+    effect: Optional[str] = None
+    timing: Optional[str] = None
+    declare: Optional[str] = None
+    color: Optional[str] = None
+    keywords: Optional[list[str]] = None
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def parse_keywords_json(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return value
+
+
 class ManifestationResponse(BaseModel):
     id: int
     name: str
@@ -225,6 +257,28 @@ class ManifestationResponse(BaseModel):
     save: Optional[str] = None
     declare: Optional[str] = None
     effect: Optional[str] = None
+    weapons: Optional[list[ManifestationWeaponResponse]] = None
+    abilities: Optional[list[ManifestationAbilityResponse]] = None
+
+    @field_validator("weapons", mode="before")
+    @classmethod
+    def parse_weapons_json(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return value
+
+    @field_validator("abilities", mode="before")
+    @classmethod
+    def parse_abilities_json(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return value
 
     class Config:
         from_attributes = True
@@ -358,6 +412,7 @@ class ManifestationLoreResponse(BaseModel):
     id: int
     name: str
     faction_id: Optional[int] = None
+    points: Optional[int] = None
     manifestations: list[ManifestationResponse] = []
 
     class Config:

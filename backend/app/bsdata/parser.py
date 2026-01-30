@@ -226,13 +226,8 @@ class BSDataParser:
             "core_abilities": [],
         }
 
-        # Parse manifestations
-        for profile in root.findall(
-            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MANIFESTATION), NS_GST
-        ):
-            manif = self._parse_manifestation_profile(profile, NS_GST)
-            if manif:
-                result["manifestations"].append(manif)
+        # Parse manifestations with weapons and abilities from parent entries
+        self._parse_manifestation_entries(root, NS_GST, result["manifestations"])
 
         # Parse battle tactic cards
         for profile in root.findall(
@@ -280,15 +275,91 @@ class BSDataParser:
 
         result = {
             "units": [],
+            "manifestations": [],
         }
 
-        # Find unit selectionEntries (type="unit") and parse them completely
         for unit_entry in root.findall(".//bs:selectionEntry[@type='unit']", NS):
-            unit = self._parse_unit_entry(unit_entry)
-            if unit:
-                result["units"].append(unit)
+            # Check if this is a manifestation entry (has manifestation profile, no unit profile)
+            has_manif_profile = (
+                unit_entry.find(
+                    ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MANIFESTATION), NS
+                )
+                is not None
+            )
+            has_unit_profile = (
+                unit_entry.find(
+                    ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_UNIT), NS
+                )
+                is not None
+            )
+
+            if has_manif_profile and not has_unit_profile:
+                manif = self._parse_library_manifestation_entry(unit_entry)
+                if manif:
+                    result["manifestations"].append(manif)
+            else:
+                unit = self._parse_unit_entry(unit_entry)
+                if unit:
+                    result["units"].append(unit)
 
         return result
+
+    def _parse_library_manifestation_entry(self, entry: ET.Element) -> Optional[dict]:
+        """Parse a manifestation selectionEntry from a Library.cat file.
+
+        Extracts manifestation stats, weapons, and abilities.
+        """
+        entry_name = entry.get("name", "")
+
+        manif_profile = entry.find(
+            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MANIFESTATION), NS
+        )
+        if manif_profile is None:
+            return None
+
+        manif = self._parse_manifestation_profile(manif_profile, NS)
+        if not manif:
+            return None
+
+        # Use entry name (not profile name) for cache lookup
+        manif["name"] = entry_name
+
+        # Extract weapons
+        weapons = []
+        seen_ids = set()
+        for weapon_profile in entry.findall(
+            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MELEE), NS
+        ):
+            weapon = self._parse_weapon_profile(weapon_profile, NS, "melee")
+            if weapon and weapon["bsdata_id"] not in seen_ids:
+                weapons.append(weapon)
+                seen_ids.add(weapon["bsdata_id"])
+        for weapon_profile in entry.findall(
+            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_RANGED), NS
+        ):
+            weapon = self._parse_weapon_profile(weapon_profile, NS, "ranged")
+            if weapon and weapon["bsdata_id"] not in seen_ids:
+                weapons.append(weapon)
+                seen_ids.add(weapon["bsdata_id"])
+
+        # Extract abilities
+        abilities = []
+        ability_type_map = {
+            PROFILE_TYPE_ABILITY_PASSIVE: "passive",
+            PROFILE_TYPE_ABILITY_ACTIVATED: "activated",
+        }
+        for profile_type_id, ability_type in ability_type_map.items():
+            for ability_profile in entry.findall(
+                ".//bs:profile[@typeId='{}']".format(profile_type_id), NS
+            ):
+                ability = self._parse_ability_profile(ability_profile, NS, ability_type)
+                if ability and ability["bsdata_id"] not in seen_ids:
+                    abilities.append(ability)
+                    seen_ids.add(ability["bsdata_id"])
+
+        manif["weapons"] = weapons
+        manif["abilities"] = abilities
+        return manif
 
     def parse_faction_main_catalog(self, cat_path: Path) -> dict:
         """Parse main faction catalog for points costs, reinforcement, and notes."""
@@ -793,6 +864,74 @@ class BSDataParser:
 
         return result
 
+    def _parse_manifestation_entries(self, root: ET.Element, ns: dict, output: list):
+        """Find selectionEntries containing manifestation profiles and extract weapons/abilities."""
+        ns_uri = ns[list(ns.keys())[0]]
+
+        # Build parent map so we can walk up from profiles to selectionEntries
+        parent_map = {}
+        for parent in root.iter():
+            for child in parent:
+                parent_map[child] = parent
+
+        # Find all manifestation profiles
+        for profile in root.findall(
+            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MANIFESTATION), ns
+        ):
+            manif = self._parse_manifestation_profile(profile, ns)
+            if not manif:
+                continue
+
+            # Walk up to find the parent selectionEntry
+            entry = profile
+            while entry is not None:
+                tag_local = entry.tag.split("}")[-1] if "}" in entry.tag else entry.tag
+                if tag_local == "selectionEntry":
+                    break
+                entry = parent_map.get(entry)
+
+            # Extract weapons and abilities from the selectionEntry
+            weapons = []
+            abilities = []
+
+            if entry is not None:
+                seen_ids = set()
+
+                for weapon_profile in entry.findall(
+                    ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MELEE), ns
+                ):
+                    weapon = self._parse_weapon_profile(weapon_profile, ns, "melee")
+                    if weapon and weapon["bsdata_id"] not in seen_ids:
+                        weapons.append(weapon)
+                        seen_ids.add(weapon["bsdata_id"])
+
+                for weapon_profile in entry.findall(
+                    ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_RANGED), ns
+                ):
+                    weapon = self._parse_weapon_profile(weapon_profile, ns, "ranged")
+                    if weapon and weapon["bsdata_id"] not in seen_ids:
+                        weapons.append(weapon)
+                        seen_ids.add(weapon["bsdata_id"])
+
+                ability_type_map = {
+                    PROFILE_TYPE_ABILITY_PASSIVE: "passive",
+                    PROFILE_TYPE_ABILITY_ACTIVATED: "activated",
+                }
+                for profile_type_id, ability_type in ability_type_map.items():
+                    for ability_profile in entry.findall(
+                        ".//bs:profile[@typeId='{}']".format(profile_type_id), ns
+                    ):
+                        ability = self._parse_ability_profile(
+                            ability_profile, ns, ability_type
+                        )
+                        if ability and ability["bsdata_id"] not in seen_ids:
+                            abilities.append(ability)
+                            seen_ids.add(ability["bsdata_id"])
+
+            manif["weapons"] = weapons
+            manif["abilities"] = abilities
+            output.append(manif)
+
     def _parse_manifestation_profile(
         self, profile: ET.Element, ns: dict
     ) -> Optional[dict]:
@@ -985,17 +1124,27 @@ class BSDataParser:
                 continue
 
             entries = []
-            for profile in group.findall(".//bs:profile", NS):
-                profile_type_id = profile.get("typeId", "")
 
-                if profile_type_id == PROFILE_TYPE_ABILITY_SPELL:
-                    parsed = self._parse_spell_profile(profile)
-                    if parsed:
-                        entries.append(parsed)
-                elif profile_type_id == PROFILE_TYPE_ABILITY_PRAYER:
-                    parsed = self._parse_prayer_profile(profile)
-                    if parsed:
-                        entries.append(parsed)
+            # Iterate selectionEntries to capture all profiles per entry
+            selection_entries = group.findall(".//bs:selectionEntry", NS)
+
+            if selection_entries:
+                for sel_entry in selection_entries:
+                    entry = self._parse_lore_selection_entry(sel_entry)
+                    if entry:
+                        entries.append(entry)
+            else:
+                # Fallback: iterate profiles directly (flat structure)
+                for profile in group.findall(".//bs:profile", NS):
+                    profile_type_id = profile.get("typeId", "")
+                    if profile_type_id == PROFILE_TYPE_ABILITY_SPELL:
+                        parsed = self._parse_spell_profile(profile)
+                        if parsed:
+                            entries.append(parsed)
+                    elif profile_type_id == PROFILE_TYPE_ABILITY_PRAYER:
+                        parsed = self._parse_prayer_profile(profile)
+                        if parsed:
+                            entries.append(parsed)
 
             if entries:
                 index[group_id] = {
@@ -1004,6 +1153,131 @@ class BSDataParser:
                 }
 
         return index
+
+    def parse_universal_manifestation_lores(self) -> list:
+        """Parse the master 'Manifestation Lores' shared group from Lores.cat.
+
+        Returns a list of universal lore dicts with name, bsdata_id, points,
+        and target_id (pointing to the actual lore group in the lores index).
+        """
+        lores_file = self.repo_path / "Lores.cat"
+        if not lores_file.exists():
+            return []
+
+        tree = ET.parse(lores_file)
+        root = tree.getroot()
+
+        result = []
+
+        # Find the shared "Manifestation Lores" group
+        for group in root.findall(
+            "bs:sharedSelectionEntryGroups/bs:selectionEntryGroup", NS
+        ):
+            if group.get("name") != "Manifestation Lores":
+                continue
+
+            for entry in group.findall("bs:selectionEntries/bs:selectionEntry", NS):
+                lore_name = entry.get("name", "")
+                lore_id = entry.get("id", "")
+
+                # Extract points cost
+                points = None
+                for cost in entry.findall(".//bs:cost", NS):
+                    cost_value = cost.get("value", "0")
+                    try:
+                        parsed_points = int(float(cost_value))
+                        if parsed_points > 0:
+                            points = parsed_points
+                    except (ValueError, TypeError):
+                        pass
+
+                # Get the target lore group ID via entryLink
+                target_id = None
+                for link in entry.findall("bs:entryLinks/bs:entryLink", NS):
+                    target_id = link.get("targetId")
+                    break
+
+                if lore_name and target_id:
+                    result.append(
+                        {
+                            "name": lore_name,
+                            "bsdata_id": lore_id,
+                            "points": points,
+                            "target_id": target_id,
+                        }
+                    )
+
+        return result
+
+    def _parse_lore_selection_entry(self, sel_entry: ET.Element) -> Optional[dict]:
+        """Parse a lore selectionEntry, extracting the summoning spell plus
+        any manifestation stats, weapons, and abilities from sibling profiles."""
+        entry = None
+
+        # Find the primary spell/prayer profile (summoning ability)
+        for profile in sel_entry.findall(".//bs:profile", NS):
+            profile_type_id = profile.get("typeId", "")
+            if profile_type_id == PROFILE_TYPE_ABILITY_SPELL:
+                entry = self._parse_spell_profile(profile)
+                break
+            elif profile_type_id == PROFILE_TYPE_ABILITY_PRAYER:
+                entry = self._parse_prayer_profile(profile)
+                break
+
+        if not entry:
+            return None
+
+        # Extract manifestation stats from sibling profile
+        for profile in sel_entry.findall(
+            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MANIFESTATION), NS
+        ):
+            manif = self._parse_manifestation_profile(profile, NS)
+            if manif:
+                entry["move"] = manif.get("move")
+                entry["health"] = manif.get("health")
+                entry["save"] = manif.get("save")
+                entry["banishment"] = manif.get("banishment")
+                break
+
+        # Extract weapons
+        weapons = []
+        seen_ids = set()
+        for wp in sel_entry.findall(
+            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_MELEE), NS
+        ):
+            weapon = self._parse_weapon_profile(wp, NS, "melee")
+            if weapon and weapon["bsdata_id"] not in seen_ids:
+                weapons.append(weapon)
+                seen_ids.add(weapon["bsdata_id"])
+        for wp in sel_entry.findall(
+            ".//bs:profile[@typeId='{}']".format(PROFILE_TYPE_RANGED), NS
+        ):
+            weapon = self._parse_weapon_profile(wp, NS, "ranged")
+            if weapon and weapon["bsdata_id"] not in seen_ids:
+                weapons.append(weapon)
+                seen_ids.add(weapon["bsdata_id"])
+
+        # Extract abilities
+        abilities = []
+        ability_type_map = {
+            PROFILE_TYPE_ABILITY_PASSIVE: "passive",
+            PROFILE_TYPE_ABILITY_ACTIVATED: "activated",
+        }
+        for profile_type_id, ability_type in ability_type_map.items():
+            for ap in sel_entry.findall(
+                ".//bs:profile[@typeId='{}']".format(profile_type_id), NS
+            ):
+                ability = self._parse_ability_profile(ap, NS, ability_type)
+                if ability and ability["bsdata_id"] not in seen_ids:
+                    abilities.append(ability)
+                    seen_ids.add(ability["bsdata_id"])
+
+        if weapons:
+            entry["weapons"] = weapons
+        if abilities:
+            entry["abilities"] = abilities
+
+        return entry
 
     def _parse_prayer_profile(self, profile: ET.Element) -> Optional[dict]:
         """Parse a prayer profile (same structure as spell, uses Chanting Value)."""

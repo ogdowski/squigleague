@@ -14,10 +14,10 @@
         <div class="text-3xl font-bold leading-none mt-0.5">{{ health || '-' }}</div>
       </div>
 
-      <!-- Control (bottom) -->
+      <!-- Bottom stat (Control or custom) -->
       <div class="absolute bottom-3 left-1/2 -translate-x-1/2 text-center">
         <div class="text-3xl font-bold leading-none">{{ control || '-' }}</div>
-        <div class="text-[10px] text-gray-500 leading-none mt-0.5">Control</div>
+        <div class="text-[10px] text-gray-500 leading-none mt-0.5">{{ bottomLabel }}</div>
       </div>
 
       <!-- Save (right) - different color -->
@@ -67,6 +67,10 @@ defineProps({
   ward: {
     type: [String, Number],
     default: null
+  },
+  bottomLabel: {
+    type: String,
+    default: 'Control'
   }
 })
 </script>

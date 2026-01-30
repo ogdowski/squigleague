@@ -108,39 +108,82 @@
 
         <!-- Desktop layout -->
         <div class="hidden lg:flex gap-6">
-          <!-- Stats circle -->
-          <div class="flex-shrink-0">
-            <div class="w-36 h-36 rounded-full border-4 border-squig-yellow flex flex-col items-center justify-center bg-gray-800/50">
-              <div class="text-center">
-                <div class="text-2xl font-bold text-squig-yellow">{{ selectedManifestation.health || '-' }}</div>
-                <div class="text-[10px] text-gray-400 uppercase tracking-wider">Health</div>
-              </div>
-              <div class="flex gap-4 mt-1">
-                <div class="text-center">
-                  <div class="text-sm font-bold">{{ selectedManifestation.move || '-' }}</div>
-                  <div class="text-[9px] text-gray-500">Move</div>
-                </div>
-                <div class="text-center">
-                  <div class="text-sm font-bold">{{ selectedManifestation.save || '-' }}</div>
-                  <div class="text-[9px] text-gray-500">Save</div>
-                </div>
-              </div>
-            </div>
+          <div class="flex-shrink-0 flex flex-col items-center gap-3">
+            <UnitStatCircle
+              :move="selectedManifestation.move"
+              :health="selectedManifestation.health"
+              :save="selectedManifestation.save"
+              :control="selectedManifestation.banishment"
+              bottom-label="Ban"
+            />
           </div>
           <!-- Content -->
           <div class="flex-1 space-y-4">
             <div>
-              <h2 class="text-2xl font-bold text-squig-yellow">{{ selectedManifestation.name }}</h2>
+              <h2 class="text-2xl font-bold text-squig-yellow">{{ selectedManifestation.name.replace(/^Summon\s+/, '') }}</h2>
               <p v-if="selectedManifestationLore" class="text-sm text-gray-400">{{ selectedManifestationLore.name }}</p>
             </div>
-            <div class="flex flex-wrap gap-2">
-              <span v-if="selectedManifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
+            <div v-if="selectedManifestation.casting_value" class="flex flex-wrap gap-2">
+              <span class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
                 Casting Value: {{ selectedManifestation.casting_value }}+
               </span>
-              <span v-if="selectedManifestation.banishment" class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">
-                Banishment: {{ selectedManifestation.banishment }}+
-              </span>
             </div>
+
+            <!-- Weapons table (desktop) -->
+            <div v-if="selectedManifestation.weapons?.length" class="card">
+              <h3 class="font-bold text-squig-yellow mb-3">Weapons</h3>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-gray-500 text-xs border-b border-gray-700">
+                    <th class="text-left pb-2 pr-3">Name</th>
+                    <th class="pb-2 px-2">Range</th>
+                    <th class="pb-2 px-2">Attacks</th>
+                    <th class="pb-2 px-2">To Hit</th>
+                    <th class="pb-2 px-2">To Wound</th>
+                    <th class="pb-2 px-2">Rend</th>
+                    <th class="pb-2 px-2">Damage</th>
+                    <th class="text-left pb-2 pl-3">Ability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="weapon in selectedManifestation.weapons" :key="weapon.name" class="border-b border-gray-800/50 last:border-0">
+                    <td class="py-2 pr-3 text-left font-medium">{{ weapon.name }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.weapon_type === 'ranged' ? (weapon.range || '-') : '-' }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.attacks || '-' }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.hit || '-' }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.wound || '-' }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.rend || '-' }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.damage || '-' }}</td>
+                    <td class="py-2 pl-3 text-left text-gray-400">{{ weapon.ability || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Abilities -->
+            <div v-if="selectedManifestation.abilities?.length" class="card">
+              <h3 class="font-bold text-squig-yellow mb-3">Abilities</h3>
+              <div class="space-y-3">
+                <div v-for="ability in selectedManifestation.abilities" :key="ability.name" class="bg-gray-700/50 rounded-lg overflow-hidden">
+                  <div :class="['px-3 py-1 text-xs font-medium', getAbilityPhaseClass(ability.color)]">
+                    {{ ability.timing || (ability.ability_type === 'passive' ? 'Passive' : getAbilityPhaseLabel(ability.color)) }}
+                  </div>
+                  <div class="p-3">
+                    <div class="flex items-start justify-between mb-1">
+                      <h4 class="font-bold">{{ ability.name }}</h4>
+                      <span :class="['text-xs px-2 py-0.5 rounded flex-shrink-0 ml-2', ability.ability_type === 'passive' ? 'bg-green-900/50 text-green-300' : 'bg-blue-900/50 text-blue-300']">{{ ability.ability_type }}</span>
+                    </div>
+                    <p v-if="ability.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ ability.declare }}</p>
+                    <p v-if="ability.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ ability.effect }}</p>
+                    <div v-if="ability.keywords?.length" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-600/50">
+                      <span v-for="kw in ability.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Summon ability -->
             <div v-if="selectedManifestation.declare || selectedManifestation.effect" class="card">
               <div class="bg-yellow-800/60 text-yellow-200 px-3 py-1 text-xs font-medium rounded-t-lg -mx-4 -mt-4 mb-3">
                 Hero Phase
@@ -155,32 +198,81 @@
         <!-- Mobile layout -->
         <div class="lg:hidden space-y-4">
           <div>
-            <h2 class="text-xl font-bold text-squig-yellow">{{ selectedManifestation.name }}</h2>
+            <h2 class="text-xl font-bold text-squig-yellow">{{ selectedManifestation.name.replace(/^Summon\s+/, '') }}</h2>
             <p v-if="selectedManifestationLore" class="text-sm text-gray-400">{{ selectedManifestationLore.name }}</p>
           </div>
-          <!-- Stats table -->
-          <div class="card">
-            <table class="w-full text-center text-sm">
-              <thead><tr class="text-gray-500 text-xs">
-                <th class="pb-1">Move</th><th class="pb-1">Health</th><th class="pb-1">Save</th>
-              </tr></thead>
-              <tbody><tr class="font-bold">
-                <td>{{ selectedManifestation.move || '-' }}</td>
-                <td>{{ selectedManifestation.health || '-' }}</td>
-                <td>{{ selectedManifestation.save || '-' }}</td>
-              </tr></tbody>
+          <!-- Stats table (mobile) -->
+          <div class="card overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-gray-400 border-b border-gray-700">
+                  <th class="py-2 px-3 text-center">Move</th>
+                  <th class="py-2 px-3 text-center">Health</th>
+                  <th class="py-2 px-3 text-center">Save</th>
+                  <th class="py-2 px-3 text-center">Ban</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-3 text-center font-bold text-lg">{{ selectedManifestation.move || '-' }}</td>
+                  <td class="py-2 px-3 text-center font-bold text-lg">{{ selectedManifestation.health || '-' }}</td>
+                  <td class="py-2 px-3 text-center font-bold text-lg">{{ selectedManifestation.save || '-' }}</td>
+                  <td class="py-2 px-3 text-center font-bold text-lg">{{ selectedManifestation.banishment || '-' }}</td>
+                </tr>
+              </tbody>
             </table>
+            <div v-if="selectedManifestation.casting_value" class="border-t border-gray-700 px-3 py-2 text-xs text-gray-500">
+              Casting Value: <span class="text-purple-300 font-bold">{{ selectedManifestation.casting_value }}+</span>
+            </div>
           </div>
-          <!-- Badges -->
-          <div class="flex flex-wrap gap-2">
-            <span v-if="selectedManifestation.casting_value" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">
-              Casting Value: {{ selectedManifestation.casting_value }}+
-            </span>
-            <span v-if="selectedManifestation.banishment" class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">
-              Banishment: {{ selectedManifestation.banishment }}+
-            </span>
+
+          <!-- Weapons (mobile) -->
+          <div v-if="selectedManifestation.weapons?.length" class="card">
+            <h3 class="font-bold text-squig-yellow mb-3">Weapons</h3>
+            <div class="space-y-2">
+              <template v-for="weapon in selectedManifestation.weapons" :key="weapon.name">
+                <div class="bg-gray-700/50 rounded-lg p-3">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <h4 class="font-medium">{{ weapon.name }}</h4>
+                    <span v-if="weapon.weapon_type === 'ranged'" class="text-sm font-bold text-white bg-gray-600/80 px-2 py-0.5 rounded">{{ weapon.range || '-' }}</span>
+                  </div>
+                  <div class="grid grid-cols-5 gap-1 text-center text-xs">
+                    <div><span class="text-gray-500 block">Atk</span><span class="font-bold">{{ weapon.attacks || '-' }}</span></div>
+                    <div><span class="text-gray-500 block">Hit</span><span class="font-bold">{{ weapon.hit || '-' }}</span></div>
+                    <div><span class="text-gray-500 block">Wnd</span><span class="font-bold">{{ weapon.wound || '-' }}</span></div>
+                    <div><span class="text-gray-500 block">Rnd</span><span class="font-bold">{{ weapon.rend || '-' }}</span></div>
+                    <div><span class="text-gray-500 block">Dmg</span><span class="font-bold">{{ weapon.damage || '-' }}</span></div>
+                  </div>
+                  <p v-if="weapon.ability && weapon.ability !== '-'" class="text-xs text-gray-400 mt-1.5"><span class="text-gray-500">Ability:</span> {{ weapon.ability }}</p>
+                </div>
+              </template>
+            </div>
           </div>
-          <!-- Ability -->
+
+          <!-- Abilities -->
+          <div v-if="selectedManifestation.abilities?.length" class="card">
+            <h3 class="font-bold text-squig-yellow mb-3">Abilities</h3>
+            <div class="space-y-3">
+              <div v-for="ability in selectedManifestation.abilities" :key="ability.name" class="bg-gray-700/50 rounded-lg overflow-hidden">
+                <div :class="['px-3 py-1 text-xs font-medium', getAbilityPhaseClass(ability.color)]">
+                  {{ ability.timing || (ability.ability_type === 'passive' ? 'Passive' : getAbilityPhaseLabel(ability.color)) }}
+                </div>
+                <div class="p-3">
+                  <div class="flex items-start justify-between mb-1">
+                    <h4 class="font-bold">{{ ability.name }}</h4>
+                    <span :class="['text-xs px-2 py-0.5 rounded flex-shrink-0 ml-2', ability.ability_type === 'passive' ? 'bg-green-900/50 text-green-300' : 'bg-blue-900/50 text-blue-300']">{{ ability.ability_type }}</span>
+                  </div>
+                  <p v-if="ability.declare" class="text-sm text-gray-400 mb-2 whitespace-pre-wrap"><span class="font-medium text-gray-300">Declare:</span> {{ ability.declare }}</p>
+                  <p v-if="ability.effect" class="text-sm text-gray-300 whitespace-pre-wrap">{{ ability.effect }}</p>
+                  <div v-if="ability.keywords?.length" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-600/50">
+                    <span v-for="kw in ability.keywords" :key="kw" class="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded">{{ kw }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summon ability -->
           <div v-if="selectedManifestation.declare || selectedManifestation.effect" class="card">
             <div class="bg-yellow-800/60 text-yellow-200 px-3 py-1 text-xs font-medium rounded-t-lg -mx-4 -mt-4 mb-3">
               Hero Phase
@@ -206,25 +298,17 @@
 
         <div class="mb-6">
           <h2 class="text-2xl font-bold">{{ selectedManifestationLore.name }}</h2>
-          <p class="text-gray-400">{{ selectedManifestationLore.manifestations?.length || 0 }} manifestations</p>
+          <p v-if="selectedManifestationLore.points" class="text-squig-yellow font-bold">{{ selectedManifestationLore.points }} pts</p>
         </div>
 
-        <div class="space-y-1">
+        <div class="lg:w-1/2 space-y-1">
           <div
             v-for="manifestation in selectedManifestationLore.manifestations"
             :key="manifestation.id"
             @click="selectManifestation(manifestation)"
-            class="bg-gray-700/50 rounded px-3 py-2 cursor-pointer hover:bg-gray-600/50 transition-colors flex items-center justify-between"
+            class="bg-gray-700/50 rounded px-3 py-2 cursor-pointer hover:bg-gray-600/50 transition-colors"
           >
-            <div class="flex-1 min-w-0">
-              <span class="text-sm font-medium">{{ manifestation.name }}</span>
-              <div class="flex gap-3 text-xs text-gray-500 mt-0.5">
-                <span v-if="manifestation.move">Move {{ manifestation.move }}</span>
-                <span v-if="manifestation.health">HP {{ manifestation.health }}</span>
-                <span v-if="manifestation.save">Save {{ manifestation.save }}</span>
-              </div>
-            </div>
-            <span v-if="manifestation.banishment" class="text-xs text-red-400 flex-shrink-0 ml-3">Ban {{ manifestation.banishment }}+</span>
+            <span class="text-sm font-medium">{{ manifestation.name.replace(/^Summon\s+/, '') }}</span>
           </div>
         </div>
       </div>
@@ -261,6 +345,7 @@
           :faction="selectedFaction"
           @select-unit="loadUnit"
           @select-faction="loadFaction"
+          @select-manifestation="loadFactionManifestation"
         />
       </div>
 
@@ -287,7 +372,69 @@
               class="card cursor-pointer hover:border-purple-500/50 transition-colors flex items-center justify-between"
             >
               <span class="font-medium">{{ lore.name }}</span>
-              <span class="text-sm text-gray-400">{{ lore.manifestations?.length || 0 }}</span>
+              <span v-if="lore.points" class="text-sm text-squig-yellow font-bold">{{ lore.points }} pts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battle Tactics -->
+        <div v-if="battleTactics.length > 0" class="mt-12">
+          <div class="flex items-center gap-3 mb-6">
+            <h2 class="text-xl font-bold text-amber-400">Battle Tactics</h2>
+            <div class="flex-1 h-px bg-amber-400/30"></div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div
+              v-for="tactic in battleTactics"
+              :key="tactic.id"
+              @click="toggleBattleTactic(tactic.id)"
+              class="card cursor-pointer transition-colors"
+              :class="isTacticExpanded(tactic.id) ? 'border-amber-500/50' : 'hover:border-amber-500/30'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-amber-300">{{ tactic.name }}</span>
+                <!-- Chevron only on mobile -->
+                <svg
+                  class="w-4 h-4 text-gray-500 transition-transform lg:hidden"
+                  :class="{ 'rotate-180': isTacticExpanded(tactic.id) }"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+
+              <!-- Expanded: 3 phase steps -->
+              <div v-if="isTacticExpanded(tactic.id)" class="mt-3 space-y-2" @click.stop>
+                <p v-if="tactic.card_rules" class="text-xs text-gray-400 mb-3">{{ tactic.card_rules }}</p>
+
+                <!-- Affray -->
+                <div v-if="tactic.affray_name || tactic.affray_effect" class="rounded bg-red-900/20 border border-red-800/30 p-2.5">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-red-400">1. Affray</span>
+                    <span v-if="tactic.affray_name" class="text-xs font-medium text-red-300">{{ tactic.affray_name }}</span>
+                  </div>
+                  <p v-if="tactic.affray_effect" class="text-xs text-gray-300 whitespace-pre-wrap">{{ tactic.affray_effect }}</p>
+                </div>
+
+                <!-- Strike -->
+                <div v-if="tactic.strike_name || tactic.strike_effect" class="rounded bg-orange-900/20 border border-orange-800/30 p-2.5">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-orange-400">2. Strike</span>
+                    <span v-if="tactic.strike_name" class="text-xs font-medium text-orange-300">{{ tactic.strike_name }}</span>
+                  </div>
+                  <p v-if="tactic.strike_effect" class="text-xs text-gray-300 whitespace-pre-wrap">{{ tactic.strike_effect }}</p>
+                </div>
+
+                <!-- Domination -->
+                <div v-if="tactic.domination_name || tactic.domination_effect" class="rounded bg-blue-900/20 border border-blue-800/30 p-2.5">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">3. Domination</span>
+                    <span v-if="tactic.domination_name" class="text-xs font-medium text-blue-300">{{ tactic.domination_name }}</span>
+                  </div>
+                  <p v-if="tactic.domination_effect" class="text-xs text-gray-300 whitespace-pre-wrap">{{ tactic.domination_effect }}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -308,6 +455,7 @@ import axios from 'axios'
 import FactionBrowser from '../components/rules/FactionBrowser.vue'
 import FactionDetail from '../components/rules/FactionDetail.vue'
 import UnitDetail from '../components/rules/UnitDetail.vue'
+import UnitStatCircle from '../components/rules/UnitStatCircle.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -330,6 +478,9 @@ let searchTimeout = null
 const grandAlliances = ref([])
 const factions = ref([])
 const universalManifestationLores = ref([])
+const battleTactics = ref([])
+const allTacticsExpanded = ref(false)
+const expandedTacticIds = ref(new Set())
 
 const selectedFaction = ref(null)
 const selectedUnit = ref(null)
@@ -370,15 +521,17 @@ const fetchData = async () => {
   error.value = ''
 
   try {
-    const [gaResponse, factionsResponse, loresResponse] = await Promise.all([
+    const [gaResponse, factionsResponse, loresResponse, tacticsResponse] = await Promise.all([
       axios.get(`${API_URL}/bsdata/grand-alliances`),
       axios.get(`${API_URL}/bsdata/factions?include_aor=true`),
       axios.get(`${API_URL}/bsdata/manifestation-lores`),
+      axios.get(`${API_URL}/bsdata/battle-tactics`),
     ])
 
     grandAlliances.value = gaResponse.data
     factions.value = factionsResponse.data
     universalManifestationLores.value = loresResponse.data
+    battleTactics.value = tacticsResponse.data
   } catch (err) {
     console.error('Failed to fetch BSData:', err)
     error.value = t('rules.failedToLoad')
@@ -442,6 +595,60 @@ const selectManifestationLore = (lore) => {
   selectedManifestation.value = null
   window.scrollTo(0, 0)
   router.push({ name: 'RulesFaction', params: { factionSlug: toSlug(lore.name) } })
+}
+
+const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
+
+const getAbilityPhaseLabel = (color) => {
+  const phases = {
+    'Yellow': 'Hero Phase', 'Red': 'Combat Phase', 'Blue': 'Movement Phase',
+    'Green': 'Start of Turn', 'Purple': 'Shooting Phase', 'Orange': 'Charge Phase',
+    'Grey': 'Passive', 'Gray': 'Passive', 'Black': 'Deployment', 'Cyan': 'Any Phase',
+  }
+  return phases[color] || color
+}
+
+const getAbilityPhaseClass = (color) => {
+  const classes = {
+    'Yellow': 'bg-yellow-800/60 text-yellow-200', 'Red': 'bg-red-900/60 text-red-200',
+    'Blue': 'bg-blue-800/60 text-blue-200', 'Green': 'bg-gray-700/60 text-gray-300',
+    'Purple': 'bg-purple-900/60 text-purple-200', 'Orange': 'bg-orange-800/60 text-orange-200',
+    'Grey': 'bg-green-900/60 text-green-200', 'Gray': 'bg-green-900/60 text-green-200',
+    'Black': 'bg-gray-800/60 text-gray-300', 'Cyan': 'bg-cyan-900/60 text-cyan-200',
+  }
+  return classes[color] || 'bg-gray-700/60 text-gray-300'
+}
+
+const isTacticExpanded = (tacticId) => {
+  return allTacticsExpanded.value || expandedTacticIds.value.has(tacticId)
+}
+
+const toggleBattleTactic = (tacticId) => {
+  if (isDesktop()) {
+    allTacticsExpanded.value = !allTacticsExpanded.value
+  } else {
+    const newSet = new Set(expandedTacticIds.value)
+    if (newSet.has(tacticId)) {
+      newSet.delete(tacticId)
+    } else {
+      newSet.add(tacticId)
+    }
+    expandedTacticIds.value = newSet
+  }
+}
+
+const loadFactionManifestation = (manifestation) => {
+  selectedManifestation.value = manifestation
+  window.scrollTo(0, 0)
+  if (selectedFaction.value) {
+    router.push({
+      name: 'RulesUnit',
+      params: {
+        factionSlug: toSlug(selectedFaction.value.name),
+        unitSlug: toSlug(manifestation.name)
+      }
+    })
+  }
 }
 
 const selectManifestation = (manifestation) => {

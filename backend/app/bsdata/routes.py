@@ -329,6 +329,7 @@ async def list_faction_manifestation_lores(
                 id=lore.id,
                 name=lore.name,
                 faction_id=lore.faction_id,
+                points=lore.points,
                 manifestations=[
                     ManifestationResponse.model_validate(m) for m in manifestations
                 ],
@@ -431,26 +432,9 @@ async def list_manifestation_lores(session: Session = Depends(get_session)):
                 id=lore.id,
                 name=lore.name,
                 faction_id=lore.faction_id,
+                points=lore.points,
                 manifestations=[
                     ManifestationResponse.model_validate(m) for m in manifestations
-                ],
-            )
-        )
-
-    # Include orphan manifestations
-    orphans = session.exec(
-        select(Manifestation)
-        .where(Manifestation.lore_id == None)
-        .order_by(Manifestation.name)
-    ).all()
-    if orphans:
-        result.append(
-            ManifestationLoreResponse(
-                id=0,
-                name="Endless Spells & Invocations",
-                faction_id=None,
-                manifestations=[
-                    ManifestationResponse.model_validate(m) for m in orphans
                 ],
             )
         )

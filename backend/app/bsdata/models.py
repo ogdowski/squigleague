@@ -322,6 +322,7 @@ class ManifestationLore(SQLModel, table=True):
     bsdata_id: str = Field(unique=True, index=True, max_length=100)
     faction_id: Optional[int] = Field(default=None, foreign_key="bsdata_factions.id")
     name: str = Field(index=True, max_length=200)
+    points: Optional[int] = None
 
     manifestations: list["Manifestation"] = Relationship(back_populates="lore")
 
@@ -346,6 +347,8 @@ class Manifestation(SQLModel, table=True):
     declare: Optional[str] = None
     effect: Optional[str] = None
     keywords: Optional[str] = None  # JSON array
+    weapons: Optional[str] = None  # JSON array of weapon objects
+    abilities: Optional[str] = None  # JSON array of ability objects
 
     lore: Optional[ManifestationLore] = Relationship(back_populates="manifestations")
 

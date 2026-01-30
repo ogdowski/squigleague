@@ -59,43 +59,68 @@
           </div>
         </div>
 
-        <!-- Desktop weapons & abilities rendered below -->
+        <!-- Desktop weapons table -->
         <template v-if="unit.weapons?.length">
           <div class="card">
             <h3 class="font-bold text-squig-yellow mb-3">{{ t('rules.weapons') }}</h3>
-            <div class="space-y-3">
-              <template v-if="meleeWeapons.length">
-                <p class="text-xs text-gray-500 font-medium">{{ t('rules.meleeWeapons') }}</p>
-                <div v-for="weapon in meleeWeapons" :key="weapon.id" class="bg-gray-700/50 rounded-lg p-3">
-                  <h4 class="font-medium mb-1.5">{{ weapon.name }}</h4>
-                  <div class="grid grid-cols-6 gap-1 text-center text-xs">
-                    <div><span class="text-gray-500 block">Atk</span><span class="font-bold">{{ weapon.attacks }}</span></div>
-                    <div><span class="text-gray-500 block">Hit</span><span class="font-bold">{{ weapon.hit }}</span></div>
-                    <div><span class="text-gray-500 block">Wnd</span><span class="font-bold">{{ weapon.wound }}</span></div>
-                    <div><span class="text-gray-500 block">Rnd</span><span class="font-bold">{{ weapon.rend || '-' }}</span></div>
-                    <div><span class="text-gray-500 block">Dmg</span><span class="font-bold">{{ weapon.damage }}</span></div>
-                    <div><span class="text-gray-500 block">Abi</span><span class="font-bold text-gray-400">{{ weapon.ability || '-' }}</span></div>
-                  </div>
-                </div>
-              </template>
-              <template v-if="rangedWeapons.length">
-                <p class="text-xs text-gray-500 font-medium">{{ t('rules.rangedWeapons') }}</p>
-                <div v-for="weapon in rangedWeapons" :key="weapon.id" class="bg-gray-700/50 rounded-lg p-3">
-                  <div class="flex items-center justify-between mb-1.5">
-                    <h4 class="font-medium">{{ weapon.name }}</h4>
-                    <span class="text-xs text-gray-400">{{ formatRange(weapon.range) }}</span>
-                  </div>
-                  <div class="grid grid-cols-6 gap-1 text-center text-xs">
-                    <div><span class="text-gray-500 block">Atk</span><span class="font-bold">{{ weapon.attacks }}</span></div>
-                    <div><span class="text-gray-500 block">Hit</span><span class="font-bold">{{ weapon.hit }}</span></div>
-                    <div><span class="text-gray-500 block">Wnd</span><span class="font-bold">{{ weapon.wound }}</span></div>
-                    <div><span class="text-gray-500 block">Rnd</span><span class="font-bold">{{ weapon.rend || '-' }}</span></div>
-                    <div><span class="text-gray-500 block">Dmg</span><span class="font-bold">{{ weapon.damage }}</span></div>
-                    <div><span class="text-gray-500 block">Abi</span><span class="font-bold text-gray-400">{{ weapon.ability || '-' }}</span></div>
-                  </div>
-                </div>
-              </template>
-            </div>
+            <template v-if="meleeWeapons.length">
+              <p class="text-xs text-gray-500 font-medium mb-2">{{ t('rules.meleeWeapons') }}</p>
+              <table class="w-full text-sm mb-4">
+                <thead>
+                  <tr class="text-gray-500 text-xs border-b border-gray-700">
+                    <th class="text-left pb-2 pr-3">Name</th>
+                    <th class="pb-2 px-2">Range</th>
+                    <th class="pb-2 px-2">Attacks</th>
+                    <th class="pb-2 px-2">To Hit</th>
+                    <th class="pb-2 px-2">To Wound</th>
+                    <th class="pb-2 px-2">Rend</th>
+                    <th class="pb-2 px-2">Damage</th>
+                    <th class="text-left pb-2 pl-3">Ability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="weapon in meleeWeapons" :key="weapon.id" class="border-b border-gray-800/50 last:border-0">
+                    <td class="py-2 pr-3 text-left font-medium">{{ weapon.name }}</td>
+                    <td class="py-2 px-2 text-center text-gray-600">-</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.attacks }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.hit }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.wound }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.rend || '-' }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.damage }}</td>
+                    <td class="py-2 pl-3 text-left text-gray-400">{{ weapon.ability || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </template>
+            <template v-if="rangedWeapons.length">
+              <p class="text-xs text-gray-500 font-medium mb-2">{{ t('rules.rangedWeapons') }}</p>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-gray-500 text-xs border-b border-gray-700">
+                    <th class="text-left pb-2 pr-3">Name</th>
+                    <th class="pb-2 px-2">Range</th>
+                    <th class="pb-2 px-2">Attacks</th>
+                    <th class="pb-2 px-2">To Hit</th>
+                    <th class="pb-2 px-2">To Wound</th>
+                    <th class="pb-2 px-2">Rend</th>
+                    <th class="pb-2 px-2">Damage</th>
+                    <th class="text-left pb-2 pl-3">Ability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="weapon in rangedWeapons" :key="weapon.id" class="border-b border-gray-800/50 last:border-0">
+                    <td class="py-2 pr-3 text-left font-medium">{{ weapon.name }}</td>
+                    <td class="py-2 px-2 text-center">{{ formatRange(weapon.range) }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.attacks }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.hit }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.wound }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.rend || '-' }}</td>
+                    <td class="py-2 px-2 text-center">{{ weapon.damage }}</td>
+                    <td class="py-2 pl-3 text-left text-gray-400">{{ weapon.ability || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </template>
           </div>
         </template>
 

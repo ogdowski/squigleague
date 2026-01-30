@@ -47,6 +47,16 @@ BSDATA_LOCAL_PATH = Path("/app/bsdata/age-of-sigmar-4th")
 class BSDataSync:
     """Service for syncing BSData to database via GitHub API."""
 
+    # Unicode quote characters to normalize to ASCII apostrophe
+    _QUOTE_MAP = str.maketrans(
+        {
+            "\u2018": "'",  # LEFT SINGLE QUOTATION MARK
+            "\u2019": "'",  # RIGHT SINGLE QUOTATION MARK
+            "\u201C": '"',  # LEFT DOUBLE QUOTATION MARK
+            "\u201D": '"',  # RIGHT DOUBLE QUOTATION MARK
+        }
+    )
+
     def __init__(self, session: Session):
         self.session = session
         self.repo_path = BSDATA_LOCAL_PATH
@@ -54,14 +64,24 @@ class BSDataSync:
         self._grand_alliance_cache: dict[str, int] = {}
         self._faction_cache: dict[str, int] = {}
         self._lores_index: dict = {}
+        self._manifestation_stats_cache: dict[str, dict] = {}
+
+    @classmethod
+    def _normalize_cache_key(cls, name: str) -> str:
+        """Normalize a manifestation name for cache key lookup.
+
+        Handles Unicode quote differences between BSData files.
+        """
+        return name.lower().translate(cls._QUOTE_MAP)
 
     def get_current_commit(self) -> Optional[str]:
         """Get current BSData commit from database."""
-        status = self.session.exec(
+        statement = (
             select(BSDataSyncStatus)
             .where(BSDataSyncStatus.status == "success")
             .order_by(BSDataSyncStatus.synced_at.desc())
-        ).first()
+        )
+        status = self.session.execute(statement).scalars().first()
         return status.commit_hash if status else None
 
     def _get_latest_commit(self) -> str:
@@ -206,10 +226,47 @@ class BSDataSync:
         self._clear_all_data()
         self._ensure_grand_alliances()
 
-        # Build lores index from Lores.cat for cross-file resolution
+        # ── Phase 1: Build manifestation stats cache BEFORE faction sync ──
+        # GST manifestation profiles (universal manifestations)
+        gst_data = self.parser.parse_game_system()
+        for manif_data in gst_data.get("manifestations", []):
+            self._upsert_manifestation(manif_data)
+            manif_name = manif_data.get("name", "")
+            if manif_name:
+                self._manifestation_stats_cache[
+                    self._normalize_cache_key(manif_name)
+                ] = {
+                    "move": manif_data.get("move"),
+                    "health": manif_data.get("health"),
+                    "save": manif_data.get("save"),
+                    "banishment": manif_data.get("banishment"),
+                    "weapons": manif_data.get("weapons", []),
+                    "abilities": manif_data.get("abilities", []),
+                }
+            stats["manifestations_count"] += 1
+
+        # Library.cat manifestation profiles (faction-specific manifestations)
+        faction_catalogs = self.parser.get_faction_catalogs()
+        for main_cat, lib_cat in faction_catalogs:
+            if lib_cat and lib_cat.exists():
+                lib_data = self.parser.parse_library_catalog(lib_cat)
+                for manif_data in lib_data.get("manifestations", []):
+                    manif_name = manif_data.get("name", "")
+                    if manif_name:
+                        self._manifestation_stats_cache[
+                            self._normalize_cache_key(manif_name)
+                        ] = {
+                            "move": manif_data.get("move"),
+                            "health": manif_data.get("health"),
+                            "save": manif_data.get("save"),
+                            "banishment": manif_data.get("banishment"),
+                            "weapons": manif_data.get("weapons", []),
+                            "abilities": manif_data.get("abilities", []),
+                        }
+
+        # ── Phase 2: Build lores index and sync factions ──
         self._lores_index = self.parser.parse_lores_indexed()
 
-        faction_catalogs = self.parser.get_faction_catalogs()
         for main_cat, lib_cat in faction_catalogs:
             faction_stats = self._sync_faction(main_cat, lib_cat)
             if faction_stats:
@@ -218,12 +275,7 @@ class BSDataSync:
                 stats["weapons_count"] += faction_stats.get("weapons", 0)
                 stats["abilities_count"] += faction_stats.get("abilities", 0)
 
-        gst_data = self.parser.parse_game_system()
-
-        for manif_data in gst_data.get("manifestations", []):
-            self._upsert_manifestation(manif_data)
-            stats["manifestations_count"] += 1
-
+        # ── Phase 3: Core content (battle tactics, core abilities, etc.) ──
         for card_data in gst_data.get("battle_tactic_cards", []):
             self._upsert_battle_tactic_card(card_data)
             stats["battle_tactics_count"] += 1
@@ -240,6 +292,11 @@ class BSDataSync:
         for lore_data in lores_data.get("spell_lores", []):
             self._upsert_spell_lore(lore_data)
         stats["spell_lores_count"] = len(lores_data.get("spell_lores", []))
+
+        # ── Phase 4: Universal manifestation lores ──
+        universal_lores = self.parser.parse_universal_manifestation_lores()
+        for lore_data in universal_lores:
+            self._upsert_universal_manifestation_lore(lore_data)
 
         self.session.commit()
         return stats
@@ -278,14 +335,14 @@ class BSDataSync:
         # Clear caches
         self._grand_alliance_cache.clear()
         self._faction_cache.clear()
+        self._manifestation_stats_cache.clear()
         logger.info("Cleared all BSData tables")
 
     def _ensure_grand_alliances(self):
         """Ensure all grand alliances exist in database."""
         for alliance_name in ["Order", "Chaos", "Death", "Destruction"]:
-            existing = self.session.exec(
-                select(GrandAlliance).where(GrandAlliance.name == alliance_name)
-            ).first()
+            statement = select(GrandAlliance).where(GrandAlliance.name == alliance_name)
+            existing = self.session.execute(statement).scalars().first()
 
             if not existing:
                 alliance = GrandAlliance(name=alliance_name)
@@ -306,9 +363,8 @@ class BSDataSync:
         if bsdata_id in self._faction_cache:
             return self._faction_cache[bsdata_id]
 
-        existing = self.session.exec(
-            select(Faction).where(Faction.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(Faction).where(Faction.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             self._faction_cache[bsdata_id] = existing.id
@@ -467,9 +523,8 @@ class BSDataSync:
         parent_faction_name = parts[0]
         aor_name = parts[1]
 
-        parent_faction = self.session.exec(
-            select(Faction).where(Faction.name == parent_faction_name)
-        ).first()
+        statement = select(Faction).where(Faction.name == parent_faction_name)
+        parent_faction = self.session.execute(statement).scalars().first()
 
         if not parent_faction:
             return
@@ -494,9 +549,8 @@ class BSDataSync:
         if not aor_faction or not aor_faction.parent_faction_id:
             return
 
-        parent_units = self.session.exec(
-            select(Unit).where(Unit.faction_id == aor_faction.parent_faction_id)
-        ).all()
+        statement = select(Unit).where(Unit.faction_id == aor_faction.parent_faction_id)
+        parent_units = self.session.execute(statement).scalars().all()
 
         for parent_unit in parent_units:
             if parent_unit.name in unit_ref_names:
@@ -515,9 +569,8 @@ class BSDataSync:
         keywords_list = unit_data.get("keywords", [])
         keywords_json = json.dumps(keywords_list) if keywords_list else None
 
-        existing = self.session.exec(
-            select(Unit).where(Unit.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(Unit).where(Unit.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = unit_data.get("name", existing.name)
@@ -566,9 +619,8 @@ class BSDataSync:
     def _upsert_weapon(self, unit_id: int, weapon_data: dict):
         """Upsert a weapon."""
         bsdata_id = weapon_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(Weapon).where(Weapon.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(Weapon).where(Weapon.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = weapon_data.get("name", existing.name)
@@ -599,9 +651,8 @@ class BSDataSync:
     def _upsert_unit_ability(self, unit_id: int, ability_data: dict):
         """Upsert a unit ability."""
         bsdata_id = ability_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(UnitAbility).where(UnitAbility.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(UnitAbility).where(UnitAbility.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = ability_data.get("name", existing.name)
@@ -630,9 +681,8 @@ class BSDataSync:
     def _upsert_battle_trait(self, faction_id: int, trait_data: dict):
         """Upsert a battle trait."""
         bsdata_id = trait_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(BattleTrait).where(BattleTrait.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(BattleTrait).where(BattleTrait.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = trait_data.get("name", existing.name)
@@ -657,9 +707,8 @@ class BSDataSync:
     def _upsert_heroic_trait(self, faction_id: int, trait_data: dict):
         """Upsert a heroic trait."""
         bsdata_id = trait_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(HeroicTrait).where(HeroicTrait.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(HeroicTrait).where(HeroicTrait.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = trait_data.get("name", existing.name)
@@ -690,9 +739,8 @@ class BSDataSync:
     def _upsert_artefact(self, faction_id: int, artefact_data: dict):
         """Upsert an artefact."""
         bsdata_id = artefact_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(Artefact).where(Artefact.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(Artefact).where(Artefact.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = artefact_data.get("name", existing.name)
@@ -725,9 +773,10 @@ class BSDataSync:
     def _upsert_battle_formation(self, faction_id: int, formation_data: dict):
         """Upsert a battle formation."""
         bsdata_id = formation_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(BattleFormation).where(BattleFormation.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(BattleFormation).where(
+            BattleFormation.bsdata_id == bsdata_id
+        )
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = formation_data.get("name", existing.name)
@@ -758,9 +807,15 @@ class BSDataSync:
     def _upsert_manifestation(self, manif_data: dict):
         """Upsert a manifestation."""
         bsdata_id = manif_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(Manifestation).where(Manifestation.bsdata_id == bsdata_id)
-        ).first()
+        weapons_json = (
+            json.dumps(manif_data["weapons"]) if manif_data.get("weapons") else None
+        )
+        abilities_json = (
+            json.dumps(manif_data["abilities"]) if manif_data.get("abilities") else None
+        )
+
+        statement = select(Manifestation).where(Manifestation.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = manif_data.get("name", existing.name)
@@ -768,6 +823,10 @@ class BSDataSync:
             existing.health = manif_data.get("health", existing.health)
             existing.save = manif_data.get("save", existing.save)
             existing.banishment = manif_data.get("banishment", existing.banishment)
+            if weapons_json:
+                existing.weapons = weapons_json
+            if abilities_json:
+                existing.abilities = abilities_json
         else:
             manif = Manifestation(
                 bsdata_id=bsdata_id,
@@ -776,15 +835,18 @@ class BSDataSync:
                 health=manif_data.get("health"),
                 save=manif_data.get("save"),
                 banishment=manif_data.get("banishment"),
+                weapons=weapons_json,
+                abilities=abilities_json,
             )
             self.session.add(manif)
 
     def _upsert_battle_tactic_card(self, card_data: dict):
         """Upsert a battle tactic card."""
         bsdata_id = card_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(BattleTacticCard).where(BattleTacticCard.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(BattleTacticCard).where(
+            BattleTacticCard.bsdata_id == bsdata_id
+        )
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = card_data.get("name", existing.name)
@@ -820,9 +882,8 @@ class BSDataSync:
     def _upsert_core_ability(self, ability_data: dict):
         """Upsert a core ability (with full ability fields)."""
         bsdata_id = ability_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(CoreAbility).where(CoreAbility.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(CoreAbility).where(CoreAbility.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = ability_data.get("name", existing.name)
@@ -850,9 +911,10 @@ class BSDataSync:
     def _upsert_regiment_of_renown(self, regiment_data: dict):
         """Upsert a Regiment of Renown."""
         bsdata_id = regiment_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(RegimentOfRenown).where(RegimentOfRenown.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(RegimentOfRenown).where(
+            RegimentOfRenown.bsdata_id == bsdata_id
+        )
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = regiment_data.get("name", existing.name)
@@ -872,9 +934,8 @@ class BSDataSync:
     def _upsert_spell_lore(self, lore_data: dict):
         """Upsert a spell lore with its spells."""
         bsdata_id = lore_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(SpellLore).where(SpellLore.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(SpellLore).where(SpellLore.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = lore_data.get("name", existing.name)
@@ -893,9 +954,8 @@ class BSDataSync:
     def _upsert_spell(self, lore_id: int, spell_data: dict):
         """Upsert a spell."""
         bsdata_id = spell_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(Spell).where(Spell.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(Spell).where(Spell.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = spell_data.get("name", existing.name)
@@ -926,9 +986,8 @@ class BSDataSync:
         points: Optional[int] = None,
     ):
         """Upsert a faction-specific spell lore resolved from Lores.cat."""
-        existing = self.session.exec(
-            select(SpellLore).where(SpellLore.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(SpellLore).where(SpellLore.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = lore_name
@@ -957,9 +1016,8 @@ class BSDataSync:
         points: Optional[int] = None,
     ):
         """Upsert a faction-specific prayer lore resolved from Lores.cat."""
-        existing = self.session.exec(
-            select(PrayerLore).where(PrayerLore.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(PrayerLore).where(PrayerLore.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = lore_name
@@ -982,9 +1040,8 @@ class BSDataSync:
     def _upsert_prayer(self, lore_id: int, prayer_data: dict):
         """Upsert a prayer."""
         bsdata_id = prayer_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(Prayer).where(Prayer.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(Prayer).where(Prayer.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = prayer_data.get("name", existing.name)
@@ -1010,9 +1067,10 @@ class BSDataSync:
         self, faction_id: int, bsdata_id: str, lore_name: str, entries: list
     ):
         """Upsert a faction-specific manifestation lore resolved from Lores.cat."""
-        existing = self.session.exec(
-            select(ManifestationLore).where(ManifestationLore.bsdata_id == bsdata_id)
-        ).first()
+        statement = select(ManifestationLore).where(
+            ManifestationLore.bsdata_id == bsdata_id
+        )
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
             existing.name = lore_name
@@ -1030,26 +1088,119 @@ class BSDataSync:
         for entry_data in entries:
             self._upsert_faction_manifestation(lore.id, entry_data)
 
-    def _upsert_faction_manifestation(self, lore_id: int, entry_data: dict):
-        """Upsert a manifestation entry (summoning spell stored as manifestation)."""
-        bsdata_id = entry_data.get("bsdata_id", "")
-        existing = self.session.exec(
-            select(Manifestation).where(Manifestation.bsdata_id == bsdata_id)
-        ).first()
+    def _upsert_universal_manifestation_lore(self, lore_data: dict):
+        """Upsert a universal manifestation lore (Morbid Conjuration, etc.).
+
+        These have faction_id=NULL and are available to all armies.
+        The lore_data contains a target_id pointing to the actual lore group
+        in the lores index, whose entries contain the summoning spells.
+        """
+        bsdata_id = lore_data["bsdata_id"]
+        lore_name = lore_data["name"]
+        points = lore_data.get("points")
+        target_id = lore_data.get("target_id")
+
+        statement = select(ManifestationLore).where(
+            ManifestationLore.bsdata_id == bsdata_id
+        )
+        existing = self.session.execute(statement).scalars().first()
 
         if existing:
-            existing.name = entry_data.get("name", existing.name)
+            existing.name = lore_name
+            existing.faction_id = None
+            existing.points = points
+            lore = existing
+        else:
+            lore = ManifestationLore(
+                bsdata_id=bsdata_id,
+                faction_id=None,
+                name=lore_name,
+                points=points,
+            )
+            self.session.add(lore)
+            self.session.flush()
+
+        # Resolve target lore group from lores index
+        if target_id and self._lores_index:
+            lore_content = self._lores_index.get(target_id)
+            if lore_content:
+                for entry_data in lore_content.get("entries", []):
+                    self._upsert_faction_manifestation(lore.id, entry_data)
+
+    def _upsert_faction_manifestation(self, lore_id: int, entry_data: dict):
+        """Upsert a manifestation entry (summoning spell stored as manifestation).
+
+        Merges stats (move/health/save/banishment) and weapons/abilities from two sources:
+        1. entry_data itself (parsed directly from Lores.cat selectionEntry profiles)
+        2. GST manifestation stats cache (fallback for universal manifestations)
+        Entry-level data takes priority over cache.
+        """
+        bsdata_id = entry_data.get("bsdata_id", "")
+        manif_name = entry_data.get("name", "")
+
+        # Look up stats from manifestation stats cache by name.
+        # Lore entries use "Summon X" while cache uses the model name directly.
+        # Also handles "The X" prefix mismatch and Unicode quote normalization.
+        lookup_name = self._normalize_cache_key(manif_name)
+        cached_stats = self._manifestation_stats_cache.get(lookup_name, {})
+        if not cached_stats and lookup_name.startswith("summon "):
+            stripped = lookup_name.removeprefix("summon ")
+            cached_stats = self._manifestation_stats_cache.get(stripped, {})
+            if not cached_stats:
+                cached_stats = self._manifestation_stats_cache.get(
+                    "the " + stripped, {}
+                )
+
+        # Resolve stats: entry_data (from lore parser) first, cache fallback
+        resolved_move = entry_data.get("move") or cached_stats.get("move")
+        resolved_health = entry_data.get("health") or cached_stats.get("health")
+        resolved_save = entry_data.get("save") or cached_stats.get("save")
+        resolved_banishment = entry_data.get("banishment") or cached_stats.get(
+            "banishment"
+        )
+
+        # Resolve weapons/abilities: entry_data first, cache fallback
+        entry_weapons = entry_data.get("weapons", [])
+        entry_abilities = entry_data.get("abilities", [])
+        resolved_weapons = (
+            entry_weapons if entry_weapons else cached_stats.get("weapons", [])
+        )
+        resolved_abilities = (
+            entry_abilities if entry_abilities else cached_stats.get("abilities", [])
+        )
+        weapons_json = json.dumps(resolved_weapons) if resolved_weapons else None
+        abilities_json = json.dumps(resolved_abilities) if resolved_abilities else None
+
+        statement = select(Manifestation).where(Manifestation.bsdata_id == bsdata_id)
+        existing = self.session.execute(statement).scalars().first()
+
+        if existing:
+            existing.name = manif_name or existing.name
             existing.lore_id = lore_id
             existing.casting_value = entry_data.get("casting_value")
             existing.declare = entry_data.get("declare")
             existing.effect = entry_data.get("effect")
+            existing.move = resolved_move or existing.move
+            existing.health = resolved_health or existing.health
+            existing.save = resolved_save or existing.save
+            existing.banishment = resolved_banishment or existing.banishment
+            if weapons_json:
+                existing.weapons = weapons_json
+            if abilities_json:
+                existing.abilities = abilities_json
         else:
             manifestation = Manifestation(
                 bsdata_id=bsdata_id,
                 lore_id=lore_id,
-                name=entry_data.get("name", ""),
+                name=manif_name,
                 casting_value=entry_data.get("casting_value"),
                 declare=entry_data.get("declare"),
                 effect=entry_data.get("effect"),
+                move=resolved_move,
+                health=resolved_health,
+                save=resolved_save,
+                banishment=resolved_banishment,
+                weapons=weapons_json,
+                abilities=abilities_json,
             )
             self.session.add(manifestation)

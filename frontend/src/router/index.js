@@ -128,6 +128,10 @@ router.beforeEach(async (to) => {
   }
   if (to.meta.requiresRules) {
     const authStore = useAuthStore()
+    // On refresh, user may not be fetched yet — ensure it's loaded
+    if (!authStore.user && authStore.token) {
+      await authStore.fetchUser()
+    }
     if (authStore.user?.role === 'admin') return
     try {
       const response = await axios.get(`${API_URL}/admin/settings/features`)
@@ -135,7 +139,8 @@ router.beforeEach(async (to) => {
         return { name: 'Home' }
       }
     } catch {
-      return { name: 'Home' }
+      // Don't redirect on network/auth errors — only block when
+      // the API explicitly says rules are disabled
     }
   }
 })

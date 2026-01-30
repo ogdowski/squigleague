@@ -42,6 +42,21 @@
                 </div>
               </div>
             </div>
+            <!-- Faction Manifestations at the end of unit list -->
+            <div v-if="allFactionManifestations.length">
+              <h4 class="text-sm font-medium text-gray-400 mb-3">Manifestations</h4>
+              <div class="space-y-1">
+                <div
+                  v-for="manifestation in allFactionManifestations"
+                  :key="manifestation.id"
+                  @click="$emit('selectManifestation', manifestation)"
+                  class="bg-gray-700/50 rounded px-3 py-1.5 cursor-pointer hover:bg-gray-600/50 transition-colors flex items-center justify-between"
+                >
+                  <span class="text-sm">{{ manifestation.name.replace(/^Summon\s+/, '') }}</span>
+                  <span v-if="manifestation.casting_value" class="text-squig-yellow font-bold text-sm flex-shrink-0 ml-4">{{ manifestation.casting_value }}+</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -371,7 +386,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['selectUnit', 'selectFaction'])
+defineEmits(['selectUnit', 'selectFaction', 'selectManifestation'])
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -462,10 +477,16 @@ const groupedUnits = computed(() => {
   return unitTypeOrder
     .filter(type => groups[type]?.length > 0)
     .map(type => ({
-      name: type,
+      name: type === 'Other' ? 'Faction Terrain' : type,
       units: groups[type].sort((a, b) => a.name.localeCompare(b.name))
     }))
 })
+
+const allFactionManifestations = computed(() => {
+  if (!sectionData.manifestation_lores?.length) return []
+  return sectionData.manifestation_lores.flatMap(lore => lore.manifestations || [])
+})
+
 
 const getUnitCategory = (unit) => {
   const keywordsList = Array.isArray(unit.keywords)
