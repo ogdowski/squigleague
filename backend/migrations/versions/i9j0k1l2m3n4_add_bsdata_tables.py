@@ -13,6 +13,7 @@ Create Date: 2026-01-29
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import inspect
 
 revision = "i9j0k1l2m3n4"
 down_revision = "h8i9j0k1l2m3"
@@ -21,6 +22,12 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Skip if tables already created by SQLModel.metadata.create_all()
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    if "bsdata_grand_alliances" in inspector.get_table_names():
+        return
+
     # Grand Alliances
     op.create_table(
         "bsdata_grand_alliances",
