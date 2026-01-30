@@ -214,6 +214,7 @@
             <div class="card p-3 md:p-6">
               <h3 class="text-xs md:text-sm text-gray-400 mb-1">{{ t('leagueDetail.format') }}</h3>
               <p class="text-base md:text-lg font-bold">{{ leagueFormat }}</p>
+              <p v-if="league.total_qualifying_spots" class="text-xs text-gray-500 mt-1">Top {{ league.total_qualifying_spots }}</p>
             </div>
             <div class="card p-3 md:p-6">
               <div class="flex items-center gap-1 md:gap-2 mb-1">
@@ -473,11 +474,11 @@
                   <th class="text-left py-2 px-2">{{ t('leagueDetail.position') }}</th>
                   <th class="text-left py-2 px-2">{{ t('leagueDetail.player') }}</th>
                   <th class="text-center py-2 px-2">{{ t('leagueDetail.played') }}</th>
-                  <th class="text-center py-2 px-2">{{ t('leagueDetail.won') }}</th>
-                  <th class="text-center py-2 px-2">{{ t('leagueDetail.drawn') }}</th>
-                  <th class="text-center py-2 px-2">{{ t('leagueDetail.lost') }}</th>
+                  <th class="text-center py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.won') }}</th>
+                  <th class="text-center py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.drawn') }}</th>
+                  <th class="text-center py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.lost') }}</th>
                   <th class="text-right py-2 px-2">{{ t('leagueDetail.points') }}</th>
-                  <th class="text-right py-2 px-2">{{ t('leagueDetail.average') }}</th>
+                  <th class="text-right py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.average') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -520,16 +521,16 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </button>
-                        <span v-if="entry.army_faction && (league.has_group_phase_lists || league.group_phase_ended)" class="text-xs text-gray-500">({{ entry.army_faction }})</span>
+                        <span v-if="entry.army_faction && (league.has_group_phase_lists || league.group_phase_ended)" class="text-xs text-gray-500 hidden sm:inline">({{ entry.army_faction }})</span>
                       </div>
                     </div>
                   </td>
                   <td class="py-2 px-2 text-center">{{ entry.games_played }}</td>
-                  <td class="py-2 px-2 text-center text-green-400">{{ entry.games_won }}</td>
-                  <td class="py-2 px-2 text-center text-yellow-400">{{ entry.games_drawn }}</td>
-                  <td class="py-2 px-2 text-center text-red-400">{{ entry.games_lost }}</td>
+                  <td class="py-2 px-2 text-center text-green-400 hidden sm:table-cell">{{ entry.games_won }}</td>
+                  <td class="py-2 px-2 text-center text-yellow-400 hidden sm:table-cell">{{ entry.games_drawn }}</td>
+                  <td class="py-2 px-2 text-center text-red-400 hidden sm:table-cell">{{ entry.games_lost }}</td>
                   <td class="py-2 px-2 text-right font-bold text-squig-yellow">{{ entry.total_points }}</td>
-                  <td class="py-2 px-2 text-right text-gray-400">{{ entry.average_points.toFixed(0) }}</td>
+                  <td class="py-2 px-2 text-right text-gray-400 hidden sm:table-cell">{{ entry.average_points.toFixed(0) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -1633,9 +1634,6 @@ const groupPhaseEnded = computed(() => {
 const leagueFormat = computed(() => {
   if (!league.value) return ''
   if (league.value.has_knockout_phase) {
-    if (league.value.knockout_size) {
-      return t('leagueDetail.groupsKnockoutTop', { count: league.value.knockout_size })
-    }
     return t('leagueDetail.groupsKnockout')
   }
   return t('leagueDetail.groupsOnly')
@@ -2033,7 +2031,7 @@ const openMatchModal = (match) => {
 
   // Check if existing map is a standard mission or custom
   const existingMap = match.map_name || ''
-  const isStandardMap = missionMaps.includes(existingMap)
+  const isStandardMap = missionMaps.value.includes(existingMap)
 
   scoreForm.value = {
     player1_score: match.player1_score,
