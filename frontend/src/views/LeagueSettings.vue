@@ -465,8 +465,9 @@ const canEdit = computed(() => {
 
 const toLocalDatetime = (isoString) => {
   if (!isoString) return ''
-  const date = new Date(isoString)
-  return date.toISOString().slice(0, 16)
+  // Extract YYYY-MM-DDTHH:MM directly from the ISO string without Date conversion
+  // Backend stores naive datetimes - no timezone conversion needed
+  return isoString.slice(0, 16)
 }
 
 const fetchLeague = async () => {
@@ -521,12 +522,14 @@ const saveSettings = async () => {
       has_knockout_phase_lists: form.value.has_knockout_phase ? form.value.has_knockout_phase_lists : false,
       voting_enabled: form.value.voting_enabled,
       status: form.value.status,
-      group_phase_end: form.value.group_phase_end ? new Date(form.value.group_phase_end).toISOString() : null,
-      knockout_phase_end: form.value.knockout_phase_end ? new Date(form.value.knockout_phase_end).toISOString() : null,
+      group_phase_end: form.value.group_phase_end ? form.value.group_phase_end + ':00' : null,
+      knockout_phase_end: form.value.knockout_phase_end ? form.value.knockout_phase_end + ':00' : null,
     }
 
     const response = await axios.patch(`${API_URL}/league/${leagueId.value}`, payload)
     league.value = response.data
+    form.value.group_phase_end = toLocalDatetime(response.data.group_phase_end)
+    form.value.knockout_phase_end = toLocalDatetime(response.data.knockout_phase_end)
     success.value = t('leagueSettings.settingsSaved')
   } catch (err) {
     error.value = err.response?.data?.detail || t('leagueSettings.failedToSave')

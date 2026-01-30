@@ -295,7 +295,7 @@ const createLeague = async () => {
     const payload = {
       name: form.value.name,
       description: form.value.description || null,
-      registration_end: new Date(form.value.registration_end).toISOString(),
+      registration_end: form.value.registration_end + ':00',
       min_players: form.value.min_players,
       max_players: form.value.max_players || null,
       min_group_size: form.value.min_group_size,
