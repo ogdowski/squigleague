@@ -1,14 +1,12 @@
 <template>
   <div
     :class="[
-      'card hover:brightness-110 transition-all py-3',
+      'card hover:brightness-110 transition-all py-3 cursor-pointer',
       resultClass
     ]"
+    @click="router.push(`/league/${leagueId}/match/${match.id}`)"
   >
-    <router-link
-      :to="`/league/${leagueId}/match/${match.id}`"
-      class="block cursor-pointer"
-    >
+    <div>
       <!-- Mobile: stacked layout, Desktop: horizontal -->
       <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <!-- Player 1 -->
@@ -66,7 +64,7 @@
         </span>
         <span v-if="match.map_name">{{ t('matchCard.map') }} {{ match.map_name }}</span>
       </div>
-    </router-link>
+    </div>
 
     <!-- Action row - stacked on mobile -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3 pt-3 border-t border-gray-700">
@@ -98,7 +96,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+
+const router = useRouter()
 
 const { t } = useI18n()
 

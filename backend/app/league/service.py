@@ -21,6 +21,38 @@ from app.league.scoring import calculate_match_points
 from sqlmodel import Session, select
 
 
+def update_match_deadlines(session: Session, league: League) -> int:
+    """Updates all match deadlines to match their phase end date."""
+    updated = 0
+
+    if league.group_phase_end:
+        group_matches = session.scalars(
+            select(Match).where(
+                Match.league_id == league.id,
+                Match.phase == "group",
+            )
+        ).all()
+        for match in group_matches:
+            match.deadline = league.group_phase_end
+            updated += 1
+
+    if league.knockout_phase_end:
+        knockout_matches = session.scalars(
+            select(Match).where(
+                Match.league_id == league.id,
+                Match.phase == "knockout",
+            )
+        ).all()
+        for match in knockout_matches:
+            match.deadline = league.knockout_phase_end
+            updated += 1
+
+    if updated:
+        session.commit()
+
+    return updated
+
+
 def recalculate_all_army_stats(session: Session) -> dict:
     """Recalculates all army stats from confirmed matches. Run once to populate cache."""
     # Clear existing stats
@@ -519,47 +551,32 @@ def draw_groups(
 def generate_group_matches(
     session: Session,
     league: League,
-    weeks_per_match: int = 2,
 ) -> list[Match]:
     """
     Generates group phase matches (round-robin within each group).
-
-    Args:
-        session: Database session
-        league: League
-        weeks_per_match: Weeks per match (for deadline calculation)
-
-    Returns:
-        List of created matches
+    Deadline is set to league.group_phase_end (synced via update_match_deadlines).
     """
     statement = select(Group).where(Group.league_id == league.id)
     groups = session.scalars(statement).all()
 
     created_matches = []
-    base_deadline = datetime.utcnow()
 
     for group in groups:
         statement = select(LeaguePlayer).where(LeaguePlayer.group_id == group.id)
         players = list(session.scalars(statement).all())
 
-        match_count = 0
         for i, player1 in enumerate(players):
             for player2 in players[i + 1 :]:
-                deadline = base_deadline + timedelta(
-                    weeks=weeks_per_match * (match_count // len(players) + 1)
-                )
-
                 match = Match(
                     league_id=league.id,
                     player1_id=player1.id,
                     player2_id=player2.id,
                     phase="group",
                     status="scheduled",
-                    deadline=deadline,
+                    deadline=league.group_phase_end,
                 )
                 session.add(match)
                 created_matches.append(match)
-                match_count += 1
 
     session.commit()
     return created_matches
@@ -903,13 +920,10 @@ def get_next_knockout_round(current_round: str) -> Optional[str]:
 def generate_knockout_matches(
     session: Session,
     league: League,
-    weeks_per_match: int = 2,
 ) -> list[Match]:
     """
     Generates knockout phase matches for the FIRST ROUND only.
-
-    Best plays worst, second plays second-to-last, etc.
-    Uses league.knockout_size to determine the bracket size.
+    Deadline is set to league.knockout_phase_end (synced via update_match_deadlines).
     """
     qualified = get_qualified_players(session, league)
     knockout_size = len(qualified)
@@ -923,7 +937,6 @@ def generate_knockout_matches(
     first_round = rounds[0]
 
     created_matches = []
-    base_deadline = datetime.utcnow()
 
     half = knockout_size // 2
     for i in range(half):
@@ -937,7 +950,7 @@ def generate_knockout_matches(
             phase="knockout",
             knockout_round=first_round,
             status="scheduled",
-            deadline=base_deadline + timedelta(days=league.days_per_match),
+            deadline=league.knockout_phase_end,
         )
         session.add(match)
         created_matches.append(match)
@@ -1020,7 +1033,6 @@ def advance_to_next_knockout_round(
     # Create matches for next round
     # Pair 1st with last, 2nd with second-to-last, etc. (bracket style)
     created_matches = []
-    base_deadline = datetime.utcnow()
     half = len(winners) // 2
 
     for i in range(half):
@@ -1034,7 +1046,7 @@ def advance_to_next_knockout_round(
             phase="knockout",
             knockout_round=next_round,
             status="scheduled",
-            deadline=base_deadline + timedelta(days=league.days_per_match),
+            deadline=league.knockout_phase_end,
         )
         session.add(match)
         created_matches.append(match)
@@ -1271,7 +1283,6 @@ def change_player_group(
         )
         new_groupmates = list(session.scalars(statement).all())
 
-        base_deadline = datetime.utcnow()
         for groupmate in new_groupmates:
             match = Match(
                 league_id=player.league_id,
@@ -1279,7 +1290,7 @@ def change_player_group(
                 player2_id=groupmate.id,
                 phase="group",
                 status="scheduled",
-                deadline=base_deadline + timedelta(days=league.days_per_match),
+                deadline=league.group_phase_end,
             )
             session.add(match)
             created_count += 1

@@ -75,6 +75,7 @@ from app.league.service import (
     get_voting_results,
     remove_player_from_league,
     submit_match_result,
+    update_match_deadlines,
 )
 from app.users.models import User
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -366,8 +367,16 @@ async def update_league(
     if update_data.get("status") == "finished" and league.finished_at is None:
         league.finished_at = datetime.utcnow()
 
+    # Update match deadlines when phase end dates change
+    phase_dates_changed = (
+        "group_phase_end" in update_data or "knockout_phase_end" in update_data
+    )
     session.add(league)
     session.commit()
+
+    if phase_dates_changed:
+        update_match_deadlines(session, league)
+
     session.refresh(league)
 
     player_count = get_league_player_count(session, league_id)
@@ -874,6 +883,9 @@ async def draw_groups_endpoint(
     session.add(league)
     session.commit()
 
+    # Set match deadlines to phase end dates
+    update_match_deadlines(session, league)
+
     return {
         "message": f"Created {len(groups)} groups with {len(matches)} matches",
         "groups": [{"id": g.id, "name": g.name} for g in groups],
@@ -961,6 +973,9 @@ async def recalculate_dates_endpoint(
     league.knockout_phase_end = knockout_end
     session.add(league)
     session.commit()
+
+    # Sync match deadlines with new phase dates
+    update_match_deadlines(session, league)
 
     return {
         "message": "Dates recalculated",
