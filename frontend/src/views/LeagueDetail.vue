@@ -468,17 +468,17 @@
             </span>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full text-sm table-fixed">
               <thead>
                 <tr class="text-gray-400 border-b border-gray-700">
-                  <th class="text-left py-2 px-2">{{ t('leagueDetail.position') }}</th>
+                  <th class="text-left py-2 px-2 w-10">{{ t('leagueDetail.position') }}</th>
                   <th class="text-left py-2 px-2">{{ t('leagueDetail.player') }}</th>
-                  <th class="text-center py-2 px-2">{{ t('leagueDetail.played') }}</th>
-                  <th class="text-center py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.won') }}</th>
-                  <th class="text-center py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.drawn') }}</th>
-                  <th class="text-center py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.lost') }}</th>
-                  <th class="text-right py-2 px-2">{{ t('leagueDetail.points') }}</th>
-                  <th class="text-right py-2 px-2 hidden sm:table-cell">{{ t('leagueDetail.average') }}</th>
+                  <th class="text-center py-2 px-2 w-10">{{ t('leagueDetail.played') }}</th>
+                  <th class="text-center py-2 px-2 w-10 hidden sm:table-cell">{{ t('leagueDetail.won') }}</th>
+                  <th class="text-center py-2 px-2 w-10 hidden sm:table-cell">{{ t('leagueDetail.drawn') }}</th>
+                  <th class="text-center py-2 px-2 w-10 hidden sm:table-cell">{{ t('leagueDetail.lost') }}</th>
+                  <th class="text-right py-2 px-2 w-14">{{ t('leagueDetail.points') }}</th>
+                  <th class="text-right py-2 px-2 w-14 hidden sm:table-cell">{{ t('leagueDetail.average') }}</th>
                 </tr>
               </thead>
               <tbody>
